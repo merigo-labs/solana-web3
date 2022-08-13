@@ -1,15 +1,10 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/buffer_layout.dart';
-import 'package:solana_web3/keypair.dart';
-import 'package:solana_web3/models/program_address.dart';
-import 'package:solana_web3/public_key.dart';
-import 'package:solana_web3/web3.dart';
-
-import 'utils.dart';
+import 'package:solana_web3/src/buffer_layout.dart';
+import 'package:solana_web3/src/instruction.dart';
+import 'package:solana_web3/src/programs/system.dart';
 
 
 /// System Program Tests

@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/web_socket_manager_lookup.dart';
+import 'package:solana_web3/src/web_socket_manager_lookup.dart';
 
 
 ///  Web Socket Manager Map Tests

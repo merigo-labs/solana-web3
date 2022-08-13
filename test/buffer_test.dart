@@ -4,7 +4,7 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/buffer.dart';
+import 'package:solana_web3/src/buffer.dart';
 import './utils.dart';
 
 

@@ -3,9 +3,9 @@
 
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/keypair.dart';
-import 'package:solana_web3/models/program_address.dart';
-import 'package:solana_web3/public_key.dart';
+import 'package:solana_web3/src/keypair.dart';
+import 'package:solana_web3/src/models/program_address.dart';
+import 'package:solana_web3/src/public_key.dart';
 
 
 /// Keypair Tests

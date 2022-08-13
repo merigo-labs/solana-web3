@@ -2,6 +2,7 @@ name: solana_web3
 description: Solana Dart API built on the Solana JSON RPC API.
 version: 0.0.1
 homepage:
+repository: https://github.com/merigo-labs/solana-web3
 
 environment:
   sdk: ">=2.17.3 <3.0.0"

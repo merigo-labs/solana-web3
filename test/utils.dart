@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/buffer.dart';
+import 'package:solana_web3/src/buffer.dart';
 
 
 /// Test Utilities
