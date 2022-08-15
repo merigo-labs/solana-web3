@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:flutter/material.dart';
 import 'package:solana_web3/src/rpc/rpc_http_headers.dart';
 
 
@@ -43,6 +44,7 @@ abstract class RpcRequestConfig {
   ///   ]
   /// }
   /// ```
+  @protected
   Map<String, dynamic> object();
 
   /// Returns the result of [object], removing all `null` valued entries.

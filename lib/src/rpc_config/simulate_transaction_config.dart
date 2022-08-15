@@ -5,12 +5,14 @@ import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/config/transaction_encoding.dart';
 import 'package:solana_web3/src/rpc/rpc_request_config.dart';
 import 'package:solana_web3/src/rpc_config/accounts_filter.dart';
+import 'package:solana_web3/src/rpc_config/commitment_and_min_context_slot_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_config.dart';
 
 
 /// Simulate Transaction Config
 /// ------------------------------------------------------------------------------------------------
  
-class SimulateTransactionConfig extends RpcRequestConfig {
+class SimulateTransactionConfig extends CommitmentAndMinContextSlotConfig {
 
   /// JSON-RPC configurations for `SimulateTransaction` methods.
   const SimulateTransactionConfig({
@@ -18,19 +20,16 @@ class SimulateTransactionConfig extends RpcRequestConfig {
     super.headers,
     super.timeout,
     this.sigVerify = false,
-    this.commitment,
+    super.commitment,
     this.encoding = TransactionEncoding.base64,
     this.replaceRecentBlockhash,
     this.accounts,
-    this.minContextSlot,
+    super.minContextSlot,
   }): assert(encoding == TransactionEncoding.base64);
 
   /// If true, the transaction signatures will be verified (default: `false`, conflicts with 
   /// [replaceRecentBlockhash]).
   final bool sigVerify;
-
-  /// The type of block to query for the confirmation (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The transaction data encoding (must be 'base64').
   final TransactionEncoding encoding;
@@ -43,9 +42,6 @@ class SimulateTransactionConfig extends RpcRequestConfig {
   /// If this parameter not provided, the RPC node will retry the transaction until it is finalised 
   /// or until the blockhash expires.
   final AccountsFilter? accounts;
-
-  /// The minimum slot that the request can be evaluated at.
-  final int? minContextSlot;
 
   @override
   Map<String, dynamic> object() => {

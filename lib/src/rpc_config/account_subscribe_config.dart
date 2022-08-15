@@ -2,24 +2,20 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_web3/src/config/account_encoding.dart';
-import 'package:solana_web3/src/config/commitment.dart';
-import 'package:solana_web3/src/rpc/rpc_subscribe_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_subscribe_config.dart';
 
 
 /// Account Subscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-class AccountSubscribeConfig extends RpcSubscribeConfig {
+class AccountSubscribeConfig extends CommitmentSubscribeConfig {
 
   /// Defines the configurations for JSON-RPC `accountSubscribe` requests.
   AccountSubscribeConfig({
     super.timeout,
-    this.commitment = Commitment.finalized,
+    super.commitment,
     this.encoding = AccountEncoding.base64,
   }): assert(encoding.isAccount);
-
-  /// The type of block to query for the request (default: [Commitment.finalized]).
-  final Commitment commitment;
 
   /// The account data's encoding (default: [AccountEncoding.base64]).
   final AccountEncoding encoding;

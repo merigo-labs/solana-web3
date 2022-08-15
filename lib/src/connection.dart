@@ -161,6 +161,35 @@ extension FutureRpcContextResponse<T> on Future<RpcContextResponse<T>> {
   Future<T?> optional() => then((final RpcContextResponse<T> value) => value.result?.value);
 }
 
+/// Future extensions.
+extension FutureRace<T> on Future<T> {
+
+  Future<T> race(final Future future) {
+    final Completer<T> completer = Completer.sync();
+    then((value) {
+      if (!completer.isCompleted) {
+        completer.complete(value);
+      }
+    });
+    catchError((error, stakeTrace) {
+      if (!completer.isCompleted) {
+        completer.completeError(error, stakeTrace);
+      }
+    });
+    future.then((_) {
+      if (!completer.isCompleted) {
+        completer.completeError('The future lost the race.');
+      }
+    });
+    future.catchError((error, stakeTrace) {
+      if (!completer.isCompleted) {
+        completer.completeError(error, stakeTrace);
+      }
+    });
+    return completer.future;
+  }
+}
+
 
 /// Connection
 /// ------------------------------------------------------------------------------------------------
@@ -173,6 +202,7 @@ class Connection {
   Connection(
     this.cluster, { 
     final Cluster? wsCluster, 
+    this.commitment = Commitment.confirmed,
   }) {
     socket = WebSocketConnection(
       wsCluster ?? cluster, 
@@ -183,8 +213,14 @@ class Connection {
     );
   }
 
+  /// A persistent connection.
+  final http.Client client = http.Client();
+
   /// The cluster to connect to.
   final Cluster cluster;
+
+  /// The default commitment level (applied to a subset of method invocations).
+  final Commitment? commitment;
 
   /// The websocket connection.
   late final WebSocketConnection socket;
@@ -200,6 +236,7 @@ class Connection {
 
   /// Disposes of all the acquired resources.
   void disconnect() {
+    client.close();
     socket.disconnect().ignore();
     _webSocketExchangeManager.dispose();
     _webSocketSubscriptionManager.dispose();
@@ -281,7 +318,7 @@ class Connection {
     final RpcParser<T, U> parse,
   ) {
     return (final http.Response response) {
-      _debugResponse(response);
+      //_debugResponse(response);
       final Map<String, dynamic> body = json.decode(response.body);
       final RpcResponse<T> rpc = RpcResponse.parse<T, U>(body, parse);
       return rpc.isSuccess ? Future.value(rpc) : Future.error(rpc.error!);
@@ -331,8 +368,8 @@ class Connection {
   /// The [config] object can be used to set the request's [RpcRequestConfig.headers] and 
   /// [RpcRequestConfig.timeout] duration.
   Future<http.Response> _post<T, U>(final Object body, { final RpcRequestConfig? config }) {
-    _debugRequest(body);
-    final Future<http.Response> request = http.post(
+    //_debugRequest(body);
+    final Future<http.Response> request = client.post(
       cluster.http(),
       body: json.encode(body).codeUnits,
       headers: (config?.headers ?? const RpcHttpHeaders()).toJson(),
@@ -385,7 +422,7 @@ class Connection {
 
   /// Get the [cluster]'s health status.
   Future<HealthStatus> health() {
-    return http.get(cluster.http('health'))
+    return client.get(cluster.http('health'))
       .then((final http.Response response) => HealthStatus.fromName(response.body));
   }
 
@@ -734,8 +771,9 @@ class Connection {
   Future<RpcContextResponse<List<LargeAccount>>> getLargestAccountsRaw({ 
     final GetLargestAccountsConfig? config, 
   }) {
+    final defaultConfig = config?.applyDefault(commitment: commitment) ?? GetLargestAccountsConfig(commitment: commitment);
     parse(result) => RpcContextResult.parse(result, _listParser(LargeAccount.fromJson));
-    return _request(Method.getLargestAccounts, [], parse, config: config);
+    return _request(Method.getLargestAccounts, [], parse, config: defaultConfig);
   }
 
   /// Returns the 20 largest accounts, by lamport balance (results may be cached up to two hours).
@@ -993,8 +1031,9 @@ class Connection {
   Future<RpcContextResponse<Supply>> getSupplyRaw({
     final GetSupplyConfig? config, 
   }) {
+    final supplyConfig = config?.applyDefault(commitment: commitment) ?? GetSupplyConfig(commitment: commitment);
     parse(result) => RpcContextResult.parse(result, Supply.fromJson);
-    return _request(Method.getSupply, [], parse, config: config);
+    return _request(Method.getSupply, [], parse, config: supplyConfig);
   }
 
   /// Returns information about the current supply.
@@ -1187,6 +1226,8 @@ class Connection {
   }
 
   /// Requests an airdrop of [lamports] to [publicKey].
+  /// 
+  /// Returns the transaction signature as a base-58 encoded string.
   Future<RpcResponse<String>> requestAirdropRaw(
     final PublicKey publicKey, 
     final u64 lamports, {
@@ -1199,6 +1240,8 @@ class Connection {
   }
 
   /// Requests an airdrop of [lamports] to [publicKey].
+  /// 
+  /// Returns the transaction signature as a base-58 encoded string.
   Future<String> requestAirdrop(
     final PublicKey publicKey, 
     final u64 lamports, {
@@ -1246,9 +1289,11 @@ class Connection {
       }
     }
 
-    final String signedTransaction = transaction.serialise().getString(BufferEncoding.base64);
-    config ??= SendTransactionConfig(encoding: TransactionEncoding.base64);
-    return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: config);
+    final defaultConfig = config?.applyDefault(preflightCommitment: commitment) 
+      ?? SendTransactionConfig(preflightCommitment: commitment); 
+    final BufferEncoding bufferEncoding = BufferEncoding.fromName(defaultConfig.encoding.name);
+    final String signedTransaction = transaction.serialise().getString(bufferEncoding);
+    return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: defaultConfig);
   }
 
   /// Sign and send a [transaction] to the cluster for processing.
@@ -1306,7 +1351,7 @@ class Connection {
     final Message message = transaction.compileAndVerifyMessage();
     final SimulateTransactionConfig config = SimulateTransactionConfig(
       sigVerify: signers != null,
-      commitment: commitment,
+      commitment: commitment ?? this.commitment,
       encoding: TransactionEncoding.base64,
       accounts: includeAccounts 
         ? AccountsFilter(addresses: message.nonProgramIds.toList(growable: false)) 
@@ -1351,10 +1396,25 @@ class Connection {
     return signature;
   }
 
+  ///
+  Future<u64> _checkBlockHeight(
+    final BlockhashWithExpiryBlockHeight blockhash, {
+    required final Commitment? commitment,
+  }) async {
+    final config = GetBlockHeightConfig(commitment: commitment);
+    u64 blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
+    while (blockHeight <= blockhash.lastValidBlockHeight) {
+      blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    return Future.error('Block Height Exceeded.');
+  }
+
   /// 
   Future<dynamic> confirmTransaction(
     final TransactionSignature signature, {
     final List<Signer> signers = const [],
+    final BlockhashWithExpiryBlockHeight? blockhash,
     final ConfirmTransactionConfig? config,
   }) async {
 
@@ -1368,17 +1428,26 @@ class Connection {
 
     utils.require(decodedSignature.length == signatureLength, 'Invalid signature length.');
 
-    final Commitment commitment = config?.commitment ?? Commitment.finalized;
+    final Commitment commitment = config?.commitment ?? this.commitment ??  Commitment.finalized;
     final Completer completer = Completer.sync();
 
     try {
 
-      final WebSocketSubscription subscription = await signatureSubscribe(
+      final Future<WebSocketSubscription> futureSubscription = signatureSubscribe(
         signature, 
-        config: SignatureSubscribeConfig(
-          commitment: commitment,
-          timeout: Duration(seconds: commitment == Commitment.finalized ? 60 : 30),
-        ),
+        config: SignatureSubscribeConfig(commitment: commitment),
+      );
+
+      final WebSocketSubscription subscription = await futureSubscription.race(
+        blockhash != null 
+          ? _checkBlockHeight(
+              blockhash, 
+              commitment: commitment,
+            )
+          : Future.delayed(
+              Duration(seconds: commitment == Commitment.finalized ? 60 : 30),
+              () => Future.error(TimeoutException('Confirm Transaction Timed Out.')),
+            ),
       );
 
       subscription.on(
@@ -1522,6 +1591,8 @@ class Connection {
   ///   },
   /// );
   /// ```
+  /// 
+  /// TODO: Create the listener (subscribe) before making the exchange request.
   Future<WebSocketSubscription> subscribe(
     final Method method,
     final List<Object> params, {

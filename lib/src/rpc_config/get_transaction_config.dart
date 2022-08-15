@@ -4,12 +4,13 @@
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/config/transaction_encoding.dart';
 import 'package:solana_web3/src/rpc/rpc_request_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_config.dart';
 
 
 /// Get Transaction Config
 /// ------------------------------------------------------------------------------------------------
 
-class GetTransactionConfig extends RpcRequestConfig {
+class GetTransactionConfig extends CommitmentConfig {
 
   /// JSON-RPC configurations for `getTransaction` methods.
   GetTransactionConfig({
@@ -17,7 +18,7 @@ class GetTransactionConfig extends RpcRequestConfig {
     super.headers,
     super.timeout,
     this.encoding = TransactionEncoding.base64,
-    this.commitment,
+    super.commitment,
     this.maxSupportedTransactionVersion,
   }): assert(commitment != Commitment.processed),
       assert(encoding == null || encoding.isTransaction),
@@ -25,9 +26,6 @@ class GetTransactionConfig extends RpcRequestConfig {
 
   /// The transaction data's encoding (default: [TransactionEncoding.json]).
   final TransactionEncoding? encoding;
-
-  /// The type of block to query for the request (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The max transaction version to return in responses. If the requested transaction is a higher 
   /// version, an error will be returned. If this parameter is omitted, only legacy transactions 

@@ -5,29 +5,27 @@ import 'package:solana_web3/src/config/account_encoding.dart';
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/models/data_slice.dart';
 import 'package:solana_web3/src/rpc/rpc_request_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_and_min_context_slot_config.dart';
 import 'package:solana_web3/src/utils/types.dart' show u64;
 
 
 /// Get Account Info Config
 /// ------------------------------------------------------------------------------------------------
 
-class GetAccountInfoConfig extends RpcRequestConfig {
+class GetAccountInfoConfig extends CommitmentAndMinContextSlotConfig {
 
   /// JSON-RPC configurations for `getAccountInfo` methods.
   GetAccountInfoConfig({
     super.id,
     super.headers,
     super.timeout,
-    this.commitment,
+    super.commitment,
     this.encoding = AccountEncoding.base64,
     this.dataSlice,
-    this.minContextSlot,
+    super.minContextSlot,
   }): assert(encoding.isAccount, 'Invalid encoding.'),
       assert(dataSlice == null || encoding.isBinary, 'Must use binary encoding for [DataSlice].'),
       assert(minContextSlot == null || minContextSlot >= 0);
-
-  /// The type of block to query for the request (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The account data's encoding (default: [AccountEncoding.base64]). 
   /// 
@@ -37,9 +35,6 @@ class GetAccountInfoConfig extends RpcRequestConfig {
   /// Limit the returned account data to the range [DataSlice.offset] : [DataSlice.offset] + 
   /// [DataSlice.length].
   final DataSlice? dataSlice;
-
-  /// The minimum slot that the request can be evaluated at.
-  final u64? minContextSlot;
 
   @override
   Map<String, dynamic> object() => {

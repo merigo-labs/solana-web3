@@ -4,14 +4,14 @@
 import 'package:solana_web3/src/config/transaction_detail.dart';
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/config/transaction_encoding.dart';
-import 'package:solana_web3/src/rpc/rpc_request_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_config.dart';
 import 'package:solana_web3/src/utils/types.dart' show u64;
 
 
 /// Get Block Config
 /// ------------------------------------------------------------------------------------------------
 
-class GetBlockConfig extends RpcRequestConfig {
+class GetBlockConfig extends CommitmentConfig {
 
   /// JSON-RPC configurations for `getBlock` methods.
   GetBlockConfig({
@@ -21,7 +21,7 @@ class GetBlockConfig extends RpcRequestConfig {
     this.encoding,
     this.transactionDetails,
     this.rewards,
-    this.commitment,
+    super.commitment,
     this.maxSupportedTransactionVersion,
   }): assert(commitment != Commitment.processed),
       assert(encoding == null || encoding.isTransaction),
@@ -35,10 +35,6 @@ class GetBlockConfig extends RpcRequestConfig {
 
   /// If true, populate the response's rewards array (default: `true`).
   final bool? rewards;
-
-  /// The type of block to query for the request, [Commitment.processed] is not supported 
-  /// (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The max transaction version to return in responses. If the requested block contains a 
   /// transaction with a higher version, an error will be returned.

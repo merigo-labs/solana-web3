@@ -11,11 +11,14 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages). 
 -->
 
-Solana Dart API built on Solana's [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api). The library is based on the popular Javascript library [solana-web3.js](https://github.com/solana-labs/solana-web3.js).
+The Solana Dart API built on Solana's [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api).
+
+Android and iOS supported.
 
 ## Features
+---
 
-The library includes the following features:
+The library is modelled on the [solana-web3.js](https://github.com/solana-labs/solana-web3.js) Javascript API and includes the following features:
 
 * Compute Budget Program
 * ED25519 Program
@@ -24,35 +27,40 @@ The library includes the following features:
 * System Program
 
 ## Usage
+---
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+Invoke a [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api) method.
 
 ```dart
 import 'package:solana_web3/solana_web3.dart' as web3;
 
-// Connect to the devnet cluster.
-final cluster = web3.Cluster.devnet;
-final connection = web3.Connection(cluster);
+void main() async {
+  // Connect to a cluster.
+  final cluster = web3.Cluster.devnet;
+  final connection = web3.Connection(cluster);
 
-// Create a new account and send SOL to the wallet address.
-final keypair = web3.Keypair.generate();
-const amount = web3.LAMPORTS_PER_SOL * 2; // Keep this value low.
-print('Airdrop $amount lamport(s) to account ${keypair.publicKey}...');
-final transactionSignature = await connection.requestAirdrop(keypair.publicKey, amount);
-await connection.confirmTransaction(transactionSignature);
+  // Create a new account and get its wallet address.
+  final keypair = web3.Keypair.generate();
+  final address = keypair.publicKey;
 
-// Get the account balance.
-final balance = await connection.getBalance(keypair.publicKey);
-print('The account ${keypair.publicKey} has a balance of $balance lamport(s).');
+  // Fund the test account with 2 SOL.
+  const amount = web3.LAMPORTS_PER_SOL * 2; // Keep this value low.
+  print('Airdrop $amount lamports to account $address...');
+  final transactionSignature = await connection.requestAirdrop(address, amount);
+  await connection.confirmTransaction(transactionSignature);
+
+  // Get the account balance.
+  final balance = await connection.getBalance(address);
+  print('The account $address has a balance of $balance lamports.');
+}
 ```
 
-## Additional information
+## Bugs and Feature Requests
+---
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+### Bugs
+Feel free to report any bugs found by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
 
+### Feature Requests
+If you'd like a feature added to the library, let us know by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
 
-## Bugs
-Please report all bugs on the GitHub [issues](https://github.com/merigo-labs/solana-web3/issues) page.

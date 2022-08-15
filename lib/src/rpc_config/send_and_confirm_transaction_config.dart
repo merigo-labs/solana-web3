@@ -3,7 +3,7 @@
 
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/config/transaction_encoding.dart';
-import 'package:solana_web3/src/rpc/rpc_request_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_config.dart';
 import 'package:solana_web3/src/rpc_config/confirm_transaction_config.dart';
 import 'package:solana_web3/src/rpc_config/send_transaction_config.dart';
 import 'package:solana_web3/src/utils/types.dart';
@@ -12,7 +12,7 @@ import 'package:solana_web3/src/utils/types.dart';
 /// Send And Confirm Transaction Config
 /// ------------------------------------------------------------------------------------------------
 
-class SendAndConfirmTransactionConfig extends RpcRequestConfig {
+class SendAndConfirmTransactionConfig extends CommitmentConfig {
 
   /// JSON-RPC configurations for `sendAndConfirmTransaction` methods.
   const SendAndConfirmTransactionConfig({
@@ -21,7 +21,7 @@ class SendAndConfirmTransactionConfig extends RpcRequestConfig {
     super.timeout,
     this.skipPreflight = false,
     this.preflightCommitment,
-    this.commitment,
+    super.commitment,
     this.encoding = TransactionEncoding.base64,
     this.maxRetries,
     this.minContextSlot,
@@ -32,9 +32,6 @@ class SendAndConfirmTransactionConfig extends RpcRequestConfig {
 
   /// The type of block to query for the request (default: [commitment]).
   final Commitment? preflightCommitment;
-
-  /// The type of block to query for the confirmation (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The transaction data encoding (must be 'base64').
   final TransactionEncoding encoding;

@@ -49,4 +49,36 @@ class SendTransactionConfig extends RpcRequestConfig {
     'maxRetries': maxRetries,
     'minContextSlot': minContextSlot,
   };
+
+  /// Creates a copy of `this` instance, applying the provided parameters as default values.
+  /// 
+  /// ```
+  /// final SendTransactionConfig config = SendTransactionConfig(
+  ///   preflightCommitment: null,
+  /// );
+  /// print(config.object());     //  {
+  ///                             //    ...,
+  ///                             //    'preflightCommitment': null,
+  ///                             //  }
+  /// 
+  /// final SendTransactionConfig configCopy = config.applyDefault(
+  ///   preflightCommitment: Commitment.finalized,
+  /// );
+  /// print(configCopy.object()); //  {
+  ///                             //    ...,
+  ///                             //    'preflightCommitment': 'finalized',
+  ///                             //  }
+  /// ```
+  SendTransactionConfig applyDefault({
+    final Commitment? preflightCommitment,
+  }) => SendTransactionConfig(
+    id: id,
+    headers: headers,
+    timeout: timeout,
+    skipPreflight: skipPreflight,
+    preflightCommitment: preflightCommitment ?? this.preflightCommitment,
+    encoding: encoding,
+    maxRetries: maxRetries,
+    minContextSlot: minContextSlot,
+  );
 }

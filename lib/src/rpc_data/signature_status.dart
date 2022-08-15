@@ -3,7 +3,7 @@
 
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show i64, u64, usize;
+import 'package:solana_web3/src/utils/types.dart' show u64, usize;
 
 
 /// Signature Status

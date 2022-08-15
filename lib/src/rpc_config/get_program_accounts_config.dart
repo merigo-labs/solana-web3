@@ -7,6 +7,7 @@ import 'package:solana_web3/src/models/data_slice.dart';
 import 'package:solana_web3/src/models/program_filter.dart';
 import 'package:solana_web3/src/models/serialisable.dart';
 import 'package:solana_web3/src/rpc/rpc_request_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_config.dart';
 import 'package:solana_web3/src/utils/convert.dart' as convert show list;
 import 'package:solana_web3/src/utils/types.dart' show u64;
 
@@ -14,14 +15,14 @@ import 'package:solana_web3/src/utils/types.dart' show u64;
 /// Get Program Accounts Config
 /// ------------------------------------------------------------------------------------------------
 
-class GetProgramAccountsConfig extends RpcRequestConfig {
+class GetProgramAccountsConfig extends CommitmentConfig {
 
   /// JSON-RPC configurations for `getAccountInfo` methods.
   GetProgramAccountsConfig({
     super.id,
     super.headers,
     super.timeout,
-    this.commitment,
+    super.commitment,
     this.encoding = AccountEncoding.base64,
     this.dataSlice,
     this.filters,
@@ -29,9 +30,6 @@ class GetProgramAccountsConfig extends RpcRequestConfig {
   }): assert(encoding.isAccount, 'Invalid encoding.'),
       assert(dataSlice == null || encoding.isBinary, 'Must use binary encoding for [DataSlice].'),
       assert(minContextSlot == null || minContextSlot >= 0);
-
-  /// The type of block to query for the request (default: [Commitment.finalized]).
-  final Commitment? commitment;
 
   /// The account data's encoding (default: [AccountEncoding.base64]). 
   /// 

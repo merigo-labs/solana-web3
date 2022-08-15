@@ -5,25 +5,23 @@ import 'package:solana_web3/src/config/account_encoding.dart';
 import 'package:solana_web3/src/config/commitment.dart';
 import 'package:solana_web3/src/models/program_filter.dart';
 import 'package:solana_web3/src/rpc/rpc_subscribe_config.dart';
+import 'package:solana_web3/src/rpc_config/commitment_subscribe_config.dart';
 import 'package:solana_web3/src/utils/convert.dart' show list;
 
 
 /// Program Subscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-class ProgramSubscribeConfig extends RpcSubscribeConfig {
+class ProgramSubscribeConfig extends CommitmentSubscribeConfig {
 
   /// Defines the configurations for JSON-RPC `ProgramSubscribe` requests.
   ProgramSubscribeConfig({
     super.timeout,
-    this.commitment = Commitment.finalized,
+    super.commitment,
     this.encoding = AccountEncoding.base64,
     final List<ProgramFilter>? filters,
   }): filters = filters == null || filters.isEmpty ? null : filters,
       assert(encoding.isAccount);
-
-  /// The type of block to query for the request (default: [Commitment.finalized]).
-  final Commitment commitment;
 
   /// The Program data's encoding (default: [AccountEncoding.base64]).
   final AccountEncoding encoding;
