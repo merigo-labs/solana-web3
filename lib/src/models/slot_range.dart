@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart';
+import 'serialisable.dart';
+import '../utils/types.dart';
 
 
 /// Slot Range
@@ -40,7 +40,7 @@ class SlotRange extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// SlotRange.fromJson({ '<parameter>': <value> });
+  /// SlotRange.tryFromJson({ '<parameter>': <value> });
   /// ```
   static SlotRange? tryFromJson(final Map<String, dynamic>? json) {
     return json == null ? null : SlotRange.fromJson(json);

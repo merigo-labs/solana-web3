@@ -3,10 +3,10 @@
 
 import 'dart:async';
 import 'package:flutter/foundation.dart' show protected;
-import 'package:solana_web3/src/rpc/rpc_notification_response.dart';
-import 'package:solana_web3/src/rpc/rpc_subscribe_response.dart';
-import 'package:solana_web3/src/subscription_id.dart';
-import 'package:solana_web3/src/web_socket_manager_lookup.dart';
+import '../rpc/rpc_notification_response.dart';
+import '../rpc/rpc_subscribe_response.dart';
+import 'subscription_id.dart';
+import 'web_socket_manager_lookup.dart';
 
 
 /// Web Socket Subscription

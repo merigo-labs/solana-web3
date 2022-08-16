@@ -6,8 +6,8 @@ library nacl;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pinenacl/tweetnacl.dart' show TweetNaCl;
-import 'package:solana_web3/src/keypair.dart';
-import 'package:solana_web3/src/utils/library.dart' show require;
+import 'keypair.dart';
+import 'utils/library.dart' show require;
 
 
 /// NaCl
@@ -22,8 +22,8 @@ const int secretKeyLength = 64;
 /// Signature length in bytes.
 const int signatureLength = 64;
 
-/// Seed length in bytes.
-const int seedLength = 32;
+/// The Maximum lengthin bytes of derived public key seed.
+const int maxSeedLength = 32;
 
 /// NaCl Sign singleton.
 const NaClSign sign = NaClSign();
@@ -53,7 +53,7 @@ class NaClKeypair {
   /// 
   /// Throws an [AssertionError] if a keypair could not be generated.
   Ed25519Keypair call() {
-    return fromSeed(TweetNaCl.randombytes(seedLength));
+    return fromSeed(TweetNaCl.randombytes(maxSeedLength));
   }
 
   /// Creates a keypair from a [secretKey] byte array.
@@ -72,7 +72,7 @@ class NaClKeypair {
   /// 
   /// Throws an [AssertionError] if the [seed] is invalid.
   Ed25519Keypair fromSeed(final Uint8List seed) {
-    require(seed.length == seedLength, 'Invalid seed length ${seed.length}.');
+    require(seed.length == maxSeedLength, 'Invalid seed length ${seed.length}.');
     final publicKey = Uint8List(publicKeyLength);
     final secretKey = Uint8List(secretKeyLength)..setAll(0, seed);
     final int result = TweetNaCl.crypto_sign_keypair(publicKey, secretKey, seed);

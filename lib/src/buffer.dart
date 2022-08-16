@@ -4,9 +4,9 @@
 import 'dart:convert' show base64, utf8;
 import 'dart:math' show min;
 import 'dart:typed_data';
-import 'package:solana_web3/src/extensions/big_int.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert;
-import 'package:solana_web3/src/utils/library.dart' show require;
+import 'extensions/big_int.dart';
+import 'utils/convert.dart' as convert;
+import 'utils/library.dart' show require;
 
 
 /// Buffer Encoding

@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
-import 'package:solana_web3/src/utils/types.dart';
+import 'buffer_layout.dart' as buffer_layout;
+import 'utils/types.dart';
 
 
 /// Layouts
@@ -83,8 +83,10 @@ int getAlloc<T extends buffer_layout.Layout>(
       if (value != null && value is String) {
         alloc += item.alloc(value);
       } else {
-        print('[WARNING] Found non String `fields` property - '
-              '(key: ${item.property}) (value: $value)');
+        print(
+          '[WARNING] Found non String `fields` property '
+          '(key: ${item.property}) (value: $value)'
+        );
       }
     }
   }

@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/models/ui_token_amount.dart';
+import 'serialisable.dart';
+import 'ui_token_amount.dart';
 
 
 /// Token Balance
@@ -32,9 +32,12 @@ class TokenBalance extends Serialisable {
   /// Token amount details.
   final UITokenAmount uiTokenAmount;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// TokenBalance.fromJson({ '<parameter>': <value> });
+  /// ```
   factory TokenBalance.fromJson(final Map<String, dynamic> json) => TokenBalance(
     accountIndex: json['accountIndex'], 
     mint: json['mint'],

@@ -1,42 +1,46 @@
+import 'package:solana_web3/programs/system.dart';
 import 'package:solana_web3/solana_web3.dart' as web3;
 
-void transaction() async {
-  // Connect to a cluster.
+void transfer() async {
+  // Create a connection to the devnet cluster.
   final cluster = web3.Cluster.devnet;
   final connection = web3.Connection(cluster);
 
-  // Create two new accounts.
-  final account1 = web3.Keypair.generate();
-  final address1 = account1.publicKey;
-  final account2 = web3.Keypair.generate();
-  final address2 = account2.publicKey;
+  // Create a new wallet to transfer tokens from.
+  final fromWallet = web3.Keypair.generate();
+  final fromAddress = fromWallet.publicKey;
 
-  // Fund the test account with SOL.
-  const amount = web3.LAMPORTS_PER_SOL * 2; // Keep this value low.
-  print('Airdrop $amount lamports to each account [$address1, $address2]...');
-  final transactionSignature1 = await connection.requestAirdrop(address1, amount);
-  await connection.confirmTransaction(transactionSignature1);
-  final transactionSignature2 = await connection.requestAirdrop(address2, amount);
-  await connection.confirmTransaction(transactionSignature2);
+  // Create a new wallet to transfer tokens to.
+  final toWallet = web3.Keypair.generate();
+  final toAddress = toWallet.publicKey;
 
-  // Send 1 SOL from account1 to account2.
-  print('Sending transaction...');
+  // Airdrop some test tokens to the wallet address.
+  // NOTE: Airdrops cannot be performed on the mainnet.
+  const amount = web3.lamportsPerSol * 2; // Keep this value low.
+  print('Airdrop $amount lamports to account $fromAddress...');
+  final airdropSignature = await connection.requestAirdrop(fromAddress, amount);
+  await connection.confirmTransaction(airdropSignature);
+
+  // Create a System Program instruction to transfer SOL.
   final transaction = web3.Transaction();
   transaction.add(
-    web3.SystemProgram.transfer(
-      fromPublicKey: address1, 
-      toPublicKey: address2, 
+    SystemProgram.transfer(
+      fromPublicKey: fromAddress, 
+      toPublicKey: toAddress, 
       lamports: web3.solToLamports(1),
     ),
   );
+
+  // Send the transaction to the cluster and wait for it to be confirmed.
+  print('Sending transaction...');
   await connection.sendAndConfirmTransaction(
     transaction, 
-    signers: [account1],
+    signers: [fromWallet], // Fee payer + transaction signer.
   );
 
-  // Get the account balances.
-  final balance1 = await connection.getBalance(account1.publicKey);
-  print('${account1.publicKey} = $balance1 lamports.');
-  final balance2 = await connection.getBalance(account2.publicKey);
-  print('${account2.publicKey} = $balance2 lamports.');
+  // Check the account balances.
+  final fromBalance = await connection.getBalance(fromAddress);
+  final toBalance = await connection.getBalance(toAddress);
+  print('$fromAddress = $fromBalance lamports.');
+  print('$toAddress = $toBalance lamports.');
 }

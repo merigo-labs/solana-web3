@@ -1,9 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/mem_cmp.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'mem_cmp.dart';
+import 'serialisable.dart';
+import '../utils/types.dart' show u64;
 
 
 /// Program Filter
@@ -41,7 +41,7 @@ class ProgramFilter extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// ProgramFilter.fromJson({ '<parameter>': <value> });
+  /// ProgramFilter.tryFromJson({ '<parameter>': <value> });
   /// ```
   static ProgramFilter? tryFromJson(final Map<String, dynamic>? json) {
     return json == null ? null : ProgramFilter.fromJson(json);

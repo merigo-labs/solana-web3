@@ -3,9 +3,9 @@
 
 import 'dart:typed_data' show Uint8List;
 import 'package:base_codecs/base_codecs.dart' show Base16Codec, Base58CodecBitcoin;
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/list_codec.dart';
-import 'package:solana_web3/src/utils/types.dart' show RpcParser;
+import '../models/serialisable.dart';
+import 'list_codec.dart';
+import 'types.dart' show RpcParser;
 
 
 /// Convert

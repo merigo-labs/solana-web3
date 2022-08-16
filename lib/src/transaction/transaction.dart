@@ -2,22 +2,22 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'package:solana_web3/src/instruction.dart';
-import 'package:solana_web3/src/blockhash.dart';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/keypair.dart';
-import 'package:solana_web3/src/message/message.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/nacl.dart' as nacl;
-import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/connection.dart';
-import 'package:solana_web3/src/transaction/constants.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert;
-import 'package:solana_web3/src/utils/convert.dart';
-import 'package:solana_web3/src/utils/shortvec.dart' as shortvec;
-import 'package:solana_web3/src/utils/library.dart' show require;
-import 'package:solana_web3/src/utils/types.dart';
-import 'package:solana_web3/src/exceptions/transaction_exception.dart';
+import '../instruction.dart';
+import '../blockhash.dart';
+import '../buffer.dart';
+import '../keypair.dart';
+import '../message/message.dart';
+import '../models/serialisable.dart';
+import '../nacl.dart' as nacl;
+import '../public_key.dart';
+import '../connection.dart';
+import '../transaction/constants.dart';
+import '../utils/convert.dart' as convert;
+import '../utils/convert.dart';
+import '../utils/shortvec.dart' as shortvec;
+import '../utils/library.dart' show require;
+import '../utils/types.dart';
+import '../../exceptions/transaction_exception.dart';
 
 
 /// Transaction Signature

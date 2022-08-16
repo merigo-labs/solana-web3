@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/config/protocol.dart';
+import 'protocol.dart';
 
 
 /// Clusters

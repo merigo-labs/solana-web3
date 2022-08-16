@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'serialisable.dart';
 
 
 /// AddressTableLookup
@@ -25,9 +25,12 @@ class AddressTableLookup extends Serialisable {
    /// A list of indices used to load addresses of readonly accounts from a lookup table.
   final List<num> readonlyIndexes;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// AddressTableLookup.fromJson({ '<parameter>': <value> });
+  /// ```
   factory AddressTableLookup.fromJson(final Map<String, dynamic> json) => AddressTableLookup(
     accountKey: json['accountKey'],
     writableIndexes: json['writableIndexes'],

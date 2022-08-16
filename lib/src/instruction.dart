@@ -2,12 +2,12 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
-import 'package:solana_web3/src/exceptions/instruction_exception.dart';
-import 'package:solana_web3/src/layout.dart' as layout;
-import 'package:solana_web3/src/message/message.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'buffer.dart';
+import 'buffer_layout.dart' as buffer_layout;
+import 'layout.dart' as layout;
+import 'message/message.dart';
+import 'models/serialisable.dart';
+import '../exceptions/instruction_exception.dart';
 
 
 /// Instruction Input Data
@@ -65,7 +65,7 @@ class Instruction extends Serialisable {
   /// ```
   factory Instruction.fromJson(final Map<String, dynamic> json) => Instruction(
     programIdIndex: json['programIdIndex'],
-    accounts: json['accounts'].cast<int>(),
+    accounts: Iterable.castFrom(json['accounts']),
     data: json['data'],
   );
 

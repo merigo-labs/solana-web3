@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'serialisable.dart';
 
 
 /// Loaded Address
@@ -21,14 +21,25 @@ class LoadedAddress extends Serialisable {
   /// An ordered list of base-58 encoded addresses for readonly loaded accounts.
   final List<String> readonly;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// LoadedAddress.fromJson({ '<parameter>': <value> });
+  /// ```
   factory LoadedAddress.fromJson(final Map<String, dynamic> json) => LoadedAddress(
-    writable: json['writable'].cast<String>(),
-    readonly: json['readonly'].cast<String>(),
+    writable: List.castFrom(json['writable']),
+    readonly: List.castFrom(json['readonly']),
   );
 
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
+  /// 
+  /// Returns `null` if [json] is omitted.
+  /// 
+  /// ```
+  /// LoadedAddress.tryFromJson({ '<parameter>': <value> });
+  /// ```
   static LoadedAddress? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? LoadedAddress.fromJson(json) : null;
   }

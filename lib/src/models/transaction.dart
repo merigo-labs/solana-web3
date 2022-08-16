@@ -1,8 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/message/message.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'serialisable.dart';
+import '../message/message.dart';
+import '../utils/convert.dart' as convert show list;
 
 
 /// Transaction
@@ -25,11 +26,14 @@ class Transaction extends Serialisable {
   /// The content of the transaction.
   final Message message;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// Transaction.fromJson({ '<parameter>': <value> });
+  /// ```
   factory Transaction.fromJson(final Map<String, dynamic> json) => Transaction(
-    signatures: json['signatures']?.cast<String>(),
+    signatures: convert.list.tryCast(json['signatures']),
     message: Message.fromJson(json['message']),
   );
 

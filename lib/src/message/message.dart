@@ -1,20 +1,20 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/instruction.dart';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
-import 'package:solana_web3/src/layout.dart' as layout;
-import 'package:solana_web3/src/message/message_instruction.dart';
-import 'package:solana_web3/src/models/address_table_lookup.dart';
-import 'package:solana_web3/src/nacl.dart' as nacl show publicKeyLength;
-import 'package:solana_web3/src/rpc_config/get_block_config.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/models/transaction.dart';
-import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/transaction/constants.dart' show packetDataSize;
-import 'package:solana_web3/src/utils/convert.dart' as convert;
-import 'package:solana_web3/src/utils/shortvec.dart' as shortvec;
+import '../instruction.dart';
+import '../buffer.dart';
+import '../buffer_layout.dart' as buffer_layout;
+import '../layout.dart' as layout;
+import '../message/message_instruction.dart';
+import '../models/address_table_lookup.dart';
+import '../nacl.dart' as nacl show publicKeyLength;
+import '../../rpc_config/get_block_config.dart';
+import '../models/serialisable.dart';
+import '../models/transaction.dart';
+import '../public_key.dart';
+import '../transaction/constants.dart' show packetDataSize;
+import '../utils/convert.dart' as convert;
+import '../utils/shortvec.dart' as shortvec;
 
 
 /// Message Header

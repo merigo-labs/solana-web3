@@ -5,8 +5,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/utils/library.dart' as utils show require;
+import 'buffer.dart';
+import 'utils/library.dart' as utils show require;
 
 
 /// Layout Mixin

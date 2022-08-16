@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show RpcParser;
+import '../models/serialisable.dart';
+import 'types.dart' show RpcParser;
 
 
 /// List Codec
@@ -45,7 +45,7 @@ class ListCodec {
     final RpcParser<T, U> parse, {
     final bool growable = false,
   }) {
-    return items.cast<U>().map((final U item) => parse(item)).toList(growable: growable);
+    return items.map((final item) => parse(item as U)).toList(growable: growable);
   }
 
   /// Converts a encoded list of [items] into a `List<T>`.

@@ -2,10 +2,10 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert' show base64Decode;
-import 'package:solana_web3/src/config/data_encoding.dart';
-import 'package:solana_web3/src/exceptions/data_exception.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/convert.dart';
+import '../models/serialisable.dart';
+import '../utils/convert.dart';
+import '../../exceptions/data_exception.dart';
+import '../../types/data_encoding.dart';
 
 
 /// Data
@@ -99,7 +99,7 @@ class Data<T> extends Serialisable {
 
     // First check if [data] is binary encoded data.
     if (Data.isBinary(data)) {
-      final List<String >binaryList = (data as List).cast();
+      final List<String >binaryList = List.castFrom(data as List);
       return Data(binaryList[0], encoding: DataEncoding.fromName(binaryList[1]));
     }
 

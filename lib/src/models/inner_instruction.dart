@@ -1,9 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/instruction.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert show list;
+import 'serialisable.dart';
+import '../instruction.dart';
+import '../utils/convert.dart' as convert show list;
 
 
 /// Inner Instruction
@@ -26,9 +26,12 @@ class InnerInstruction extends Serialisable {
   /// instruction.
   final List<Instruction> instructions;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// InnerInstruction.fromJson({ '<parameter>': <value> });
+  /// ```
   factory InnerInstruction.fromJson(final Map<String, dynamic> json) => InnerInstruction(
     index: json['index'], 
     instructions: convert.list.decode(json['instructions'], Instruction.fromJson),

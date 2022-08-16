@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/config/transaction_error.dart';
-import 'package:solana_web3/src/models/inner_instruction.dart';
-import 'package:solana_web3/src/models/loaded_address.dart';
-import 'package:solana_web3/src/rpc_config/get_block_config.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/models/token_balance.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert show list;
-import 'package:solana_web3/src/utils/types.dart';
+import '../../exceptions/transaction_error.dart';
+import '../models/inner_instruction.dart';
+import '../models/loaded_address.dart';
+import '../../rpc_config/get_block_config.dart';
+import '../models/serialisable.dart';
+import '../models/token_balance.dart';
+import '../utils/convert.dart' as convert show list;
+import '../utils/types.dart';
 
 
 /// Meta
@@ -60,16 +60,12 @@ class Meta extends Serialisable {
   /// [GetBlockConfig.maxSupportedTransactionVersion] was not set in the request params.
   final LoadedAddress? loadedAddresses;
 
-  /// Parse the given [json] object to create an instance of this class or `null`.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' parameters.
-  static Meta? tryParse(final Map<String, dynamic>? json) {
-    return json != null ? Meta.fromJson(json) : null;
-  }
-
-  /// Create an instance of this class from the given [json] object.
-  /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// Meta.fromJson({ '<parameter>': <value> });
+  /// ```
   factory Meta.fromJson(final Map<String, dynamic> json) => Meta(
     err: TransactionError.tryFromName(json['err']),
     fee: json['fee'],
@@ -82,6 +78,18 @@ class Meta extends Serialisable {
     loadedAddresses: LoadedAddress.tryFromJson(json['loadedAddresses']),
   );
 
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
+  /// 
+  /// Returns `null` if [json] is omitted.
+  /// 
+  /// ```
+  /// Meta.tryFromJson({ '<parameter>': <value> }, (U) => T);
+  /// ```
+  static Meta? tryFromJson(final Map<String, dynamic>? json) {
+    return json != null ? Meta.fromJson(json) : null;
+  }
+  
   @override
   Map<String, dynamic> toJson() => {
     'err': err?.name,

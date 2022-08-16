@@ -1,9 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/config/reward_type.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart';
+import 'serialisable.dart';
+import '../../types/reward_type.dart';
+import '../utils/types.dart';
 
 
 /// Reward
@@ -36,9 +36,12 @@ class Reward extends Serialisable {
   /// and [RewardType.staking]).
   final u8? commission;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// Reward.fromJson({ '<parameter>': <value> });
+  /// ```
   factory Reward.fromJson(final Map<String, dynamic> json) => Reward(
     pubkey: json['pubkey'],
     lamports: json['lamports'],

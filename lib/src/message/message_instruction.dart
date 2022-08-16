@@ -2,11 +2,11 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data' show Uint8List;
-import 'package:solana_web3/src/instruction.dart';
-import 'package:solana_web3/src/message/message.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert show base58;
-import 'package:solana_web3/src/utils/shortvec.dart' as shortvec;
+import 'message.dart';
+import '../instruction.dart';
+import '../models/serialisable.dart';
+import '../utils/convert.dart' as convert show base58;
+import '../utils/shortvec.dart' as shortvec;
 
 
 /// Message Instruction

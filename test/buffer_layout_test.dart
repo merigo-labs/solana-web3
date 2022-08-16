@@ -2,13 +2,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/buffer_layout.dart';
-import 'package:solana_web3/src/config/account_filter.dart';
-import 'package:solana_web3/src/config/commitment.dart';
-import 'package:solana_web3/src/rpc_config/get_largest_accounts_config.dart';
-import 'package:solana_web3/src/rpc_config/get_supply_config.dart';
-import 'package:solana_web3/src/rpc_config/send_transaction_config.dart';
+import 'package:solana_web3/rpc_config/send_transaction_config.dart';
+import 'package:solana_web3/types/commitment.dart';
 
 
 /// Buffer Layout Tests

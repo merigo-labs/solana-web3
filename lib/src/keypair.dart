@@ -2,9 +2,9 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'package:solana_web3/src/exceptions/keypair_exception.dart';
-import 'package:solana_web3/src/nacl.dart' as nacl;
-import 'package:solana_web3/src/public_key.dart';
+import '../exceptions/keypair_exception.dart';
+import 'nacl.dart' as nacl;
+import 'public_key.dart';
 
 
 /// Signer

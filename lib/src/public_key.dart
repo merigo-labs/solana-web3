@@ -3,15 +3,15 @@
 
 import 'dart:typed_data' show ByteBuffer, Uint8List;
 import 'package:crypto/crypto.dart' show sha256;
-import 'package:solana_web3/src/exceptions/ed25519_exception.dart';
-import 'package:solana_web3/src/exceptions/public_key_exception.dart';
-import 'package:solana_web3/src/extensions/big_int.dart';
-import 'package:solana_web3/src/models/program_address.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/nacl.dart' as nacl show publicKeyLength, seedLength;
-import 'package:solana_web3/src/nacl_low_level.dart' as nacl_low_level;
-import 'package:solana_web3/src/utils/convert.dart' show base58;
-import 'package:solana_web3/src/utils/library.dart' show require;
+import '../exceptions/ed25519_exception.dart';
+import '../exceptions/public_key_exception.dart';
+import 'extensions/big_int.dart';
+import 'models/program_address.dart';
+import 'models/serialisable.dart';
+import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
+import 'nacl_low_level.dart' as nacl_low_level;
+import 'utils/convert.dart' show base58;
+import 'utils/library.dart' show require;
 
 
 /// Public Key
@@ -125,7 +125,7 @@ class PublicKey extends Serialisable {
     final List<int> buffer = [];
     
     for (final List<int> seed in seeds) {
-      require(seed.length <= nacl.seedLength, 'Invalid seed length.');
+      require(seed.length <= nacl.maxSeedLength, 'Invalid seed length.');
       buffer.addAll(seed);
     }
 

@@ -1,13 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/config/data_encoding.dart';
-import 'package:solana_web3/src/models/data.dart';
-import 'package:solana_web3/src/models/meta.dart';
-import 'package:solana_web3/src/rpc_config/get_block_config.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/models/transaction.dart';
-import 'package:solana_web3/src/utils/library.dart' as utils show cast;
+import '../../rpc_config/get_block_config.dart';
+import '../../types/data_encoding.dart';
+import '../models/data.dart';
+import '../models/meta.dart';
+import '../models/serialisable.dart';
 
 
 /// Transaction Data
@@ -32,9 +30,12 @@ class TransactionData<T extends Object> extends Serialisable {
   /// [GetBlockConfig.maxSupportedTransactionVersion] was not set in the request params.
   final Object? version;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// TransactionData.parse({ '<parameter>': <value> });
+  /// ```
   static TransactionData parse(final Map<String, dynamic> json) {
     const String transactionKey = 'transaction';
     final Data transaction = Data.parse(json[transactionKey]);
@@ -51,13 +52,16 @@ class TransactionData<T extends Object> extends Serialisable {
     }
   }
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// TransactionData.fromJson({ '<parameter>': <value> });
+  /// ```
   factory TransactionData.fromJson(final Map<String, dynamic> json) { 
     return TransactionData(
       transaction: json['transaction'],
-      meta: Meta.tryParse(json['meta']),
+      meta: Meta.tryFromJson(json['meta']),
       version: json['version'],
     );
   }

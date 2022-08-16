@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
+import 'buffer_layout.dart' as buffer_layout;
 
 
 /// Fee Calculator Layout
@@ -14,6 +14,7 @@ final buffer_layout.NearUInt64 feeCalculatorLayout = buffer_layout.nu64('lamport
 /// Fee Calculator
 /// ------------------------------------------------------------------------------------------------
 
+@Deprecated('Deprecated since Solana v1.8.0')
 class FeeCalculator {
 
   // Transaction fee calculator.

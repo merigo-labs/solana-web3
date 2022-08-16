@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data' show Endian, Uint8List;
-import 'package:solana_web3/src/buffer.dart';
+import '../buffer.dart';
 
 
 /// Big Int Extension

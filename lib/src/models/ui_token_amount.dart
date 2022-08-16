@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'serialisable.dart';
 
 
 /// UI Token Amount
@@ -25,9 +25,12 @@ class UITokenAmount extends Serialisable {
   /// The token amount as a string (including decimals).
   final String uiAmountString;
 
-  /// Create an instance of this class from the given [json] object.
+  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
+  /// object.
   /// 
-  /// @param [json]: A map containing the class' constructor parameters.
+  /// ```
+  /// UITokenAmount.fromJson({ '<parameter>': <value> });
+  /// ```
   factory UITokenAmount.fromJson(final Map<String, dynamic> json) => UITokenAmount(
     amount: json['amount'], 
     decimals: json['decimals'],

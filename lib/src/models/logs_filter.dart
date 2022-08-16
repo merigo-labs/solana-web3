@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/utils/convert.dart';
+import '../public_key.dart';
+import '../utils/convert.dart';
 
 
 /// Logs Filter

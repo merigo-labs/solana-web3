@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/public_key.dart';
+import '../public_key.dart';
 
 
 /// Program Address

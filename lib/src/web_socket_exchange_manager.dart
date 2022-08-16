@@ -3,9 +3,9 @@
 
 import 'dart:async';
 import 'dart:io';
-import 'package:solana_web3/src/rpc/rpc_request.dart';
-import 'package:solana_web3/src/rpc/rpc_response.dart';
-import 'package:solana_web3/src/web_socket_manager_lookup.dart';
+import '../rpc/rpc_request.dart';
+import '../rpc/rpc_response.dart';
+import 'web_socket_manager_lookup.dart';
 
 
 /// Web Socket Subscribe Exchange

@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'serialisable.dart';
+import '../utils/types.dart' show u64;
 
 
 /// Data Size
@@ -34,7 +34,7 @@ class DataSize extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// DataSize.fromJson({ '<parameter>': <value> });
+  /// DataSize.tryFromJson({ '<parameter>': <value> });
   /// ```
   static DataSize? tryFromJson(final Map<String, dynamic>? json) {
     return json == null ? null : DataSize.fromJson(json);

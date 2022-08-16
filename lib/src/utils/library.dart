@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/utils/types.dart';
+import 'types.dart' show RpcParser;
 
 
 /// Library Utilities

@@ -1,12 +1,12 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/blockhash.dart';
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
-import 'package:solana_web3/src/fee_calculator.dart';
-import 'package:solana_web3/src/layout.dart' as layout;
-import 'package:solana_web3/src/public_key.dart';
+import 'blockhash.dart';
+import 'buffer.dart';
+import 'buffer_layout.dart' as buffer_layout;
+import 'fee_calculator.dart';
+import 'layout.dart' as layout;
+import 'public_key.dart';
 
 
 /// Nonce Account Layout

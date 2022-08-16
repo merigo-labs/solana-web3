@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'serialisable.dart';
 
 
 /// Data Slice
@@ -38,7 +38,7 @@ class DataSlice extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// DataSlice.fromJson({ '<parameter>': <value> });
+  /// DataSlice.tryFromJson({ '<parameter>': <value> });
   /// ```
   static DataSlice? tryFromJson(final Map<String, dynamic>? json) {
     return json == null ? null : DataSlice.fromJson(json);

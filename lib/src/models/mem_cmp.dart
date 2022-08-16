@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart';
+import 'serialisable.dart';
+import '../utils/types.dart';
 
 
 /// Memory Comparison
@@ -39,7 +39,7 @@ class MemCmp extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// MemCmp.fromJson({ '<parameter>': <value> });
+  /// MemCmp.tryFromJson({ '<parameter>': <value> });
   /// ```
   static MemCmp? tryFromJson(final Map<String, dynamic>? json) {
     return json == null ? null : MemCmp.fromJson(json);

@@ -1,11 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/connection.dart';
-import 'package:solana_web3/src/keypair.dart';
-import 'package:solana_web3/src/loader.dart';
-import 'package:solana_web3/src/public_key.dart';
+import 'buffer.dart';
+import 'connection.dart';
+import 'keypair.dart';
+import 'loader.dart';
+import 'public_key.dart';
 
 
 /// BPF Loader

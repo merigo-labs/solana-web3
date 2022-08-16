@@ -1,20 +1,20 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/buffer.dart';
-import 'package:solana_web3/src/buffer_layout.dart' as buffer_layout;
-import 'package:solana_web3/src/config/commitment.dart';
-import 'package:solana_web3/src/connection.dart';
-import 'package:solana_web3/src/keypair.dart';
-import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/rpc_config/get_account_info_config.dart';
-import 'package:solana_web3/src/rpc_config/send_and_confirm_transaction_config.dart';
-import 'package:solana_web3/src/rpc_data/account_info.dart';
-import 'package:solana_web3/src/programs/system.dart';
-import 'package:solana_web3/src/sysvar.dart';
-import 'package:solana_web3/src/transaction/transaction.dart';
-import 'package:solana_web3/src/transaction/constants.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import '../programs/system.dart';
+import '../rpc_config/get_account_info_config.dart';
+import '../rpc_config/send_and_confirm_transaction_config.dart';
+import '../rpc_models/account_info.dart';
+import '../src/buffer.dart';
+import '../src/buffer_layout.dart' as buffer_layout;
+import '../src/connection.dart';
+import '../src/keypair.dart';
+import '../src/public_key.dart';
+import '../src/sysvar.dart';
+import '../src/transaction/transaction.dart';
+import '../src/transaction/constants.dart';
+import '../src/utils/types.dart' show u64;
+import '../types/commitment.dart';
 
 
 /// Loader
