@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   
-  async:
+  async: ^2.8.2
   base_codecs: ^1.0.1
   connectivity_plus: ^2.3.6+1
   crypto: ^3.0.2
