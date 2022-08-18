@@ -92,6 +92,12 @@ class WebSocketManagerLookup<K extends MultiKey, V> {
   /// ```
   final Map<K, V> _table = {};
 
+  /// Returns `true` if the lookup table contains no entries.
+  bool get isEmpty => _table.isEmpty;
+
+  /// Returns `true` if the lookup table contains at least one entry.
+  bool get isNotEmpty => _table.isNotEmpty;
+
   /// Returns the first entry that satisfies the given [predicate] or `null`.
   MapEntry<K, V>? _find<T>(final bool Function(K) predicate) {
     for (final MapEntry<K, V> entry in _table.entries) {

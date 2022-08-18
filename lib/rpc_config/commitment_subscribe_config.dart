@@ -11,16 +11,16 @@ import '../types/commitment.dart';
 class CommitmentSubscribeConfig extends RpcSubscribeConfig {
 
   /// JSON-RPC PubSub configurations for `subscribe` methods.
-  CommitmentSubscribeConfig({
+  const CommitmentSubscribeConfig({
     super.timeout,
-    this.commitment = Commitment.finalized,
+    this.commitment,
   });
 
   /// The type of block to query for the request.
-  final Commitment commitment;
+  final Commitment? commitment;
 
   @override
   Map<String, dynamic> object() => {
-    'commitment': commitment.name,
+    'commitment': commitment?.name,
   };
 }

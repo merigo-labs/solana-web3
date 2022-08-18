@@ -52,8 +52,8 @@ final address = wallet.publicKey;
 // NOTE: Airdrops cannot be performed on the mainnet.
 const amount = web3.lamportsPerSol * 2; // Keep this value low.
 print('Airdrop $amount lamports to account $address...');
-final transactionSignature = await connection.requestAirdrop(address, amount);
-await connection.confirmTransaction(transactionSignature);
+final airdropSignature = await connection.requestAirdrop(address, amount);
+await connection.confirmTransaction(airdropSignature);
 
 // Check the account balance.
 final balance = await connection.getBalance(address);
@@ -64,6 +64,9 @@ print('The account $address has a balance of $balance lamports');
 Transfer lamports from one account to another using the [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
 
 ```dart
+// Import the System Program.
+import 'package:solana_web3/programs/system.dart';
+
 // Create a new wallet to transfer tokens from.
 final fromWallet = web3.Keypair.generate();
 final fromAddress = fromWallet.publicKey;
@@ -82,7 +85,7 @@ await connection.confirmTransaction(airdropSignature);
 // Create a System Program instruction to transfer SOL.
 final transaction = web3.Transaction();
 transaction.add(
-    web3.SystemProgram.transfer(
+    SystemProgram.transfer(
         fromPublicKey: fromAddress, 
         toPublicKey: toAddress, 
         lamports: web3.solToLamports(1),
@@ -112,8 +115,8 @@ connection.disconnect();
 ## Bugs and Feature Requests
 
 ### Bugs
-Feel free to report any bugs found by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
+Please feel free to report any bugs found by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
 
 ### Feature Requests
-If you'd like a feature added to the library, let us know by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
+If you'd like to see a feature added to the library, let us know by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
 

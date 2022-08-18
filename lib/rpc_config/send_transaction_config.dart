@@ -27,7 +27,7 @@ class SendTransactionConfig extends RpcRequestConfig {
   /// If true, skip the preflight transaction checks (default: `false`).
   final bool skipPreflight;
 
-  /// The type of block to query for the request (default: [Commitment.finalized]).
+  /// The type of block to query for the request.
   final Commitment? preflightCommitment;
 
   /// The transaction data encoding (must be 'base64').
@@ -49,36 +49,4 @@ class SendTransactionConfig extends RpcRequestConfig {
     'maxRetries': maxRetries,
     'minContextSlot': minContextSlot,
   };
-
-  /// Creates a copy of `this` instance, applying the provided parameters as default values.
-  /// 
-  /// ```
-  /// final SendTransactionConfig config = SendTransactionConfig(
-  ///   preflightCommitment: null,
-  /// );
-  /// print(config.object());     //  {
-  ///                             //    ...,
-  ///                             //    'preflightCommitment': null,
-  ///                             //  }
-  /// 
-  /// final SendTransactionConfig configCopy = config.applyDefault(
-  ///   preflightCommitment: Commitment.finalized,
-  /// );
-  /// print(configCopy.object()); //  {
-  ///                             //    ...,
-  ///                             //    'preflightCommitment': 'finalized',
-  ///                             //  }
-  /// ```
-  SendTransactionConfig applyDefault({
-    final Commitment? preflightCommitment,
-  }) => SendTransactionConfig(
-    id: id,
-    headers: headers,
-    timeout: timeout,
-    skipPreflight: skipPreflight,
-    preflightCommitment: preflightCommitment ?? this.preflightCommitment,
-    encoding: encoding,
-    maxRetries: maxRetries,
-    minContextSlot: minContextSlot,
-  );
 }

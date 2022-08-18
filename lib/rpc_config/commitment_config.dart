@@ -18,8 +18,8 @@ class CommitmentConfig extends RpcRequestConfig {
     this.commitment,
   });
 
-  /// The type of block to query for the request, for most RPC methods, this defaults to 
-  /// [Commitment.finalized].
+  /// The type of block to query for the request. If commitment is not provided, the node will 
+  /// default to [Commitment.finalized].
   final Commitment? commitment;
 
   @override

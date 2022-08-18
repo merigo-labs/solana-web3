@@ -2,6 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'rpc_request_config.dart';
+import '../rpc/rpc_request.dart';
 import '../types/commitment.dart';
 
 
@@ -17,7 +18,22 @@ abstract class RpcSubscribeConfig extends RpcRequestConfig {
     super.timeout,
   }): super(id: null, headers: null);
 
-  /// Returns the result of [object].
+  /// Returns the `configuration object` passed to a method call as the last item in the `params` 
+  /// list.
+  /// 
+  /// ```
+  /// {
+  ///   'jsonrpc': '2.0',
+  ///   ...,
+  ///   'params': [
+  ///     '3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK',
+  ///     // The value returned by this object() call
+  ///     {
+  ///       'commitment': 'processed',
+  ///     }
+  ///   ]
+  /// }
+  /// ```
   /// 
   /// Classes derived from [RpcSubscribeConfig] cannot contain `null` valued properties. This is 
   /// required to ensure that all JSON-RPC requests produce the same [RpcRequest.hash].
@@ -38,9 +54,5 @@ abstract class RpcSubscribeConfig extends RpcRequestConfig {
   ///   { 'commitment': 'finalized' } -> "{ commitment: finalized }"
   /// ```
   @override
-  Map<String, dynamic> objectClean() {
-    final Map<String, dynamic> object = this.object();
-    assert(object.values.every((value) => value != null));
-    return object;
-  }
+  Map<String, dynamic> object();
 }

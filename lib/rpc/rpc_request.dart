@@ -2,7 +2,6 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import '../rpc_config/rpc_request_config.dart';
 import '../src/models/serialisable.dart';
 import '../types/method.dart';
 
@@ -12,7 +11,7 @@ import '../types/method.dart';
 
 class RpcRequest extends Serialisable {
   
-  /// Defines a JSON-RPC request.
+  /// Creates a JSON-RPC request to invoke [method] with [params].
   /// 
   /// ```
   /// {
@@ -60,6 +59,8 @@ class RpcRequest extends Serialisable {
   /// 
   /// assert(r0.hash() == r1.hash()); // true
   /// assert(r1.hash() == r2.hash()); // false, the configuration values are ordered differently.
+  /// 
+  /// TODO: Sort by keys, then hash.
   /// ```
   String hash() => json.encode([method.name, params]);
 
@@ -70,28 +71,25 @@ class RpcRequest extends Serialisable {
   /// ```
   /// RpcRequest.build(                                   // {
   ///   Method.getAccountInfo,                            //   'jsonrpc': '2.0',
-  ///   params: [                                         //   'id': 0,
-  ///     '3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK', //   'method': 'getAccountInfo',  
+  ///   [                                                 //   'id': 1,
+  ///     '3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK', //   'method': 'getAccountInfo',
   ///   ],                                                //   'params': [
-  ///   RpcRequestConfig<T>(                              //     '3C4iYswh...UGpTbRsK',
-  ///     id: 0,                                          //     {
-  ///     params: <configuration object>(                 //       'encoding': 'base64',
-  ///       'encoding': 'base64',                         //     },
-  ///     ),                                              //   ],
-  ///   ),                                                // }
-  /// );
+  ///   GetAccountInfoConfig(                             //     '3C4iYswh...UGpTbRsK',
+  ///     id: 1,                                          //     {
+  ///     encoding: AccountEncoding.base64,               //       'encoding': 'base64',
+  ///   ),                                                //     },
+  /// );                                                  //   ],
+  ///                                                     // }
   /// ```
-  factory RpcRequest.build(
-    final Method method, [
-    final List<Object>? params, 
-    final RpcRequestConfig? config,
-  ]) {
-    final Map<String, dynamic>? configurations = config?.objectClean();
-    final List<Object>? parameters = configurations != null && configurations.isNotEmpty
-      ? ((params ?? [])..add(configurations))
-      : params;
-    return RpcRequest(method, params: parameters, id: config?.id);
-  }
+  // factory RpcRequest.build(
+  //   final Method method,
+  //   final List<Object> params, 
+  //   final RpcRequestConfig config,
+  // ) {
+  //   final Map<String, dynamic> object = config.object();
+  //   final List<Object>? parameters = object.isEmpty ? params : params..add(object);
+  //   return RpcRequest._(method, params: parameters, id: config.id);
+  // }
 
   /// Creates a copy of `this` instance, applying the provided parameters to the new instance.
   /// 
@@ -120,12 +118,10 @@ class RpcRequest extends Serialisable {
   );
 
   @override
-  Map<String, dynamic> toJson() {
-    return {
-      'jsonrpc': jsonrpc,
-      'method': method.name,
-      'params': params,
-      'id': id,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    'jsonrpc': jsonrpc,
+    'method': method.name,
+    'params': params,
+    'id': id,
+  };
 }

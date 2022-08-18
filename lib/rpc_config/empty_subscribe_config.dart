@@ -15,5 +15,5 @@ class EmptySubscribeConfig extends RpcSubscribeConfig {
   });
 
   @override
-  Map<String, dynamic> object() => {};
+  Map<String, Object> object() => {};
 }

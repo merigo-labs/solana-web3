@@ -22,7 +22,7 @@ class AccountSubscribeConfig extends CommitmentSubscribeConfig {
 
   @override
   Map<String, dynamic> object() => {
-    'commitment': commitment.name,
+    'commitment': commitment?.name,
     'encoding': encoding.name,
   };
 }

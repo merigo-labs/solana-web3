@@ -1,7 +1,6 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:flutter/foundation.dart' show protected;
 import '../rpc/rpc_http_headers.dart';
 
 
@@ -26,10 +25,8 @@ abstract class RpcRequestConfig {
   /// The request's timeout duration.
   final Duration? timeout;
 
-  /// Returns the `configuration object` passed to a method call.
-  /// 
-  /// The `clean` configuration object returned by [objectClean] will be included as the last 
-  /// item in the `params` list.
+  /// Returns the `configuration object` passed to a method call as the last item in the `params` 
+  /// list.
   /// 
   /// ```
   /// {
@@ -37,23 +34,12 @@ abstract class RpcRequestConfig {
   ///   ...,
   ///   'params': [
   ///     '3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK',
-  ///     // The object returned by objectClean()
+  ///     // The value returned by this object() call
   ///     {
   ///       'commitment': 'processed',
   ///     }
   ///   ]
   /// }
   /// ```
-  @protected
   Map<String, dynamic> object();
-
-  /// Returns the result of [object], removing all `null` valued entries.
-  /// 
-  /// ```
-  /// print(object());      // { 'commitment': 'processed', 'encoding': null }
-  /// print(objectClean()); // { 'commitment': 'processed' }
-  /// ```
-  Map<String, dynamic> objectClean() {
-    return object()..removeWhere((key, value) => value == null);
-  }
 }

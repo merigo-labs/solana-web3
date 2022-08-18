@@ -23,9 +23,9 @@ class GetBlockConfig extends CommitmentConfig {
     this.rewards,
     super.commitment,
     this.maxSupportedTransactionVersion,
-  }): assert(commitment != Commitment.processed),
-      assert(encoding == null || encoding.isTransaction),
-      assert(maxSupportedTransactionVersion == null || maxSupportedTransactionVersion >= 0);
+  }): assert(encoding == null || encoding.isTransaction),
+      assert(maxSupportedTransactionVersion == null || maxSupportedTransactionVersion >= 0),
+      assert(commitment != Commitment.processed, 'The commitment "processed" is not supported.');
 
   /// The encoding for each returned transaction (default: [TransactionEncoding.json]).
   final TransactionEncoding? encoding;

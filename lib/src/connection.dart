@@ -5,15 +5,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:async/async.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:solana_web3/rpc/rpc_notification.dart';
+import 'package:solana_web3/rpc_models/account_notification.dart';
+import 'package:solana_web3/rpc_models/logs_notification.dart';
+import 'package:solana_web3/rpc_models/signature_notification.dart';
+import 'package:solana_web3/rpc_models/slot_notification.dart';
+import '../types/notification_method.dart';
 import 'buffer.dart';
 import 'config/cluster.dart';
-import '../types/commitment.dart';
-import '../types/health_status.dart';
-import '../types/method.dart';
-import '../types/transaction_encoding.dart';
-import '../exceptions/rpc_exception.dart';
 import 'models/logs_filter.dart';
 import 'nacl.dart' show signatureLength;
+import '../exceptions/rpc_exception.dart';
 import '../rpc/rpc_notification_response.dart';
 import '../rpc_config/rpc_subscribe_config.dart';
 import '../rpc/rpc_subscribe_response.dart';
@@ -32,6 +36,7 @@ import '../rpc_config/get_cluster_nodes_config.dart';
 import '../rpc_config/get_epoch_info_config.dart';
 import '../rpc_config/get_epoch_schedule_config.dart';
 import '../rpc_config/get_first_available_block_config.dart';
+import '../rpc_config/get_genesis_hash_config.dart';
 import '../rpc_config/get_health_config.dart';
 import '../rpc_config/get_highest_snapshot_slot_config.dart';
 import '../rpc_config/get_identity_config.dart';
@@ -81,7 +86,11 @@ import '../rpc_config/signature_unsubscribe_config.dart';
 import '../rpc_config/simulate_transaction_config.dart';
 import '../rpc_config/slot_subscribe_config.dart';
 import '../rpc_config/slot_unsubscribe_config.dart';
+import '../types/commitment.dart';
+import '../types/health_status.dart';
+import '../types/method.dart';
 import '../types/token_accounts_filter.dart';
+import '../types/transaction_encoding.dart';
 import '../rpc_models/block.dart';
 import 'public_key.dart';
 import '../rpc_config/rpc_bulk_request_config.dart';
@@ -164,28 +173,29 @@ extension FutureRpcContextResponse<T> on Future<RpcContextResponse<T>> {
 /// Future extensions.
 extension FutureRace<T> on Future<T> {
 
-  Future<T> race(final Future future) {
+  /// Creates a new future that completes with the result of [this] if it completes before [other].
+  /// 
+  /// An error is returned if [other] finishes first.
+  Future<T> before(final Future other) {
+    
     final Completer<T> completer = Completer.sync();
+    final CancelableOperation operation = CancelableOperation.fromFuture(other);
+
+    operation.then(
+      (_) => completer.completeError('The future lost the race.'),
+      onError: completer.completeError,
+    );
+
     then((value) {
-      if (!completer.isCompleted) {
-        completer.complete(value);
-      }
+      operation.cancel();
+      completer.complete(value);
     });
+    
     catchError((error, stakeTrace) {
-      if (!completer.isCompleted) {
-        completer.completeError(error, stakeTrace);
-      }
+      operation.cancel();
+      completer.completeError(error, stakeTrace);
     });
-    future.then((_) {
-      if (!completer.isCompleted) {
-        completer.completeError('The future lost the race.');
-      }
-    });
-    future.catchError((error, stakeTrace) {
-      if (!completer.isCompleted) {
-        completer.completeError(error, stakeTrace);
-      }
-    });
+    
     return completer.future;
   }
 }
@@ -198,10 +208,33 @@ class Connection {
 
   /// Creates a connection to the [cluster].
   /// 
-  /// Web socket method calls are made to [wsCluster], which defaults to [cluster].
+  /// Web socket method calls are made to the [wsCluster], which defaults to [cluster]. 
+  /// 
+  /// A web socket connection is established on creation, set [autoConnect] to `false` to connect on 
+  /// demand.
+  /// 
+  /// The [commitment] configuration will be set as the default value for all methods that accept a 
+  /// commitment parameter. Use the `config` parameter of a method call to override the default 
+  /// value.
+  /// 
+  /// ```
+  /// final connection = Connection(Cluster.mainnet);
+  /// 
+  /// final accountInfo = await connection.getAccountInfo(
+  ///   PublicKey.fromString('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'), 
+  ///   config: GetAccountInfoConfig(
+  ///     commitment: Commitment.finalized, // override default.
+  ///   ),
+  /// );
+  /// 
+  /// print('Account Info ${accountInfo?.toJson()}');
+  /// ```
+  /// 
+  /// TODO: Auto connect / resubscribe when the devices connection status changes.
   Connection(
     this.cluster, { 
     final Cluster? wsCluster, 
+    this.autoConnect = true,
     this.commitment = Commitment.confirmed,
   }) {
     socket = WebSocketConnection(
@@ -211,6 +244,12 @@ class Connection {
       onConnect: _onWebSocketConnect,
       onDisconnect: _onWebSocketDisconnect,
     );
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+      _onConnectivityChanged
+    );
+    if (autoConnect) {
+      socket.connect();
+    }
   }
 
   /// A persistent connection.
@@ -222,8 +261,12 @@ class Connection {
   /// The default commitment level (applied to a subset of method invocations).
   final Commitment? commitment;
 
+  final bool autoConnect;
+
   /// The websocket connection.
   late final WebSocketConnection socket;
+
+  late final StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   /// The latest blockhash.
   final BlockhashCache _blockhashCache = BlockhashCache();
@@ -234,12 +277,26 @@ class Connection {
   /// Adds and removes stream listeners for a web socket subscription.
   final WebSocketSubscriptionManager _webSocketSubscriptionManager = WebSocketSubscriptionManager();
 
+  bool get hasSubscribers => _webSocketSubscriptionManager.isNotEmpty;
+
   /// Disposes of all the acquired resources.
   void disconnect() {
     client.close();
     socket.disconnect().ignore();
     _webSocketExchangeManager.dispose();
     _webSocketSubscriptionManager.dispose();
+    _connectivitySubscription.cancel();
+  }
+
+
+  void _onConnectivityChanged(final ConnectivityResult result) {
+    if (result == ConnectivityResult.ethernet
+      || result == ConnectivityResult.mobile
+      || result == ConnectivityResult.wifi) {
+      if (!socket.isConnected && (autoConnect || hasSubscribers)) {
+        socket.connect().ignore(); // This will still call onConnect.
+      }
+    }
   }
 
   void _onWebSocketData(final Map<String, dynamic> json)  async {
@@ -261,11 +318,27 @@ class Connection {
       return _webSocketExchangeManager.onResponse(response);
     }
 
-    final RpcNotificationResponse? notification = RpcNotificationResponse.tryParse(json);
+    final notification = NotificationMethod.tryFromName(json['method']);
     if (notification != null) {
-      return _webSocketSubscriptionManager.onNotification(notification);
+      switch (notification) {
+        case NotificationMethod.accountNotification:
+          return _onWebSocketNotification(json, AccountInfo.parse);
+        case NotificationMethod.logsNotification:
+          return _onWebSocketNotification(json, LogsNotification.fromJson);
+        case NotificationMethod.programNotification:
+          return _onWebSocketNotification(json, ProgramAccount.fromJson);
+        case NotificationMethod.rootNotification:
+          return _onWebSocketNotification(json, utils.cast<u64>);
+        case NotificationMethod.signatureNotification:
+          return _onWebSocketNotification(json, SignatureNotification.fromJson);
+        case NotificationMethod.slotNotification:
+          return _onWebSocketNotification(json, SlotNotification.fromJson);
+      }
     }
   }
+
+  void _onWebSocketNotification<T, U>(final Map<String, dynamic> json, final RpcParser<T, U> parser) 
+    => _webSocketSubscriptionManager.onNotification(RpcNotificationResponse.parse(json, parser));
 
   void _onWebSocketError(final Object error, [final StackTrace? stackTrace]) {
     print("\n--------------------------------------------------------------------------------");
@@ -378,10 +451,24 @@ class Connection {
     return timeout != null ? request.timeout(timeout) : request;
   }
 
+  /// Creates a list of ordered parameter values.
+  List<Object> _buildParams(
+    final List<Object> values,
+    final RpcRequestConfig config, [
+    final Commitment? commitment,
+  ]) {
+    final Map<String, dynamic> object = config.object();
+    const String commitmentKey = 'commitment';
+    if (object.containsKey(commitmentKey)) {
+      object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
+    }
+    return object.isEmpty ? values : values..add(object);
+  }
+
   /// Makes a JSON-RPC POST request to the [cluster], invoking a single [method].
   /// 
-  /// The [method] is invoked with the provided [params] and configurations (
-  /// [RpcRequestConfig.id] and [RpcRequestConfig.objectClean]).
+  /// The [method] is invoked with the provided ordered parameter [values] and configurations (
+  /// [RpcRequestConfig.id] and [RpcRequestConfig.object]).
   /// 
   /// The [parse] callback function is applied to the `result` value of a `success` response.
   /// 
@@ -389,11 +476,12 @@ class Connection {
   /// [RpcRequestConfig.headers] and [RpcRequestConfig.timeout] properties.
   Future<RpcResponse<T>> _request<T, U>(
     final Method method, 
-    final List<Object> params, 
+    final List<Object> values, 
     final RpcParser<T, U> parse, {
-    final RpcRequestConfig? config,
+    required final RpcRequestConfig config,
   }) {
-    final RpcRequest request = RpcRequest.build(method, params, config);
+    final List<Object> params = _buildParams(values, config);
+    final RpcRequest request = RpcRequest(method, params: params, id: config.id);
     return _post(request.toJson(), config: config).then(_responseParser(parse));
   }
   
@@ -421,9 +509,9 @@ class Connection {
   }
 
   /// Get the [cluster]'s health status.
-  Future<HealthStatus> health() {
-    return client.get(cluster.http('health'))
-      .then((final http.Response response) => HealthStatus.fromName(response.body));
+  Future<HealthStatus> health() async {
+    final http.Response response = await client.get(cluster.http('health'));
+    return HealthStatus.fromName(response.body);
   }
 
   /// Returns all information associated with the account of the provided [publicKey].
@@ -432,7 +520,8 @@ class Connection {
     final GetAccountInfoConfig? config,
   }) {
     final parse = _contextParser(AccountInfo.tryParse);
-    return _request(Method.getAccountInfo, [publicKey.toBase58()], parse, config: config);
+    final defaultConfig = config ?? GetAccountInfoConfig();
+    return _request(Method.getAccountInfo, [publicKey.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns all information associated with the account of the provided [publicKey].
@@ -449,7 +538,8 @@ class Connection {
     final GetBalanceConfig? config,
   }) {
     final parse = _contextParser(cast<u64>);
-    return _request(Method.getBalance, [publicKey.toBase58()], parse, config: config);
+    final defaultConfig = config ?? const GetBalanceConfig();
+    return _request(Method.getBalance, [publicKey.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns the `lamports` balance of the account for the provided [publicKey].
@@ -466,7 +556,8 @@ class Connection {
     final GetBlockConfig? config,
   }) {
     assert(slot >= 0);
-    return _request(Method.getBlock, [slot], Block.tryFromJson, config: config);
+    final defaultConfig = config ?? GetBlockConfig(commitment: commitment); // asserts commitment.
+    return _request(Method.getBlock, [slot], Block.tryFromJson, config: defaultConfig);
   }
 
   /// Returns identity and transaction information about a confirmed block at [slot] in the ledger.
@@ -479,7 +570,8 @@ class Connection {
 
   /// Returns the current block height of the node.
   Future<RpcResponse<u64>> getBlockHeightRaw({ final GetBlockHeightConfig? config }) {
-    return _request(Method.getBlockHeight, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const GetBlockHeightConfig();
+    return _request(Method.getBlockHeight, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the current block height of the node.
@@ -492,7 +584,8 @@ class Connection {
     final GetBlockProductionConfig? config, 
   }) {
     final parse = _contextParser(BlockProduction.fromJson);
-    return _request(Method.getBlockProduction, [], parse, config: config);
+    final defaultConfig = config ?? const GetBlockProductionConfig();
+    return _request(Method.getBlockProduction, [], parse, config: defaultConfig);
   }
 
   /// Returns the recent block production information from the current or previous epoch.
@@ -505,7 +598,8 @@ class Connection {
     final u64 slot, { 
     final GetBlockCommitmentConfig? config, 
   }) {
-    return _request(Method.getBlockCommitment, [slot], BlockCommitment.fromJson, config: config);
+    final defaultConfig = config ?? const GetBlockCommitmentConfig();
+    return _request(Method.getBlockCommitment, [slot], BlockCommitment.fromJson, config: defaultConfig);
   }
 
   /// Returns the commitment for a particular block (slot).
@@ -523,7 +617,8 @@ class Connection {
     final GetBlocksConfig? config, 
   }) {
     final List<u64> params = endSlot != null ? [startSlot, endSlot] : [startSlot];
-    return _request(Method.getBlocks, params, convert.list.cast<u64>, config: config);
+    final defaultConfig = config ?? GetBlocksConfig(commitment: commitment); // asserts commitment.
+    return _request(Method.getBlocks, params, convert.list.cast<u64>, config: defaultConfig);
   }
 
   /// Returns a list of confirmed blocks between two slots.
@@ -541,7 +636,8 @@ class Connection {
     required final u64 limit,
     final GetBlocksWithLimitConfig? config, 
   }) {
-    return _request(Method.getBlocksWithLimit, [slot, limit], convert.list.cast<u64>, config: config);
+    final defaultConfig = config ?? GetBlocksWithLimitConfig();
+    return _request(Method.getBlocksWithLimit, [slot, limit], convert.list.cast<u64>, config: defaultConfig);
   }
 
   /// Returns a list of [limit] confirmed blocks starting at the given [slot].
@@ -563,7 +659,8 @@ class Connection {
     final u64 slot, {
     final GetBlockTimeConfig? config,
   }) {
-    return _request(Method.getBlockTime, [slot], cast<i64?>, config: config);
+    final defaultConfig = config ?? const GetBlockTimeConfig();
+    return _request(Method.getBlockTime, [slot], cast<i64?>, config: defaultConfig);
   }
 
   /// Returns the estimated production time of a block.
@@ -584,7 +681,8 @@ class Connection {
     final GetClusterNodesConfig? config, 
   }) {
     final parse = _listParser(ClusterNode.fromJson);
-    return _request(Method.getClusterNodes, [], parse, config: config);
+    final defaultConfig = config ?? const GetClusterNodesConfig();
+    return _request(Method.getClusterNodes, [], parse, config: defaultConfig);
   }
 
   /// Returns information about all the nodes participating in the cluster.
@@ -593,10 +691,9 @@ class Connection {
   }
 
   /// Returns information about the current epoch.
-  Future<RpcResponse<EpochInfo>> getEpochInfoRaw({ 
-    final GetEpochInfoConfig? config, 
-  }) {
-    return _request(Method.getEpochInfo, [], EpochInfo.fromJson, config: config);
+  Future<RpcResponse<EpochInfo>> getEpochInfoRaw({ final GetEpochInfoConfig? config }) {
+    final defaultConfig = config ?? const GetEpochInfoConfig();
+    return _request(Method.getEpochInfo, [], EpochInfo.fromJson, config: defaultConfig);
   }
 
   /// Returns information about the current epoch.
@@ -605,10 +702,9 @@ class Connection {
   }
 
   /// Returns the epoch schedule information from the cluster's genesis config.
-  Future<RpcResponse<EpochSchedule>> getEpochScheduleRaw({ 
-    final GetEpochScheduleConfig? config, 
-  }) {
-    return _request(Method.getEpochSchedule, [], EpochSchedule.fromJson, config: config);
+  Future<RpcResponse<EpochSchedule>> getEpochScheduleRaw({ final GetEpochScheduleConfig? config }) {
+    final defaultConfig = config ?? const GetEpochScheduleConfig();
+    return _request(Method.getEpochSchedule, [], EpochSchedule.fromJson, config: defaultConfig);
   }
 
   /// Returns the epoch schedule information from the cluster's genesis config.
@@ -618,14 +714,15 @@ class Connection {
 
   /// Returns the network fee that will be charged to send [message].
   /// 
-  /// TODO: Find out if `null` means zero.
+  /// TODO: Find out if a `null` return value means zero.
   Future<RpcContextResponse<u64?>> getFeeForMessageRaw(
     final Message message, {
     final GetFeeForMessageConfig? config,
   }) {
     final parse = _contextParser(utils.cast<u64?>);
     final String encoded = message.serialise().getString(BufferEncoding.base64);
-    return _request(Method.getFeeForMessage, [encoded], parse, config: config);
+    final defaultConfig = config ?? const GetFeeForMessageConfig();
+    return _request(Method.getFeeForMessage, [encoded], parse, config: defaultConfig);
   }
 
   /// Returns the network fee that will be charged to send [message].
@@ -641,7 +738,8 @@ class Connection {
   Future<RpcResponse<u64>> getFirstAvailableBlockRaw({ 
     final GetFirstAvailableBlockConfig? config, 
   }) {
-    return _request(Method.getFirstAvailableBlock, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const GetFirstAvailableBlockConfig();
+    return _request(Method.getFirstAvailableBlock, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the slot of the lowest confirmed block that has not been purged from the ledger.
@@ -653,14 +751,15 @@ class Connection {
 
   /// Returns the genesis hash.
   Future<RpcResponse<String>> getGenesisHashRaw({ 
-    final GetFirstAvailableBlockConfig? config, 
+    final GetGenesisHashConfig? config, 
   }) {
-    return _request(Method.getGenesisHash, [], utils.cast<String>, config: config);
+    final defaultConfig = config ?? const GetGenesisHashConfig();
+    return _request(Method.getGenesisHash, [], utils.cast<String>, config: defaultConfig);
   }
 
   /// Returns the genesis hash.
   Future<String> getGenesisHash({ 
-    final GetFirstAvailableBlockConfig? config, 
+    final GetGenesisHashConfig? config, 
   }) {
     return getGenesisHashRaw(config: config).unwrap();
   }
@@ -673,7 +772,8 @@ class Connection {
   Future<RpcResponse<HealthStatus>> getHealthRaw({ 
     final GetHealthConfig? config, 
   }) {
-    return _request(Method.getHealth, [], HealthStatus.fromName, config: config);
+    final defaultConfig = config ?? const GetHealthConfig();
+    return _request(Method.getHealth, [], HealthStatus.fromName, config: defaultConfig);
   }
 
   /// Returns the current health of the node.
@@ -694,7 +794,8 @@ class Connection {
   Future<RpcResponse<HighestSnapshotSlot>> getHighestSnapshotSlotRaw({ 
     final GetHighestSnapshotSlotConfig? config, 
   }) {
-    return _request(Method.getHighestSnapshotSlot, [], HighestSnapshotSlot.fromJson, config: config);
+    final defaultConfig = config ?? const GetHighestSnapshotSlotConfig();
+    return _request(Method.getHighestSnapshotSlot, [], HighestSnapshotSlot.fromJson, config: defaultConfig);
   }
 
   /// Returns the highest slot information that the node has snapshots for.
@@ -711,7 +812,8 @@ class Connection {
   Future<RpcResponse<Identity>> getIdentityRaw({ 
     final GetIdentityConfig? config, 
   }) {
-    return _request(Method.getIdentity, [], Identity.fromJson, config: config);
+    final defaultConfig = config ?? const GetIdentityConfig();
+    return _request(Method.getIdentity, [], Identity.fromJson, config: defaultConfig);
   }
 
   /// Returns the identity pubkey for the current node.
@@ -725,7 +827,8 @@ class Connection {
   Future<RpcResponse<InflationGovernor>> getInflationGovernorRaw({ 
     final GetInflationGovernorConfig? config, 
   }) {
-    return _request(Method.getInflationGovernor, [], InflationGovernor.fromJson, config: config);
+    final defaultConfig = config ?? const GetInflationGovernorConfig();
+    return _request(Method.getInflationGovernor, [], InflationGovernor.fromJson, config: defaultConfig);
   }
 
   /// Returns the current inflation governor.
@@ -739,7 +842,8 @@ class Connection {
   Future<RpcResponse<InflationRate>> getInflationRateRaw({ 
     final GetInflationRateConfig? config, 
   }) {
-    return _request(Method.getInflationRate, [], InflationRate.fromJson, config: config);
+    final defaultConfig = config ?? const GetInflationRateConfig();
+    return _request(Method.getInflationRate, [], InflationRate.fromJson, config: defaultConfig);
   }
 
   /// Returns the specific inflation values for the current epoch.
@@ -756,7 +860,8 @@ class Connection {
   }) {
     final pubKeys = addresses.map((final PublicKey address) => address.toBase58()).toList(growable: false);
     final parse = _listParser(InflationReward.tryFromJson);
-    return _request(Method.getInflationReward, [pubKeys], parse, config: config);
+    final defaultConfig = config ?? const GetInflationRewardConfig();
+    return _request(Method.getInflationReward, [pubKeys], parse, config: defaultConfig);
   }
 
   /// Returns the inflation / staking reward for a list of [addresses] for an epoch.
@@ -771,8 +876,8 @@ class Connection {
   Future<RpcContextResponse<List<LargeAccount>>> getLargestAccountsRaw({ 
     final GetLargestAccountsConfig? config, 
   }) {
-    final defaultConfig = config?.applyDefault(commitment: commitment) ?? GetLargestAccountsConfig(commitment: commitment);
     parse(result) => RpcContextResult.parse(result, _listParser(LargeAccount.fromJson));
+    final defaultConfig = config ?? const GetLargestAccountsConfig();
     return _request(Method.getLargestAccounts, [], parse, config: defaultConfig);
   }
 
@@ -788,7 +893,8 @@ class Connection {
     final GetLatestBlockhashConfig? config,
   }) {
     final parser = _contextParser(BlockhashWithExpiryBlockHeight.fromJson);
-    return _request(Method.getLatestBlockhash, [], parser, config: config);
+    final defaultConfig = config ?? const GetLatestBlockhashConfig();
+    return _request(Method.getLatestBlockhash, [], parser, config: defaultConfig);
   }
 
   /// Returns the latest blockhash.
@@ -808,7 +914,8 @@ class Connection {
   }) {
     final List<Object> params = slot != null ? [slot] : [];
     Map<String, List>? parse(final Map? result) => result != null ? Map.castFrom(result) : null;
-    return _request(Method.getLeaderSchedule, params, parse, config: config);
+    final defaultConfig = config ?? const GetLeaderScheduleConfig();
+    return _request(Method.getLeaderSchedule, params, parse, config: defaultConfig);
   }
 
   /// Returns the leader schedule for an epoch.
@@ -826,7 +933,8 @@ class Connection {
   Future<RpcResponse<u64>> getMaxRetransmitSlotRaw({
     final GetMaxRetransmitSlotConfig? config,
   }) {
-    return _request(Method.getMaxRetransmitSlot, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const GetMaxRetransmitSlotConfig();
+    return _request(Method.getMaxRetransmitSlot, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the max slot seen from retransmit stage.
@@ -840,7 +948,8 @@ class Connection {
   Future<RpcResponse<u64>> getMaxShredInsertSlotRaw({
     final GetMaxShredInsertSlotConfig? config,
   }) {
-    return _request(Method.getMaxShredInsertSlot, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const GetMaxShredInsertSlotConfig();
+    return _request(Method.getMaxShredInsertSlot, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the max slot seen from after shred insert.
@@ -855,10 +964,8 @@ class Connection {
     final int length, {
     final GetMinimumBalanceForRentExemptionConfig? config,
   }) {
-    return _request(
-      Method.getMinimumBalanceForRentExemption, 
-      [length], cast<u64>, config: config,
-    );
+    final defaultConfig = config ?? const GetMinimumBalanceForRentExemptionConfig();
+    return _request(Method.getMinimumBalanceForRentExemption, [length], cast<u64>, config: defaultConfig);
   }
 
   /// Returns the minimum balance required to make an account of size [length] rent exempt.
@@ -877,7 +984,8 @@ class Connection {
     require(accounts.length <= 100, 'getMultipleAccounts() can fetch up to a maximum of 100.');
     parse(result) => RpcContextResult.parse(result, _listParser(AccountInfo.tryParse));
     final pubKeys = accounts.map((final PublicKey account) => account.toBase58()).toList(growable: false);
-    return _request(Method.getMultipleAccounts, [pubKeys], parse, config: config);
+    final defaultConfig = config ?? GetMultipleAccountsConfig();
+    return _request(Method.getMultipleAccounts, [pubKeys], parse, config: defaultConfig);
   }
 
   /// Returns the account information for a list of Pubkeys.
@@ -894,7 +1002,8 @@ class Connection {
     final GetProgramAccountsConfig? config,
   }) {
     final parse = _listParser(ProgramAccount.fromJson);
-    return _request(Method.getProgramAccounts, [program.toBase58()], parse, config: config);
+    final defaultConfig = config ?? GetProgramAccountsConfig();
+    return _request(Method.getProgramAccounts, [program.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns all accounts owned by the provided program Pubkey.
@@ -914,7 +1023,8 @@ class Connection {
   }) {
     final List<Object> params = limit != null ? [limit] : [];
     final parse = _listParser(PerformanceSample.fromJson);
-    return _request(Method.getRecentPerformanceSamples, params, parse, config: config);
+    final defaultConfig = config ?? const GetRecentPerformanceSamplesConfig();
+    return _request(Method.getRecentPerformanceSamples, params, parse, config: defaultConfig);
   }
 
   /// Returns a list of recent performance samples, in reverse slot order. Performance samples are 
@@ -935,7 +1045,8 @@ class Connection {
     final GetSignaturesForAddressConfig? config,
   }) {
     final parse = _listParser(ConfirmedSignatureInfo.fromJson);
-    return _request(Method.getSignaturesForAddress, [address.toBase58()], parse, config: config);
+    final defaultConfig = config ?? const GetSignaturesForAddressConfig();
+    return _request(Method.getSignaturesForAddress, [address.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns signatures for confirmed transactions that include the given address in their 
@@ -958,7 +1069,8 @@ class Connection {
     final GetSignatureStatusesConfig? config,
   }) {
     parse(result) => RpcContextResult.parse(result, _listParser(SignatureStatus.tryFromJson));
-    return _request(Method.getSignatureStatuses, [signatures], parse, config: config);
+    final defaultConfig = config ?? const GetSignatureStatusesConfig();
+    return _request(Method.getSignatureStatuses, [signatures], parse, config: defaultConfig);
   }
 
   /// Returns the statuses of a list of signatures. 
@@ -975,7 +1087,8 @@ class Connection {
 
   /// Returns the slot that has reached the given or default [GetSlotConfig.commitment] level.
   Future<RpcResponse<u64>> getSlotRaw({ final GetSlotConfig? config }) {
-    return _request(Method.getSlot, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const GetSlotConfig();
+    return _request(Method.getSlot, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the slot that has reached the given or default [GetSlotConfig.commitment] level.
@@ -985,7 +1098,8 @@ class Connection {
 
   /// Returns the current slot leader.
   Future<RpcResponse<PublicKey>> getSlotLeaderRaw({ final GetSlotLeaderConfig? config }) {
-    return _request(Method.getSlotLeader, [], PublicKey.fromString, config: config);
+    final defaultConfig = config ?? const GetSlotLeaderConfig();
+    return _request(Method.getSlotLeader, [], PublicKey.fromString, config: defaultConfig);
   }
 
   /// Returns the current slot leader.
@@ -997,9 +1111,11 @@ class Connection {
   Future<RpcResponse<List<PublicKey>>> getSlotLeadersRaw({ 
     required final u64 start,
     required final u64 limit,
-    final GetSlotLeadersConfig? config }) {
+    final GetSlotLeadersConfig? config, 
+  }) {
     final parse = _listParser(PublicKey.fromString);
-    return _request(Method.getSlotLeaders, [start, limit], parse, config: config);
+    final defaultConfig = config ?? const GetSlotLeadersConfig();
+    return _request(Method.getSlotLeaders, [start, limit], parse, config: defaultConfig);
   }
 
   /// Returns the slot leaders for a given slot range.
@@ -1016,7 +1132,8 @@ class Connection {
     final PublicKey account, {
     final GetStakeActivationConfig? config, 
   }) {
-    return _request(Method.getStakeActivation, [account.toBase58()], StakeActivation.fromJson, config: config);
+    final defaultConfig = config ?? const GetStakeActivationConfig();
+    return _request(Method.getStakeActivation, [account.toBase58()], StakeActivation.fromJson, config: defaultConfig);
   }
 
   /// Returns epoch activation information for a stake account.
@@ -1031,9 +1148,9 @@ class Connection {
   Future<RpcContextResponse<Supply>> getSupplyRaw({
     final GetSupplyConfig? config, 
   }) {
-    final supplyConfig = config?.applyDefault(commitment: commitment) ?? GetSupplyConfig(commitment: commitment);
     parse(result) => RpcContextResult.parse(result, Supply.fromJson);
-    return _request(Method.getSupply, [], parse, config: supplyConfig);
+    final defaultConfig = config ?? const GetSupplyConfig();
+    return _request(Method.getSupply, [], parse, config: defaultConfig);
   }
 
   /// Returns information about the current supply.
@@ -1049,7 +1166,8 @@ class Connection {
     final GetTokenAccountBalanceConfig? config, 
   }) {
     parse(result) => RpcContextResult.parse(result, TokenAmount.fromJson);
-    return _request(Method.getTokenAccountBalance, [account.toBase58()], parse, config: config);
+    final defaultConfig = config ?? const GetTokenAccountBalanceConfig();
+    return _request(Method.getTokenAccountBalance, [account.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns the token balance of an SPL Token [account].
@@ -1068,7 +1186,8 @@ class Connection {
   }) {
     final params = [delegate.toBase58(), filter.toJson()];
     parse(result) => RpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
-    return _request(Method.getTokenAccountsByDelegate, params, parse, config: config ?? GetTokenAccountsByDelegateConfig());
+    final defaultConfig = config ?? GetTokenAccountsByDelegateConfig();
+    return _request(Method.getTokenAccountsByDelegate, params, parse, config: defaultConfig);
   }
 
   /// Returns all SPL Token accounts approved by [delegate].
@@ -1088,7 +1207,8 @@ class Connection {
   }) {
     final params = [account.toBase58(), filter.toJson()];
     parse(result) => RpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
-    return _request(Method.getTokenAccountsByOwner, params, parse, config: config ?? GetTokenAccountsByOwnerConfig());
+    final defaultConfig = config ?? GetTokenAccountsByOwnerConfig();
+    return _request(Method.getTokenAccountsByOwner, params, parse, config: defaultConfig);
   }
 
   /// Returns the token owner of an SPL Token [account].
@@ -1106,7 +1226,8 @@ class Connection {
     final GetTokenLargestAccountsConfig? config, 
   }) {
     parse(result) => RpcContextResult.parse(result, _listParser(TokenAmount.fromJson));
-    return _request(Method.getTokenLargestAccounts, [mint.toBase58()], parse, config: config);
+    final defaultConfig = config ?? const GetTokenLargestAccountsConfig();
+    return _request(Method.getTokenLargestAccounts, [mint.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns the 20 largest accounts of a particular SPL Token type.
@@ -1123,7 +1244,8 @@ class Connection {
     final GetTokenSupplyConfig? config, 
   }) {
     parse(result) => RpcContextResult.parse(result, TokenAmount.fromJson);
-    return _request(Method.getTokenSupply, [mint.toBase58()], parse, config: config);
+    final defaultConfig = config ?? const GetTokenSupplyConfig();
+    return _request(Method.getTokenSupply, [mint.toBase58()], parse, config: defaultConfig);
   }
 
   /// Returns the total supply of an SPL Token type.
@@ -1139,7 +1261,8 @@ class Connection {
     final String signature, {
     final GetTransactionConfig? config, 
   }) {
-    return _request(Method.getTransaction, [signature], TransactionInfo.tryParse, config: config);
+    final defaultConfig = config ?? GetTransactionConfig();
+    return _request(Method.getTransaction, [signature], TransactionInfo.tryParse, config: defaultConfig);
   }
 
   /// Returns transaction details for a confirmed transaction signature (base-58).
@@ -1154,7 +1277,8 @@ class Connection {
   Future<RpcResponse<u64>> getTransactionCountRaw({
     final GetTransactionCountConfig? config, 
   }) {
-    return _request(Method.getTransactionCount, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? GetTransactionCountConfig(commitment: commitment); // asserts commitment.
+    return _request(Method.getTransactionCount, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the current [Transaction] count from the ledger.
@@ -1168,7 +1292,8 @@ class Connection {
   Future<RpcResponse<Version>> getVersionRaw({
     final GetVersionConfig? config, 
   }) {
-    return _request(Method.getVersion, [], Version.fromJson, config: config);
+    final defaultConfig = config ?? const GetVersionConfig();
+    return _request(Method.getVersion, [], Version.fromJson, config: defaultConfig);
   }
 
   /// Returns the current solana versions running on the node.
@@ -1182,7 +1307,8 @@ class Connection {
   Future<RpcResponse<VoteAccountStatus>> getVoteAccountsRaw({
     final GetVoteAccountsConfig? config, 
   }) {
-    return _request(Method.getVoteAccounts, [], VoteAccountStatus.fromJson, config: config);
+    final defaultConfig = config ?? const GetVoteAccountsConfig();
+    return _request(Method.getVoteAccounts, [], VoteAccountStatus.fromJson, config: defaultConfig);
   }
 
   /// Returns the account info and associated stake for all the voting accounts in the current bank.
@@ -1198,7 +1324,8 @@ class Connection {
     final IsBlockhashValidConfig? config, 
   }) {
     parse(result) => RpcContextResult.parse(result, utils.cast<bool>);
-    return _request(Method.isBlockhashValid, [blockhash], parse, config: config);
+    final defaultConfig = config ?? const IsBlockhashValidConfig();
+    return _request(Method.isBlockhashValid, [blockhash], parse, config: defaultConfig);
   }
 
   /// Returns whether a [blockhash] (base-58) is still valid or not.
@@ -1214,7 +1341,8 @@ class Connection {
   Future<RpcResponse<u64>> minimumLedgerSlotRaw({
     final MinimumLedgerSlotConfig? config, 
   }) {
-    return _request(Method.minimumLedgerSlot, [], utils.cast<u64>, config: config);
+    final defaultConfig = config ?? const MinimumLedgerSlotConfig();
+    return _request(Method.minimumLedgerSlot, [], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the lowest slot that the node has information about in its ledger. This value may 
@@ -1233,10 +1361,8 @@ class Connection {
     final u64 lamports, {
     final RequestAirdropConfig? config,
   }) {
-    return _request(
-      Method.requestAirdrop, 
-      [publicKey.toBase58(), lamports], utils.cast<String>, config: config,
-    );
+    final defaultConfig = config ?? const RequestAirdropConfig();
+    return _request(Method.requestAirdrop, [publicKey.toBase58(), lamports], utils.cast<String>, config: defaultConfig);
   }
 
   /// Requests an airdrop of [lamports] to [publicKey].
@@ -1289,8 +1415,7 @@ class Connection {
       }
     }
 
-    final defaultConfig = config?.applyDefault(preflightCommitment: commitment) 
-      ?? SendTransactionConfig(preflightCommitment: commitment); 
+    final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment); 
     final BufferEncoding bufferEncoding = BufferEncoding.fromName(defaultConfig.encoding.name);
     final String signedTransaction = transaction.serialise().getString(bufferEncoding);
     return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: defaultConfig);
@@ -1323,7 +1448,9 @@ class Connection {
           lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
         );
 
-        if (signers == null) break;
+        if (signers == null) {
+          break;
+        }
 
         transaction.sign(signers);
         final Uint8List? payerSignature = transaction.signature;
@@ -1351,7 +1478,7 @@ class Connection {
     final Message message = transaction.compileAndVerifyMessage();
     final SimulateTransactionConfig config = SimulateTransactionConfig(
       sigVerify: signers != null,
-      commitment: commitment ?? this.commitment,
+      commitment: commitment,
       encoding: TransactionEncoding.base64,
       accounts: includeAccounts 
         ? AccountsFilter(addresses: message.nonProgramIds.toList(growable: false)) 
@@ -1378,7 +1505,7 @@ class Connection {
     ).unwrap();
   }
 
-  /// 
+  /// Sign, send and confirm a [transaction].
   Future<TransactionSignature> sendAndConfirmTransaction(
     final Transaction transaction, {
     final List<Signer> signers = const [],
@@ -1396,22 +1523,30 @@ class Connection {
     return signature;
   }
 
-  ///
-  Future<u64> _checkBlockHeight(
-    final BlockhashWithExpiryBlockHeight blockhash, {
-    required final Commitment? commitment,
-  }) async {
+  /// Returns an error when [blockhash.lastValidBlockHeight] has been exceeded.
+  Future<u64> _blockHeightExceeded(
+    final BlockhashWithExpiryBlockHeight blockhash, 
+    final Commitment? commitment,
+  ) async {
     final config = GetBlockHeightConfig(commitment: commitment);
     u64 blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
     while (blockHeight <= blockhash.lastValidBlockHeight) {
       blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
       await Future.delayed(const Duration(seconds: 1));
     }
-    return Future.error('Block Height Exceeded.');
+    return Future.error('Transaction block height exceeded.');
   }
 
-  /// 
-  Future<dynamic> confirmTransaction(
+  /// Returns the time out duration for a [signatureSubscribe] event.
+  Duration _confirmTransactionTimeLimit<T>(final Commitment? commitment) 
+    => Duration(seconds: commitment == null || commitment == Commitment.finalized ? 60 : 30);
+
+  /// Creates an `onTimeout` callback function for a [confirmTransaction].
+  Future<WebSocketSubscription<SignatureNotification>> Function() _confirmTransactionTimeout<T>() 
+    => () => Future.error(TimeoutException('Transaction signature confirmation timed out.'));
+
+  /// Confirms a transaction.
+  Future<RpcNotification<SignatureNotification>> confirmTransaction(
     final TransactionSignature signature, {
     final List<Signer> signers = const [],
     final BlockhashWithExpiryBlockHeight? blockhash,
@@ -1423,45 +1558,39 @@ class Connection {
     try {
       decodedSignature = convert.base58.decode(signature);
     } catch (error) {
-      throw TransactionException('Failed to decode base58 signature $signature');
+      throw TransactionException('Failed to decode base58 signature $signature.');
     }
 
     utils.require(decodedSignature.length == signatureLength, 'Invalid signature length.');
 
-    final Commitment commitment = config?.commitment ?? this.commitment ??  Commitment.finalized;
-    final Completer completer = Completer.sync();
+    final Commitment? commitment = config?.commitment ?? this.commitment;
+    final Completer<RpcNotification<SignatureNotification>> completer = Completer.sync();
 
     try {
 
-      final Future<WebSocketSubscription> futureSubscription = signatureSubscribe(
+      final Future<WebSocketSubscription<SignatureNotification>> futureSubscription = signatureSubscribe(
         signature, 
         config: SignatureSubscribeConfig(commitment: commitment),
       );
 
-      final WebSocketSubscription subscription = await futureSubscription.race(
+      final WebSocketSubscription<SignatureNotification> subscription = await (
         blockhash != null 
-          ? _checkBlockHeight(
-              blockhash, 
-              commitment: commitment,
+          ? futureSubscription.before(
+              _blockHeightExceeded(blockhash, commitment)
             )
-          : Future.delayed(
-              Duration(seconds: commitment == Commitment.finalized ? 60 : 30),
-              () => Future.error(TimeoutException('Confirm Transaction Timed Out.')),
-            ),
+          : futureSubscription.timeout(
+              _confirmTransactionTimeLimit(commitment), 
+              onTimeout: _confirmTransactionTimeout(),
+            )
       );
 
       subscription.on(
-        (data) { 
-          print('SIGNATURE CONFIRMATION: $data');
-          completer.complete(data);
-        },
-        onDone: () {
-          completer.completeError('Subscription closed.');
-        }
+        completer.complete,
+        onDone: () => completer.completeError('Subscription closed.'),
       );
 
-    } catch (error) {
-      return completer.completeError('Woops');
+    } catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
     }
 
     return completer.future;
@@ -1469,9 +1598,8 @@ class Connection {
 
 
   /// Creates an `onTimeout` callback function for a [_webSocketExchange].
-  Future<RpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() => () {
-    return Future.error(TimeoutException('The web socket request has timed out.'));
-  };
+  Future<RpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
+    => () => Future.error(TimeoutException('Web socket request timed out.'));
 
   /// Removes the [ids] and their associated values from [_webSocketExchangeManager].
   void _webSocketExchangeRemove(List<int?> ids) {
@@ -1523,7 +1651,7 @@ class Connection {
         }
       }
 
-      // 
+      // Check that existing requests have an id and new requests do not.
       assert(
         exchange == null ? request.id == null : request.id == exchange.id, 
         'A [WebSocketExchange] must be initialised with a new or existing exchange request.',
@@ -1537,6 +1665,7 @@ class Connection {
 
       // Send the request to the JSON-RPC web socket server (the response will be recevied by 
       // `onSocketData`).
+      print('[WebSocketExchange] data ${exchange.request.toJson()}');
       connection.add(json.encode(exchange.request.toJson()));
 
       // Return the pending subscription that completes when a success response is received from the 
@@ -1552,7 +1681,7 @@ class Connection {
     }
   }
 
-  ///
+  /// Re-subscribe to an existing subscription.
   Future<WebSocketSubscription> resubscribe(
     final WebSocketExchange exchange, {
     final RpcRequestConfig? config,
@@ -1567,7 +1696,7 @@ class Connection {
   /// 
   /// Returns a [WebSocketSubscription] that can be used to attach notification handlers.
   /// 
-  /// The subscription [method] is invoked with the provided [params].
+  /// The subscription [method] is invoked with the ordered parameter [values].
   /// 
   /// Request configurations can be set using the [config] object.
   /// 
@@ -1593,14 +1722,16 @@ class Connection {
   /// ```
   /// 
   /// TODO: Create the listener (subscribe) before making the exchange request.
-  Future<WebSocketSubscription> subscribe(
+  Future<WebSocketSubscription<T>> _subscribe<T>(
     final Method method,
-    final List<Object> params, {
-    final RpcSubscribeConfig? config,
+    final List<Object> values, {
+    required final RpcSubscribeConfig config,
   }) async {
-    final RpcRequest request = RpcRequest.build(method, params, config);
+    final List<Object> params = _buildParams(values, config, commitment ?? Commitment.finalized);
+    assert(params.isEmpty || params.last is! Map || (params.last as Map).values.every((value) => value != null));
+    final RpcRequest request = RpcRequest(method, params: params, id: config.id);
     final RpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
-    final x = _webSocketSubscriptionManager.subscribe(response);
+    final x = _webSocketSubscriptionManager.subscribe<T>(response);
     print('WSEM SUBSCRIBE $_webSocketExchangeManager');
     print('WSSM SUBSCRIBE $_webSocketSubscriptionManager');
     return x;
@@ -1630,14 +1761,14 @@ class Connection {
   /// 
   /// print(response.result); // true
   /// ```
-  Future<RpcUnsubscribeResponse> unsubscribe(
+  Future<RpcUnsubscribeResponse> _unsubscribe<T>(
     final Method method,
-    final WebSocketSubscription subscription, {
-    final RpcUnsubscribeConfig? config,
+    final WebSocketSubscription<T> subscription, {
+    required final RpcUnsubscribeConfig? config,
   }) async {
 
     // Cancel the stream listener.
-    await _webSocketSubscriptionManager.unsubscribe(subscription);
+    await _webSocketSubscriptionManager.unsubscribe<T>(subscription);
 
     // Create the return response (default to `success`).
     RpcUnsubscribeResponse response = RpcUnsubscribeResponse.fromResult(true);
@@ -1645,7 +1776,9 @@ class Connection {
     // If the stream has no more listeners, cancel the web socket subscription.
     if (!_webSocketSubscriptionManager.hasListener(subscription.id)) {
       try {
-        final RpcRequest request = RpcRequest.build(method, [subscription.id], config);
+        final defaultConfig = config ?? const RpcUnsubscribeConfig();
+        final List<Object> params = _buildParams([subscription.id], defaultConfig);
+        final RpcRequest request = RpcRequest(method, params: params, id: defaultConfig.id);
         response = await _webSocketExchange<bool>(request, config: config);
         _webSocketExchangeRemove([subscription.exchangeId, response.id]);
         
@@ -1669,11 +1802,12 @@ class Connection {
 
   /// Subscribes to an account to receive notifications when the lamports or data for a given 
   /// account's [publicKey] changes.
-  Future<WebSocketSubscription> accountSubscribe(
+  Future<WebSocketSubscription<AccountNotification>> accountSubscribe(
     final PublicKey publicKey, {
     final AccountSubscribeConfig? config,
   }) async {
-    return subscribe(Method.accountSubscribe, [publicKey.toBase58()], config: config);
+    final defaultConfig = config ?? AccountSubscribeConfig();
+    return _subscribe(Method.accountSubscribe, [publicKey.toBase58()], config: defaultConfig);
   }
 
   /// Unsubscribes from account change notifications.
@@ -1681,15 +1815,16 @@ class Connection {
     final WebSocketSubscription subscription, {
     final AccountUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.accountUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.accountUnsubscribe, subscription, config: config);
   }
 
   /// Subscribe to transaction logging.
-  Future<WebSocketSubscription> logsSubscribe(
+  Future<WebSocketSubscription<LogsNotification>> logsSubscribe(
     final LogsFilter filter, {
     final LogsSubscribeConfig? config,
   }) async {
-    return subscribe(Method.logsSubscribe, [filter.value], config: config);
+    final defaultConfig = config ?? const LogsSubscribeConfig();
+    return _subscribe(Method.logsSubscribe, [filter.value], config: defaultConfig);
   }
 
   /// Unsubscribes from transaction logging.
@@ -1697,16 +1832,17 @@ class Connection {
     final WebSocketSubscription subscription, {
     final LogsUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.logsUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.logsUnsubscribe, subscription, config: config);
   }
 
   /// Subscribes to a program to receive notifications when the lamports or data for a given account 
   /// owned by the program changes.
-  Future<WebSocketSubscription> programSubscribe(
+  Future<WebSocketSubscription<ProgramAccount>> programSubscribe(
     final PublicKey programId, {
     final ProgramSubscribeConfig? config,
   }) async {
-    return subscribe(Method.programSubscribe, [programId.toBase58()], config: config);
+    final defaultConfig = config ?? ProgramSubscribeConfig();
+    return _subscribe(Method.programSubscribe, [programId.toBase58()], config: defaultConfig);
   }
 
   /// Unsubscribes from program changes.
@@ -1714,21 +1850,22 @@ class Connection {
     final WebSocketSubscription subscription, {
     final ProgramUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.programUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.programUnsubscribe, subscription, config: config);
   }
 
   /// Subscribes to a transaction signature to receive a `signatureNotification` when the 
   /// transaction is confirmed, the subscription is automatically cancelled.
   /// 
   /// TODO: Cancel stream if there are no other listeners.
-  Future<WebSocketSubscription> signatureSubscribe(
+  Future<WebSocketSubscription<SignatureNotification>> signatureSubscribe(
     final TransactionSignature signature, {
     final SignatureSubscribeConfig? config,
   }) async {
-    final WebSocketSubscription subscription = await subscribe(
+    final defaultConfig = config ?? const SignatureSubscribeConfig();
+    final WebSocketSubscription<SignatureNotification> subscription = await _subscribe(
       Method.signatureSubscribe, 
       [signature], 
-      config: config,
+      config: defaultConfig,
     );
     _webSocketExchangeRemove([subscription.exchangeId]);
     print('WSEM UNSUBSCRIBE $_webSocketExchangeManager');
@@ -1741,14 +1878,15 @@ class Connection {
     final WebSocketSubscription subscription, {
     final SignatureUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.signatureUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.signatureUnsubscribe, subscription, config: config);
   }
 
   /// Subscribes to receive notifications anytime a slot is processed by the validator.
-  Future<WebSocketSubscription> slotSubscribe({
+  Future<WebSocketSubscription<SlotNotification>> slotSubscribe({
     final SlotSubscribeConfig? config,
   }) async {
-    return subscribe(Method.slotSubscribe, [], config: config);
+    final defaultConfig = config ?? const SlotSubscribeConfig();
+    return _subscribe(Method.slotSubscribe, [], config: defaultConfig);
   }
 
   /// Unsubscribes from slot updates.
@@ -1756,14 +1894,15 @@ class Connection {
     final WebSocketSubscription subscription, {
     final SlotUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.slotUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.slotUnsubscribe, subscription, config: config);
   }
 
   /// Subscribes to receive notifications anytime a new root is set by the validator.
-  Future<WebSocketSubscription> rootSubscribe({
+  Future<WebSocketSubscription<u64>> rootSubscribe({
     final RootSubscribeConfig? config,
   }) async {
-    return subscribe(Method.rootSubscribe, [], config: config);
+    final defaultConfig = config ?? const RootSubscribeConfig();
+    return _subscribe(Method.rootSubscribe, [], config: defaultConfig);
   }
 
   /// Unsubscribes from root changes.
@@ -1771,6 +1910,6 @@ class Connection {
     final WebSocketSubscription subscription, {
     final RootUnsubscribeConfig? config,
   }) async {
-    return unsubscribe(Method.rootUnsubscribe, subscription, config: config);
+    return _unsubscribe(Method.rootUnsubscribe, subscription, config: config);
   }
 }
