@@ -301,8 +301,6 @@ class Connection {
 
   void _onWebSocketData(final Map<String, dynamic> json)  async {
     
-    print('[ON SOCKET DATA] $json');
-
     if (RpcResponse.isType<int>(json)) {
       final RpcSubscribeResponse response = RpcResponse.parse(json, cast<int>);
       return _webSocketExchangeManager.onResponse(response);
@@ -347,19 +345,13 @@ class Connection {
   }
 
   void _onWebSocketConnect(final WebSocket connection) {
-    print("\n--------------------------------------------------------------------------------");
-    print("[ON SOCKET CONNECT]");
-    print("--------------------------------------------------------------------------------\n");
     for(final WebSocketExchange exchange in _webSocketExchangeManager.values) {
-      print('Resubscribing $exchange');
       resubscribe(exchange).ignore();
     }
   }
 
   void _onWebSocketDisconnect() {
-    print("\n--------------------------------------------------------------------------------");
-    print("[ON SOCKET DISCONNECT]");
-    print("--------------------------------------------------------------------------------\n");
+    
   }
 
   /// Prints the contents of a JSON-RPC request.
@@ -1665,7 +1657,6 @@ class Connection {
 
       // Send the request to the JSON-RPC web socket server (the response will be recevied by 
       // `onSocketData`).
-      print('[WebSocketExchange] data ${exchange.request.toJson()}');
       connection.add(json.encode(exchange.request.toJson()));
 
       // Return the pending subscription that completes when a success response is received from the 
@@ -1674,7 +1665,6 @@ class Connection {
       return await exchange.response.timeout(timeLimit, onTimeout: _onWebSocketExchangeTimeout());
 
     } catch (error, stackTrace) {
-      print('_webSocketRequest() Error : $error');
       _webSocketExchangeRemove([exchange?.id]);
       exchange?.completeError(error, stackTrace);
       return Future.error(error, stackTrace);
@@ -1731,10 +1721,7 @@ class Connection {
     assert(params.isEmpty || params.last is! Map || (params.last as Map).values.every((value) => value != null));
     final RpcRequest request = RpcRequest(method, params: params, id: config.id);
     final RpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
-    final x = _webSocketSubscriptionManager.subscribe<T>(response);
-    print('WSEM SUBSCRIBE $_webSocketExchangeManager');
-    print('WSSM SUBSCRIBE $_webSocketSubscriptionManager');
-    return x;
+    return _webSocketSubscriptionManager.subscribe<T>(response);
   }
 
   /// Unsubscribes from the JSON-RPC PubSub [method] to stop receiving notifications sent by the web 
@@ -1795,8 +1782,6 @@ class Connection {
       }
     }
 
-    print('WSEM UNSUBSCRIBE $_webSocketExchangeManager');
-    print('WSSM UNSUBSCRIBE $_webSocketSubscriptionManager');
     return response;
   }
 
@@ -1868,8 +1853,6 @@ class Connection {
       config: defaultConfig,
     );
     _webSocketExchangeRemove([subscription.exchangeId]);
-    print('WSEM UNSUBSCRIBE $_webSocketExchangeManager');
-    print('WSSM UNSUBSCRIBE $_webSocketSubscriptionManager');
     return subscription;
   }
 

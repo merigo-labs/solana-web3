@@ -87,7 +87,6 @@ abstract class Layout<T> extends LayoutProperties with LayoutMixin {
   /// @abstract
   const Layout(super.span, super.property);
 
-
   /// Function to create an Object into which decoded properties will
   /// be written.
   ///
@@ -980,7 +979,7 @@ class Structure extends StructureLayout<dynamic, Layout> {
   /// left unmodified.
   @override
   int encode(final dynamic src, final Buffer b, [int offset = 0]) {
-    src is  Map<String, dynamic>;
+    src is Map<String, dynamic>;
     final int firstOffset = offset;
     int lastOffset = 0;
     int lastWrote = 0;

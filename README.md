@@ -25,88 +25,92 @@ The library is modelled on the [solana-web3.js](https://github.com/solana-labs/s
 * Stake Program
 * System Program
 
-## Usage
+## Example
 
-Import the package (after adding it to your [pubspec.yaml](https://pub.dev/packages/solana_web3/install) file).
+1. Import the package and [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
 
 ```dart
 import 'package:solana_web3/solana_web3.dart' as web3;
+import 'package:solana_web3/programs/system.dart';
 ```
 
-Connect to a Solana cluster.
+2. Connect to a Solana cluster.
 
 ```dart
 final cluster = web3.Cluster.devnet;
 final connection = web3.Connection(cluster);
 ```
 
-### Example 1
-Invoke a [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api) method.
+3. Create a new wallet and airdrop [amount] token(s) to the address.
 
 ```dart
-// Create a new wallet.
-final wallet = web3.Keypair.generate();
-final address = wallet.publicKey;
+/// NOTE: Keep the value of [amount] low (e.g. 1 or 2).
+/// 
+/// WARNING: Airdrops cannot be performed on the mainnet.
+Future<web3.Keypair> createWalletWithBalance(
+  final web3.Connection connection, { 
+  required final int amount, 
+}) async {
 
-// Airdrop some test tokens to the wallet address.
-// NOTE: Airdrops cannot be performed on the mainnet.
-const amount = web3.lamportsPerSol * 2; // Keep this value low.
-print('Airdrop $amount lamports to account $address...');
-final airdropSignature = await connection.requestAirdrop(address, amount);
-await connection.confirmTransaction(airdropSignature);
+  // Create a new wallet and get its public address.
+  final wallet = web3.Keypair.generate();
+  final address = wallet.publicKey;
 
-// Check the account balance.
-final balance = await connection.getBalance(address);
-print('The account $address has a balance of $balance lamports');
+  // Airdrop some test tokens to the wallet address.
+  // NOTE: Airdrops cannot be performed on the mainnet.
+  if (amount > 0) {
+    final lamports = web3.lamportsPerSol * amount;
+    final transactionSignature = await connection.requestAirdrop(address, lamports);
+    await connection.confirmTransaction(transactionSignature);
+  }
+
+  return wallet;
+}
 ```
 
-### Example 2
-Transfer lamports from one account to another using the [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
+4. Transfer lamports from one account to another using the [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
 
 ```dart
-// Import the System Program.
-import 'package:solana_web3/programs/system.dart';
+print('Creating accounts...\n');
 
 // Create a new wallet to transfer tokens from.
-final fromWallet = web3.Keypair.generate();
-final fromAddress = fromWallet.publicKey;
+final wallet1 = await createWalletWithBalance(connection, amount: 2);
+final address1 = wallet1.publicKey;
 
 // Create a new wallet to transfer tokens to.
-final toWallet = web3.Keypair.generate();
-final toAddress = toWallet.publicKey;
+final wallet2 = await createWalletWithBalance(connection, amount: 0);
+final address2 = wallet2.publicKey;
 
-// Airdrop some test tokens to the wallet address.
-// NOTE: Airdrops cannot be performed on the mainnet.
-const amount = web3.lamportsPerSol * 2; // Keep this value low.
-print('Airdrop $amount lamports to account $fromAddress...');
-final airdropSignature = await connection.requestAirdrop(fromAddress, amount);
-await connection.confirmTransaction(airdropSignature);
+// Check the account balances before making the transfer.
+final balance = await connection.getBalance(wallet1.publicKey);
+print('Account $address1 has an initial balance of $balance lamports.');
+print('Account $address2 has an initial balance of 0 lamports.\n');
 
-// Create a System Program instruction to transfer SOL.
+// Create a System Program instruction to transfer 1 SOL from [address1] to [address2].
 final transaction = web3.Transaction();
 transaction.add(
     SystemProgram.transfer(
-        fromPublicKey: fromAddress, 
-        toPublicKey: toAddress, 
+        fromPublicKey: address1, 
+        toPublicKey: address2, 
         lamports: web3.solToLamports(1),
     ),
 );
 
 // Send the transaction to the cluster and wait for it to be confirmed.
-print('Sending transaction...');
+print('Send and confirm transaction...\n');
 await connection.sendAndConfirmTransaction(
     transaction, 
-    signers: [fromWallet], // Fee payer + transaction signer.
+    signers: [wallet1], // Fee payer + transaction signer.
 );
 
-// Check the account balances.
-final fromBalance = await connection.getBalance(fromAddress);
-final toBalance = await connection.getBalance(toAddress);
-print('$fromAddress = $fromBalance lamports.');
-print('$toAddress = $toBalance lamports.');
+// Check the updated account balances.
+final wallet1balance = await connection.getBalance(wallet1.publicKey);
+final wallet2balance = await connection.getBalance(wallet2.publicKey);
+print('Account $address1 has an updated balance of $wallet1balance lamports.');
+print('Account $address2 has an updated balance of $wallet2balance lamports.');
 ```
 
-Close the connection.
+5. Close the connection.
 
 ```dart
 connection.disconnect();
