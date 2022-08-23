@@ -42,13 +42,13 @@ class NonceAccount {
   /// 2 minutes of the latest blockhash. If it takes longer than 2 minutes to get everybody’s 
   /// signatures, then you have to use nonce accounts.
   const NonceAccount({
-    required this.authorisedPubkey,
+    required this.authorizedPubkey,
     required this.nonce,
     required this.feeCalculator,
   });
 
   /// The authority of the nonce account.
-  final PublicKey authorisedPubkey;
+  final PublicKey authorizedPubkey;
   
   /// The block hash.
   final Blockhash nonce;
@@ -60,7 +60,7 @@ class NonceAccount {
   factory NonceAccount.fromAccountData(final Buffer buffer) {
     final Map<String, dynamic> nonceAccount = nonceAccountLayout.decode(buffer);
     return NonceAccount(
-      authorisedPubkey: PublicKey.fromString(nonceAccount['authorizedPubkey']),
+      authorizedPubkey: PublicKey.fromString(nonceAccount['authorizedPubkey']),
       nonce: PublicKey.fromString(nonceAccount['nonce']).toString(),
       feeCalculator: FeeCalculator.fromJson(nonceAccount['feeCalculator']),
     );

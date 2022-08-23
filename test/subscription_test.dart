@@ -29,7 +29,7 @@ void main() {
       print('Account Info Changed ${data.toJson()}');
       await connection.accountUnsubscribe(subscription);
       // await connection.requestAirdrop(utils.wallet.publicKey, web3.solToLamports(1).toInt());
-      print(connection.debugState());
+      connection.debugWebSocketState();
     });
 
     final amount = web3.solToLamports(1).toInt();

@@ -31,7 +31,7 @@ buffer_layout.RustString rustString([final String property = 'string']) {
 }
 
 /// Returns the layout for an Authorised object.
-buffer_layout.Structure authorised([final String property = 'authorized']) {
+buffer_layout.Structure authorized([final String property = 'authorized']) {
   return buffer_layout.struct(
     [
       publicKey('staker'), 

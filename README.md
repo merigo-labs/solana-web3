@@ -41,7 +41,7 @@ final cluster = web3.Cluster.devnet;
 final connection = web3.Connection(cluster);
 ```
 
-3. Create a new wallet and airdrop [amount] token(s) to the address.
+3. Create a new wallet and airdrop [amount] tokens to the address.
 
 ```dart
 /// NOTE: Keep the value of [amount] low (e.g. 1 or 2).

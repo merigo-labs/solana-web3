@@ -48,7 +48,7 @@ void main(final List<String> arguments) async {
   print('Account $address2 has an updated balance of $wallet2balance lamports.');
 }
 
-/// Creates a new wallet and airdrops [amount] token(s) to the address.
+/// Creates a new wallet and airdrops [amount] tokens to the address.
 /// 
 /// NOTE: Keep the value of [amount] low (e.g. 1 or 2).
 /// 

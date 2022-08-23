@@ -98,13 +98,13 @@ class AccountMeta extends Serialisable {
 }
 
 
-/// Serialise Config
+/// Serialize Config
 /// ------------------------------------------------------------------------------------------------
 
-class SerialiseConfig {
+class SerializeConfig {
 
-  /// Configuration object for [Transaction.serialise]
-  const SerialiseConfig({
+  /// Configuration object for [Transaction.serialize]
+  const SerializeConfig({
     this.requireAllSignatures = true,
     this.verifySignatures = true,
   });
@@ -573,8 +573,8 @@ class Transaction extends Serialisable {
   }
 
   /// Get a buffer of the Transaction data that needs to be covered by signatures.
-  Buffer serialiseMessage() {
-    return compileAndVerifyMessage().serialise();
+  Buffer serializeMessage() {
+    return compileAndVerifyMessage().serialize();
   }
 
   /// Get the estimated fee associated with a transaction
@@ -618,7 +618,7 @@ class Transaction extends Serialisable {
       unsign(publicKeys: uniqueSigners.map((final Signer pair) => pair.publicKey));
     }
     
-    final Buffer message = serialiseMessage();
+    final Buffer message = serializeMessage();
 
     for (final Signer signer in uniqueSigners) {
       final Uint8List signature = nacl.sign.detached(message.asUint8List(), signer.secretKey);
@@ -635,7 +635,7 @@ class Transaction extends Serialisable {
 
   /// Verifies signatures of a complete, signed Transaction.
   bool verifySignatures() {
-    return _verifySignatures(serialiseMessage(), requireAllSignatures: true);
+    return _verifySignatures(serializeMessage(), requireAllSignatures: true);
   }
 
   /// Verifies signatures of a complete, signed Transaction.
@@ -656,18 +656,18 @@ class Transaction extends Serialisable {
   }
 
   /// Serialises this [Transaction] into the wire format.
-  Buffer serialise([SerialiseConfig? config]) {
-    config ??= const SerialiseConfig();
-    final Buffer message = serialiseMessage();
+  Buffer serialize([SerializeConfig? config]) {
+    config ??= const SerializeConfig();
+    final Buffer message = serializeMessage();
     if (config.verifySignatures
         && !_verifySignatures(message, requireAllSignatures: config.requireAllSignatures)) {
       throw const TransactionException('Signature verification failed');
     }
-    return _serialise(message);
+    return _serialize(message);
   }
 
   /// Serialises a [Transaction] buffer into the wire format.
-  Buffer _serialise(final Buffer message) {
+  Buffer _serialize(final Buffer message) {
     final List<int> signatureCount = shortvec.encodeLength(signatures.length);
     final int transactionLength = signatureCount.length + signatures.length * 64 + message.length;
     final Buffer wireTransaction = Buffer(transactionLength);

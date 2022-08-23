@@ -135,7 +135,7 @@ class CreateNonceAccountParams {
   const CreateNonceAccountParams({
     required this.fromPublicKey,
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.lamports,
   });
   
@@ -146,7 +146,7 @@ class CreateNonceAccountParams {
   final PublicKey noncePublicKey;
   
   /// Thje public key to set as authority of the created nonce account.
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 
   /// The amount of lamports to transfer to the created nonce account.
   final u64 lamports;
@@ -162,7 +162,7 @@ class CreateNonceAccountWithSeedParams {
   const CreateNonceAccountWithSeedParams({
     required this.fromPublicKey,
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.lamports,
     required this.basePublicKey,
     required this.seed,
@@ -175,7 +175,7 @@ class CreateNonceAccountWithSeedParams {
   final PublicKey noncePublicKey;
   
   /// The public key to set as the authority of the created nonce account.
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
   
   /// The amount of lamports to transfer to the created nonce account.
   final u64 lamports;
@@ -188,22 +188,22 @@ class CreateNonceAccountWithSeedParams {
 }
 
 
-/// Initialise Nonce Params
+/// Initialize Nonce Params
 /// ------------------------------------------------------------------------------------------------
 
-class InitialiseNonceParams {
+class InitializeNonceParams {
 
-  /// Initialise nonce account system instruction params.
-  const InitialiseNonceParams({
+  /// Initialize nonce account system instruction params.
+  const InitializeNonceParams({
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
   });
 
-  /// The nonce account to be initialised.
+  /// The nonce account to be initialized.
   final PublicKey noncePublicKey;
 
-  /// The public key to set as the authority of the initialised nonce account.
-  final PublicKey authorisedPublicKey;
+  /// The public key to set as the authority of the initialized nonce account.
+  final PublicKey authorizedPublicKey;
 }
 
 
@@ -215,14 +215,14 @@ class AdvanceNonceParams {
   /// Advance nonce account system instruction params.
   const AdvanceNonceParams({
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
   });
   
   /// The nonce account.
   final PublicKey noncePublicKey;
 
   /// The public key of the nonce authority.
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 }
 
 
@@ -234,7 +234,7 @@ class WithdrawNonceParams {
   /// Withdraw nonce account system transaction params.
   const WithdrawNonceParams({
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.toPublicKey,
     required this.lamports,
   });
@@ -243,7 +243,7 @@ class WithdrawNonceParams {
   final PublicKey noncePublicKey;
 
   /// The public key of the nonce authority.
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 
   /// The public key of the account which will receive the withdrawn nonce account balance.
   final PublicKey toPublicKey;
@@ -253,26 +253,26 @@ class WithdrawNonceParams {
 }
 
 
-/// Authorise Nonce Params
+/// Authorize Nonce Params
 /// ------------------------------------------------------------------------------------------------
 
-class AuthoriseNonceParams {
+class AuthorizeNonceParams {
 
   /// Authorise nonce account system transaction params.
-  const AuthoriseNonceParams({
+  const AuthorizeNonceParams({
     required this.noncePublicKey,
-    required this.authorisedPublicKey,
-    required this.newAuthorisedPublicKey,
+    required this.authorizedPublicKey,
+    required this.newAuthorizedPublicKey,
   });
 
   /// The nonce account.
   final PublicKey noncePublicKey;
 
   /// The public key of the current nonce authority.
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 
   /// The public key to set as the new nonce authority.
-  final PublicKey newAuthorisedPublicKey;
+  final PublicKey newAuthorizedPublicKey;
 }
 
 
@@ -458,8 +458,8 @@ enum SystemInstructionType {
   createWithSeed,         // 3
   advanceNonceAccount,    // 4
   withdrawNonceAccount,   // 5
-  initialiseNonceAccount, // 6
-  authoriseNonceAccount,  // 7
+  initializeNonceAccount, // 6
+  authorizeNonceAccount,  // 7
   allocate,               // 8
   allocateWithSeed,       // 9
   assignWithSeed,         // 10
@@ -651,20 +651,20 @@ class SystemInstruction {
   }
 
   /// Decodes a nonce initialize system instruction and retrieve the instruction params.
-  static InitialiseNonceParams decodeNonceInitialize(
+  static InitializeNonceParams decodeNonceInitialize(
     final TransactionInstruction instruction,
   ) {
     _checkProgramId(instruction.programId);
     _checkKeyLength(instruction.keys, 3);
 
     final Map<String, dynamic> data = Instruction.decodeData(
-      SystemInstructionLayout.initialiseNonceAccount(),
+      SystemInstructionLayout.initializeNonceAccount(),
       instruction.data,
     );
 
-    return InitialiseNonceParams(
+    return InitializeNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
-      authorisedPublicKey: PublicKey.fromString(data['authorized']),
+      authorizedPublicKey: PublicKey.fromString(data['authorized']),
     );
   }
 
@@ -682,7 +682,7 @@ class SystemInstruction {
 
     return AdvanceNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
-      authorisedPublicKey: instruction.keys[2].publicKey,
+      authorizedPublicKey: instruction.keys[2].publicKey,
     );
   }
 
@@ -701,27 +701,27 @@ class SystemInstruction {
     return WithdrawNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
       toPublicKey: instruction.keys[1].publicKey,
-      authorisedPublicKey: instruction.keys[4].publicKey,
+      authorizedPublicKey: instruction.keys[4].publicKey,
       lamports: data['lamports'],
     );
   }
 
   /// Decodes a nonce authorize system instruction and retrieve the instruction params.
-  static AuthoriseNonceParams decodeNonceAuthorise(
+  static AuthorizeNonceParams decodeNonceAuthorize(
     final TransactionInstruction instruction,
   ) {
     _checkProgramId(instruction.programId);
     _checkKeyLength(instruction.keys, 2);
 
     final Map<String, dynamic> data = Instruction.decodeData(
-      SystemInstructionLayout.authoriseNonceAccount(),
+      SystemInstructionLayout.authorizeNonceAccount(),
       instruction.data,
     );
 
-    return AuthoriseNonceParams(
+    return AuthorizeNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
-      authorisedPublicKey: instruction.keys[1].publicKey,
-      newAuthorisedPublicKey: PublicKey.fromString(data['authorized']),
+      authorizedPublicKey: instruction.keys[1].publicKey,
+      newAuthorizedPublicKey: PublicKey.fromString(data['authorized']),
     );
   }
   
@@ -826,10 +826,10 @@ class SystemInstructionLayout {
     );
   }
 
-  /// Initialise nonce account.
-  static InstructionType<buffer_layout.Structure> initialiseNonceAccount() {
+  /// Initialize nonce account.
+  static InstructionType<buffer_layout.Structure> initializeNonceAccount() {
     return InstructionType(
-      index: SystemInstructionType.initialiseNonceAccount.index,
+      index: SystemInstructionType.initializeNonceAccount.index,
       layout: buffer_layout.struct([
         buffer_layout.u32('instruction'), 
         layout.publicKey('authorized')
@@ -838,9 +838,9 @@ class SystemInstructionLayout {
   }
 
   /// Authorise nonce account.
-  static InstructionType<buffer_layout.Structure> authoriseNonceAccount() {
+  static InstructionType<buffer_layout.Structure> authorizeNonceAccount() {
     return InstructionType(
-      index: SystemInstructionType.authoriseNonceAccount.index,
+      index: SystemInstructionType.authorizeNonceAccount.index,
       layout: buffer_layout.struct([
         buffer_layout.u32('instruction'), 
         layout.publicKey('authorized'),
@@ -1152,13 +1152,13 @@ class SystemProgram {
   /// 
   /// [noncePublicKey] The public key of the created nonce account.
   /// 
-  /// [authorisedPublicKey] The public key to set as the authority of the created nonce account.
+  /// [authorizedPublicKey] The public key to set as the authority of the created nonce account.
   /// 
   /// [lamports] The amount of lamports to transfer to the created nonce account.
   static Transaction createNonceAccount({
     required final PublicKey fromPublicKey,
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final u64 lamports,
   }) {
     return Transaction()
@@ -1172,9 +1172,9 @@ class SystemProgram {
         ),
       )
       ..add(
-        nonceInitialise(
+        nonceInitialize(
           noncePublicKey: noncePublicKey,
-          authorisedPublicKey: authorisedPublicKey,
+          authorizedPublicKey: authorizedPublicKey,
         ),
       );
   }
@@ -1185,7 +1185,7 @@ class SystemProgram {
   /// 
   /// [noncePublicKey] The public key of the created nonce account.
   /// 
-  /// [authorisedPublicKey] The public key to set as the authority of the created nonce account.
+  /// [authorizedPublicKey] The public key to set as the authority of the created nonce account.
   /// 
   /// [lamports] The amount of lamports to transfer to the created nonce account.
   /// 
@@ -1195,7 +1195,7 @@ class SystemProgram {
   static Transaction createNonceAccountWithSeed({
     required final PublicKey fromPublicKey,
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final u64 lamports,
     required final PublicKey basePublicKey,
     required final String seed,
@@ -1213,25 +1213,25 @@ class SystemProgram {
         ),
       )
       ..add(
-        nonceInitialise(
+        nonceInitialize(
           noncePublicKey: noncePublicKey,
-          authorisedPublicKey: authorisedPublicKey,
+          authorizedPublicKey: authorizedPublicKey,
         ),
       );
   }
 
-  /// Generates an instruction to initialise a Nonce account.
+  /// Generates an instruction to initialize a Nonce account.
   /// 
   /// [noncePublicKey] The nonce account.
   /// 
-  /// [authorisedPublicKey] The public key of the nonce authority.
-  static TransactionInstruction nonceInitialise({
+  /// [authorizedPublicKey] The public key of the nonce authority.
+  static TransactionInstruction nonceInitialize({
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
   }) {
-    final type = SystemInstructionLayout.initialiseNonceAccount();
+    final type = SystemInstructionLayout.initializeNonceAccount();
     final data = Instruction.encodeData(type, {
-      'authorized': authorisedPublicKey.toBytes(),
+      'authorized': authorizedPublicKey.toBytes(),
     });
 
     final List<AccountMeta> keys = [
@@ -1251,10 +1251,10 @@ class SystemProgram {
   /// 
   /// [noncePublicKey] The nonce account.
   /// 
-  /// [authorisedPublicKey] The public key of the nonce authority.
+  /// [authorizedPublicKey] The public key of the nonce authority.
   static TransactionInstruction nonceAdvance({
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
   }) {
     final type = SystemInstructionLayout.advanceNonceAccount();
     final data = Instruction.encodeData(type);
@@ -1262,7 +1262,7 @@ class SystemProgram {
     final List<AccountMeta> keys = [
       AccountMeta(noncePublicKey, isSigner: false, isWritable: true),
       AccountMeta(sysvarRecentBlockhashesPublicKey, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     return TransactionInstruction(
@@ -1276,7 +1276,7 @@ class SystemProgram {
   /// 
   /// [noncePublicKey] The nonce account.
   /// 
-  /// [authorisedPublicKey] The public key of the nonce authority.
+  /// [authorizedPublicKey] The public key of the nonce authority.
   /// 
   /// [toPublicKey] The public key of the account which will receive the withdrawn nonce account 
   /// balance.
@@ -1284,7 +1284,7 @@ class SystemProgram {
   /// [lamports] The mount of lamports to withdraw from the nonce account.
   static TransactionInstruction nonceWithdraw({
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey toPublicKey,
     required final u64 lamports,
   }) {
@@ -1298,7 +1298,7 @@ class SystemProgram {
       AccountMeta(toPublicKey, isSigner: false, isWritable: true),
       AccountMeta(sysvarRecentBlockhashesPublicKey, isSigner: false, isWritable: false),
       AccountMeta(sysvarRentPublicKey, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     return TransactionInstruction(
@@ -1313,23 +1313,23 @@ class SystemProgram {
   /// 
   /// [noncePublicKey] The nonce account.
   /// 
-  /// [authorisedPublicKey] The public key of the current nonce authority.
+  /// [authorizedPublicKey] The public key of the current nonce authority.
   /// 
-  /// [newAuthorisedPublicKey] The public key to set as the new nonce authority.
-  static TransactionInstruction nonceAuthorise({
+  /// [newAuthorizedPublicKey] The public key to set as the new nonce authority.
+  static TransactionInstruction nonceAuthorize({
     required final PublicKey noncePublicKey,
-    required final PublicKey authorisedPublicKey,
-    required final PublicKey newAuthorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
+    required final PublicKey newAuthorizedPublicKey,
   }) {
 
-    final type = SystemInstructionLayout.authoriseNonceAccount();
+    final type = SystemInstructionLayout.authorizeNonceAccount();
     final data = Instruction.encodeData(type, {
-      'authorized': newAuthorisedPublicKey.toBytes(),
+      'authorized': newAuthorizedPublicKey.toBytes(),
     });
 
     final List<AccountMeta> keys = [
       AccountMeta(noncePublicKey, isSigner: false, isWritable: true),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     return TransactionInstruction(

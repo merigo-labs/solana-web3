@@ -174,7 +174,7 @@ class Message extends Serialisable {
   }
 
   /// Encodes this message into a buffer.
-  Buffer serialise() {
+  Buffer serialize() {
 
     final int keysLength = accountKeys.length;
 

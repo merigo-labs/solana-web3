@@ -62,11 +62,11 @@ void main() {
         case SystemInstructionType.withdrawNonceAccount:
           _testInstructionType(SystemInstructionLayout.withdrawNonceAccount(), type);
           break;
-        case SystemInstructionType.initialiseNonceAccount:
-          _testInstructionType(SystemInstructionLayout.initialiseNonceAccount(), type);
+        case SystemInstructionType.initializeNonceAccount:
+          _testInstructionType(SystemInstructionLayout.initializeNonceAccount(), type);
           break;
-        case SystemInstructionType.authoriseNonceAccount:
-          _testInstructionType(SystemInstructionLayout.authoriseNonceAccount(), type);
+        case SystemInstructionType.authorizeNonceAccount:
+          _testInstructionType(SystemInstructionLayout.authorizeNonceAccount(), type);
           break;
         case SystemInstructionType.allocate:
           _testInstructionType(SystemInstructionLayout.allocate(), type);

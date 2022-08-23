@@ -23,13 +23,13 @@ final stakeConfigId = PublicKey.fromString(
 );
 
 
-/// Authorised
+/// Authorized
 /// ------------------------------------------------------------------------------------------------
 
-class Authorised {
+class Authorized {
 
   /// Stake account authority info.
-  const Authorised({
+  const Authorized({
     required this.staker,
     required this.withdrawer,
   });
@@ -42,13 +42,13 @@ class Authorised {
 }
 
 
-/// Authorised Raw
+/// Authorized Raw
 /// ------------------------------------------------------------------------------------------------
 
-class AuthorisedRaw {
+class AuthorizedRaw {
 
   /// Stake account authority info.
-  const AuthorisedRaw({
+  const AuthorizedRaw({
     required this.staker,
     required this.withdrawer,
   });
@@ -119,7 +119,7 @@ class CreateStakeAccountParams {
   const CreateStakeAccountParams({
     required this.fromPublicKey,
     required this.stakePublicKey,
-    required this.authorised,
+    required this.authorized,
     this.lockup,
     required this.lamports,
   });
@@ -131,7 +131,7 @@ class CreateStakeAccountParams {
   final PublicKey stakePublicKey;
   
   /// Authorities of the new stake account.
-  final Authorised authorised;
+  final Authorized authorized;
   
   /// Lockup of the new stake account.
   final Lockup? lockup;
@@ -152,7 +152,7 @@ class CreateStakeAccountWithSeedParams {
     required this.stakePublicKey,
     required this.basePublicKey,
     required this.seed,
-    required this.authorised,
+    required this.authorized,
     this.lockup,
     required this.lamports,
   });
@@ -161,26 +161,26 @@ class CreateStakeAccountWithSeedParams {
   final PublicKey stakePublicKey;
   final PublicKey basePublicKey;
   final String seed;
-  final Authorised authorised;
+  final Authorized authorized;
   final Lockup? lockup;
   final u64 lamports;
 }
 
 
-/// Initialise Stake Params
+/// Initialize Stake Params
 /// ------------------------------------------------------------------------------------------------
 
-class InitialiseStakeParams {
+class InitializeStakeParams {
 
   /// Initialize stake instruction params.
-  const InitialiseStakeParams({
+  const InitializeStakeParams({
     required this.stakePublicKey,
-    required this.authorised,
+    required this.authorized,
     this.lockup,
   });
 
   final PublicKey stakePublicKey;
-  final Authorised authorised;
+  final Authorized authorized;
   final Lockup? lockup;
 }
 
@@ -193,51 +193,51 @@ class DelegateStakeParams {
   /// Delegate stake instruction params.
   const DelegateStakeParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.votePublicKey,
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
   final PublicKey votePublicKey;
 }
 
 
-/// Authorise Stake Params
+/// Authorize Stake Params
 /// ------------------------------------------------------------------------------------------------
 
-class AuthoriseStakeParams {
+class AuthorizeStakeParams {
 
   /// Authorise stake instruction params.
-  const AuthoriseStakeParams({
+  const AuthorizeStakeParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
-    required this.newAuthorisedPublicKey,
-    required this.stakeAuthorisationType,
+    required this.authorizedPublicKey,
+    required this.newAuthorizedPublicKey,
+    required this.stakeAuthorizationType,
     required this.custodianPublicKey,
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
-  final PublicKey newAuthorisedPublicKey;
-  final StakeAuthorisationType stakeAuthorisationType;
+  final PublicKey authorizedPublicKey;
+  final PublicKey newAuthorizedPublicKey;
+  final StakeAuthorizationType stakeAuthorizationType;
   final PublicKey? custodianPublicKey;
 }
 
 
-/// Authorise With Seed Stake Params
+/// Authorize With Seed Stake Params
 /// ------------------------------------------------------------------------------------------------
 
-class AuthoriseWithSeedStakeParams {
+class AuthorizeWithSeedStakeParams {
 
   /// Authorize stake instruction params using a derived key.
-  const AuthoriseWithSeedStakeParams({
+  const AuthorizeWithSeedStakeParams({
     required this.stakePublicKey,
     required this.authorityBase,
     required this.authoritySeed,
     required this.authorityOwner,
-    required this.newAuthorisedPublicKey,
-    required this.stakeAuthorisationType,
+    required this.newAuthorizedPublicKey,
+    required this.stakeAuthorizationType,
     required this.custodianPublicKey,
   });
 
@@ -245,8 +245,8 @@ class AuthoriseWithSeedStakeParams {
   final PublicKey authorityBase;
   final String authoritySeed;
   final PublicKey authorityOwner;
-  final PublicKey newAuthorisedPublicKey;
-  final StakeAuthorisationType stakeAuthorisationType;
+  final PublicKey newAuthorizedPublicKey;
+  final StakeAuthorizationType stakeAuthorizationType;
   final PublicKey? custodianPublicKey;
 }
 
@@ -259,13 +259,13 @@ class SplitStakeParams {
   /// Split stake instruction params.
   const SplitStakeParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.splitStakePublicKey,
     required this.lamports,
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
   final PublicKey splitStakePublicKey;
   final u64 lamports;
 }
@@ -279,7 +279,7 @@ class SplitStakeWithSeedParams {
   /// Split with seed transaction params.
   const SplitStakeWithSeedParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.splitStakePublicKey,
     required this.basePublicKey,
     required this.seed,
@@ -287,7 +287,7 @@ class SplitStakeWithSeedParams {
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
   final PublicKey splitStakePublicKey;
   final PublicKey basePublicKey;
   final String seed;
@@ -303,14 +303,14 @@ class WithdrawStakeParams {
   /// Withdraw stake instruction params.
   const WithdrawStakeParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
     required this.toPublicKey,
     required this.lamports,
     required this.custodianPublicKey,
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
   final PublicKey toPublicKey;
   final u64 lamports;
   final PublicKey? custodianPublicKey;
@@ -325,11 +325,11 @@ class DeactivateStakeParams {
   /// Deactivate stake instruction params.
   const DeactivateStakeParams({
     required this.stakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
   });
 
   final PublicKey stakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 }
 
 
@@ -342,12 +342,12 @@ class MergeStakeParams {
   const MergeStakeParams({
     required this.stakePublicKey,
     required this.sourceStakePublicKey,
-    required this.authorisedPublicKey,
+    required this.authorizedPublicKey,
   });
 
   final PublicKey stakePublicKey;
   final PublicKey sourceStakePublicKey;
-  final PublicKey authorisedPublicKey;
+  final PublicKey authorizedPublicKey;
 }
 
 
@@ -369,23 +369,23 @@ class StakeInstruction {
   }
 
   /// Decodes a initialize stake instruction and retrieve the instruction params.
-  static InitialiseStakeParams decodeInitialize(
+  static InitializeStakeParams decodeInitialize(
     final TransactionInstruction instruction,
   ) {
     _checkProgramId(instruction.programId);
     _checkKeyLength(instruction.keys, 2);
 
     final Map<String, dynamic> data = Instruction.decodeData(
-      StakeInstructionLayout.initialise(),
+      StakeInstructionLayout.initialize(),
       instruction.data,
     );
 
-    final Map<String, dynamic> authorised = data['authorised'];
+    final Map<String, dynamic> authorised = data['authorized'];
     final Map<String, dynamic> lockup = data['lockup'];
 
-    return InitialiseStakeParams(
+    return InitializeStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
-      authorised: Authorised(
+      authorized: Authorized(
         staker: PublicKey(authorised['staker']),
         withdrawer: PublicKey(authorised['withdrawer']),
       ),
@@ -408,49 +408,49 @@ class StakeInstruction {
     return DelegateStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       votePublicKey: instruction.keys[1].publicKey,
-      authorisedPublicKey: instruction.keys[5].publicKey,
+      authorizedPublicKey: instruction.keys[5].publicKey,
     );
   }
 
   /// Decodes an authorize stake instruction and retrieve the instruction params.
-  static AuthoriseStakeParams decodeAuthorize(
+  static AuthorizeStakeParams decodeAuthorize(
     final TransactionInstruction instruction,
   ) {
     _checkProgramId(instruction.programId);
     _checkKeyLength(instruction.keys, 3);
     final Map<String, dynamic> data = Instruction.decodeData(
-      StakeInstructionLayout.authorise(),
+      StakeInstructionLayout.authorize(),
       instruction.data,
     );
 
-    return AuthoriseStakeParams(
+    return AuthorizeStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
-      authorisedPublicKey: instruction.keys[2].publicKey,
-      newAuthorisedPublicKey: PublicKey.fromString(data['newAuthorised']),
-      stakeAuthorisationType: StakeAuthorisationType(data['stakeAuthorizationType']),
+      authorizedPublicKey: instruction.keys[2].publicKey,
+      newAuthorizedPublicKey: PublicKey.fromString(data['newAuthorized']),
+      stakeAuthorizationType: StakeAuthorizationType(data['stakeAuthorizationType']),
       custodianPublicKey: instruction.keys.length > 3 ? instruction.keys[3].publicKey : null,
     );
   }
 
   /// Decodes an authorize-with-seed stake instruction and retrieve the instruction params.
-  static AuthoriseWithSeedStakeParams decodeAuthorizeWithSeed(
+  static AuthorizeWithSeedStakeParams decodeAuthorizeWithSeed(
     final TransactionInstruction instruction,
   ) {
     _checkProgramId(instruction.programId);
     _checkKeyLength(instruction.keys, 2);
 
     final Map<String, dynamic> data = Instruction.decodeData(
-      StakeInstructionLayout.authoriseWithSeed(),
+      StakeInstructionLayout.authorizeWithSeed(),
       instruction.data,
     );
 
-    return AuthoriseWithSeedStakeParams(
+    return AuthorizeWithSeedStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       authorityBase: instruction.keys[1].publicKey,
       authoritySeed: data['authoritySeed'],
       authorityOwner: PublicKey.fromString(data['authorityOwner']),
-      newAuthorisedPublicKey: PublicKey.fromString(data['newAuthorized']),
-      stakeAuthorisationType: StakeAuthorisationType(data['stakeAuthorizationType']),
+      newAuthorizedPublicKey: PublicKey.fromString(data['newAuthorized']),
+      stakeAuthorizationType: StakeAuthorizationType(data['stakeAuthorizationType']),
       custodianPublicKey: instruction.keys.length > 3 ? instruction.keys[3].publicKey : null,
     );
   }
@@ -468,7 +468,7 @@ class StakeInstruction {
     return SplitStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       splitStakePublicKey: instruction.keys[1].publicKey,
-      authorisedPublicKey: instruction.keys[2].publicKey,
+      authorizedPublicKey: instruction.keys[2].publicKey,
       lamports: data['lamports'],
     );
   }
@@ -483,7 +483,7 @@ class StakeInstruction {
     return MergeStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       sourceStakePublicKey: instruction.keys[1].publicKey,
-      authorisedPublicKey: instruction.keys[4].publicKey,
+      authorizedPublicKey: instruction.keys[4].publicKey,
     );
   }
 
@@ -502,7 +502,7 @@ class StakeInstruction {
     return WithdrawStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       toPublicKey: instruction.keys[1].publicKey,
-      authorisedPublicKey: instruction.keys[4].publicKey,
+      authorizedPublicKey: instruction.keys[4].publicKey,
       lamports: data['lamports'], 
       custodianPublicKey: instruction.keys.length > 5 ? instruction.keys[5].publicKey : null,
     );
@@ -519,7 +519,7 @@ class StakeInstruction {
 
     return DeactivateStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
-      authorisedPublicKey: instruction.keys[2].publicKey,
+      authorizedPublicKey: instruction.keys[2].publicKey,
     );
   }
   
@@ -551,15 +551,15 @@ class StakeInstruction {
 enum StakeInstructionType {
 
   // The variants MUST be ordered by their [InstructionType.index].
-  initialise,             // 0
-  authorise,              // 1
+  initialize,             // 0
+  authorize,              // 1
   delegate,               // 2
   split,                  // 3
   withdraw,               // 4
   deactivate,             // 5
   _deprecated,            // 6
   merge,                  // 7
-  authoriseWithSeed,      // 8
+  authorizeWithSeed,      // 8
   ;
 
   /// Returns the enum variant where [Enum.index] is equal to [index].
@@ -584,21 +584,21 @@ class StakeInstructionLayout {
   /// Stake instruction layout.
   const StakeInstructionLayout();
 
-  /// Initialise.
-  static InstructionType<buffer_layout.Structure> initialise() {
+  /// Initialize.
+  static InstructionType<buffer_layout.Structure> initialize() {
     return InstructionType(
-      index: StakeInstructionType.initialise.index,
+      index: StakeInstructionType.initialize.index,
       layout: buffer_layout.struct([
         buffer_layout.u32('instruction'),
-        layout.authorised(),
+        layout.authorized(),
         layout.lockup(),
       ])
     );
   }
 
-  static InstructionType<buffer_layout.Structure> authorise() {
+  static InstructionType<buffer_layout.Structure> authorize() {
     return InstructionType(
-      index:  StakeInstructionType.authorise.index,
+      index:  StakeInstructionType.authorize.index,
       layout: buffer_layout.struct([
         buffer_layout.u32('instruction'),
         layout.publicKey('newAuthorized'),
@@ -654,9 +654,9 @@ class StakeInstructionLayout {
     );
   }
 
-  static InstructionType<buffer_layout.Structure> authoriseWithSeed() {
+  static InstructionType<buffer_layout.Structure> authorizeWithSeed() {
     return InstructionType(
-      index: StakeInstructionType.authoriseWithSeed.index,
+      index: StakeInstructionType.authorizeWithSeed.index,
       layout: buffer_layout.struct([
         buffer_layout.u32('instruction'),
         layout.publicKey('newAuthorized'),
@@ -669,12 +669,12 @@ class StakeInstructionLayout {
 }
 
 
-/// Stake Authorisation Type
+/// Stake Authorization Type
 /// ------------------------------------------------------------------------------------------------
 
-class StakeAuthorisationType {
+class StakeAuthorizationType {
   /// The Stake Authorization index (from solana-stake-program).
-  const StakeAuthorisationType(this.index);
+  const StakeAuthorizationType(this.index);
   final int index;
 }
 
@@ -698,17 +698,17 @@ class StakeProgram {
   static const int space = 200;
 
   /// Generates an Initialize instruction to add to a Stake Create transaction.
-  static TransactionInstruction initialise({
+  static TransactionInstruction initialize({
     required final PublicKey stakePublicKey,
-    required final Authorised authorised,
+    required final Authorized authorized,
     required final Lockup? lockup,
   }) {
     final Lockup _lockup = lockup ?? Lockup.inactive;
-    final type = StakeInstructionLayout.initialise();
+    final type = StakeInstructionLayout.initialize();
     final data = Instruction.encodeData(type, {
       'authorized': {
-        'staker': authorised.staker.toBytes(),
-        'withdrawer': authorised.withdrawer.toBytes(),
+        'staker': authorized.staker.toBytes(),
+        'withdrawer': authorized.withdrawer.toBytes(),
       },
       'lockup': {
         'unixTimestamp': _lockup.unixTimestamp,
@@ -736,7 +736,7 @@ class StakeProgram {
     required final PublicKey stakePublicKey,
     required final PublicKey basePublicKey,
     required final String seed,
-    required final Authorised authorised,
+    required final Authorized authorized,
     final Lockup? lockup,
     required final u64 lamports,
   }) {
@@ -753,9 +753,9 @@ class StakeProgram {
         ),
       )
       ..add(
-        StakeProgram.initialise(
+        StakeProgram.initialize(
           stakePublicKey: stakePublicKey,
-          authorised: authorised,
+          authorized: authorized,
           lockup: lockup,
         )
       );
@@ -765,7 +765,7 @@ class StakeProgram {
   static Transaction createAccount({
     required final PublicKey fromPublicKey,
     required final PublicKey stakePublicKey,
-    required final Authorised authorised,
+    required final Authorized authorized,
     final Lockup? lockup,
     required final u64 lamports,
   }) {
@@ -780,9 +780,9 @@ class StakeProgram {
         ),
       )
       ..add(
-        StakeProgram.initialise(
+        StakeProgram.initialize(
           stakePublicKey: stakePublicKey, 
-          authorised: authorised, 
+          authorized: authorized, 
           lockup: lockup
         ),
       );
@@ -792,7 +792,7 @@ class StakeProgram {
   /// transaction can also be used to redelegate Stake to a new validator Vote PublicKey.
   static Transaction delegate({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey votePublicKey,
   }) {
     final type = StakeInstructionLayout.delegate();
@@ -804,7 +804,7 @@ class StakeProgram {
       AccountMeta(sysvarClockPublicKey, isSigner: false, isWritable: false),
       AccountMeta(sysvarStakeHistoryPublicKey, isSigner: false, isWritable: false),
       AccountMeta(stakeConfigId, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     return Transaction()
@@ -819,24 +819,24 @@ class StakeProgram {
 
   /// Generates a Transaction that authorizes a new PublicKey as Staker or Withdrawer on the Stake 
   /// account.
-  static Transaction authorise({
+  static Transaction authorize({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
-    required final PublicKey newAuthorisedPublicKey,
-    required final StakeAuthorisationType stakeAuthorisationType,
+    required final PublicKey authorizedPublicKey,
+    required final PublicKey newAuthorizedPublicKey,
+    required final StakeAuthorizationType stakeAuthorizationType,
     final PublicKey? custodianPublicKey,
   }) {
-    final type = StakeInstructionLayout.authorise();
+    final type = StakeInstructionLayout.authorize();
     final data = Instruction.encodeData(type, {
-      'newAuthorized': newAuthorisedPublicKey.toBytes(),
-      'stakeAuthorizationType': stakeAuthorisationType.index,
+      'newAuthorized': newAuthorizedPublicKey.toBytes(),
+      'stakeAuthorizationType': stakeAuthorizationType.index,
     });
     
     final List<AccountMeta> keys = [
       AccountMeta(stakePublicKey, isSigner: false, isWritable: true),
       // TODO: check if `sysvarClockPublicKey isWritable` should be `false`?
       AccountMeta(sysvarClockPublicKey, isSigner: false, isWritable: true),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     if (custodianPublicKey != null) {
@@ -855,19 +855,19 @@ class StakeProgram {
 
   /// Generates a Transaction that authorizes a new PublicKey as Staker or Withdrawer on the Stake 
   /// account.
-  static Transaction authoriseWithSeed({
+  static Transaction authorizeWithSeed({
     required final PublicKey stakePublicKey,
     required final PublicKey authorityBase,
     required final String authoritySeed,
     required final PublicKey authorityOwner,
-    required final PublicKey newAuthorisedPublicKey,
-    required final StakeAuthorisationType stakeAuthorisationType,
+    required final PublicKey newAuthorizedPublicKey,
+    required final StakeAuthorizationType stakeAuthorizationType,
     final PublicKey? custodianPublicKey,
   }) {
-    final type = StakeInstructionLayout.authoriseWithSeed();
+    final type = StakeInstructionLayout.authorizeWithSeed();
     final data = Instruction.encodeData(type, {
-      'newAuthorized': newAuthorisedPublicKey.toBytes(),
-      'stakeAuthorizationType': stakeAuthorisationType.index,
+      'newAuthorized': newAuthorizedPublicKey.toBytes(),
+      'stakeAuthorizationType': stakeAuthorizationType.index,
       'authoritySeed': authoritySeed,
       'authorityOwner': authorityOwner.toBytes(),
     });
@@ -895,7 +895,7 @@ class StakeProgram {
   /// Split instruction.
   static TransactionInstruction _splitInstruction({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey splitStakePublicKey,
     required final u64 lamports,
   }) {
@@ -905,7 +905,7 @@ class StakeProgram {
       keys: [
         AccountMeta(stakePublicKey, isSigner: false, isWritable: true),
         AccountMeta(splitStakePublicKey, isSigner: false, isWritable: true),
-        AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+        AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
       ],
       programId: StakeProgram.programId,
       data: data,
@@ -915,14 +915,14 @@ class StakeProgram {
   /// Generates a Transaction that splits Stake tokens into another stake account.
   static Transaction split({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey splitStakePublicKey,
     required final u64 lamports,
   }) {
     return Transaction()
       ..add(
         SystemProgram.createAccount(
-          fromPublicKey: authorisedPublicKey,
+          fromPublicKey: authorizedPublicKey,
           newAccountPublicKey: splitStakePublicKey,
           lamports: 0,
           space: StakeProgram.space,
@@ -932,7 +932,7 @@ class StakeProgram {
       ..add(
         StakeProgram._splitInstruction(
           stakePublicKey: stakePublicKey,
-          authorisedPublicKey: authorisedPublicKey,
+          authorizedPublicKey: authorizedPublicKey,
           splitStakePublicKey: splitStakePublicKey,
           lamports: lamports,
         ));
@@ -942,7 +942,7 @@ class StakeProgram {
   /// public key and seed.
   static Transaction splitWithSeed({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey splitStakePublicKey,
     required final PublicKey basePublicKey,
     required final String seed,
@@ -961,7 +961,7 @@ class StakeProgram {
       ..add(
         StakeProgram._splitInstruction(
           stakePublicKey: stakePublicKey,
-          authorisedPublicKey: authorisedPublicKey,
+          authorizedPublicKey: authorizedPublicKey,
           splitStakePublicKey: splitStakePublicKey,
           lamports: lamports,
         ));
@@ -971,7 +971,7 @@ class StakeProgram {
   static Transaction merge({
     required final PublicKey stakePublicKey,
     required final PublicKey sourceStakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
   }) {
     final type = StakeInstructionLayout.merge();
     final data = Instruction.encodeData(type);
@@ -981,7 +981,7 @@ class StakeProgram {
       AccountMeta(sourceStakePublicKey, isSigner: false, isWritable: true),
       AccountMeta(sysvarClockPublicKey, isSigner: false, isWritable: false),
       AccountMeta(sysvarStakeHistoryPublicKey, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     return Transaction()
@@ -997,7 +997,7 @@ class StakeProgram {
   /// Generates a Transaction that withdraws deactivated Stake tokens.
   static Transaction withdraw({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
     required final PublicKey toPublicKey,
     required final u64 lamports,
     required final PublicKey? custodianPublicKey,
@@ -1009,7 +1009,7 @@ class StakeProgram {
       AccountMeta(stakePublicKey, isSigner: false, isWritable: true),
       AccountMeta(toPublicKey, isSigner: false, isWritable: true),
       AccountMeta(sysvarClockPublicKey, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
 
     if (custodianPublicKey != null) {
@@ -1029,7 +1029,7 @@ class StakeProgram {
   /// Generates a Transaction that deactivates Stake tokens.
   static Transaction deactivate({
     required final PublicKey stakePublicKey,
-    required final PublicKey authorisedPublicKey,
+    required final PublicKey authorizedPublicKey,
   }) {
 
     final type = StakeInstructionLayout.deactivate();
@@ -1038,7 +1038,7 @@ class StakeProgram {
     final List<AccountMeta> keys = [
       AccountMeta(stakePublicKey, isSigner: false, isWritable: true),
       AccountMeta(sysvarClockPublicKey, isSigner: false, isWritable: false),
-      AccountMeta(authorisedPublicKey, isSigner: true, isWritable: false),
+      AccountMeta(authorizedPublicKey, isSigner: true, isWritable: false),
     ];
     
     return Transaction()

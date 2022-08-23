@@ -48,13 +48,13 @@ class RpcRequest extends Serialisable {
   /// will produce the same hash if they contain the same [method] and `ordered` [params].
   /// 
   /// ```
-  /// final p0 = ['Gr54...5Fd5', { 'encoding': 'base64', 'commitment': 'finalised' }];
+  /// final p0 = ['Gr54...5Fd5', { 'encoding': 'base64', 'commitment': 'finalized' }];
   /// final r0 = RpcRequest(Method.getAccountInfo, params: p0, id: 0);
   /// 
-  /// final p1 = ['Gr54...5Fd5', { 'encoding': 'base64', 'commitment': 'finalised' }];
+  /// final p1 = ['Gr54...5Fd5', { 'encoding': 'base64', 'commitment': 'finalized' }];
   /// final r1 = RpcRequest(Method.getAccountInfo, params: p1, id: 1);
   /// 
-  /// final p2 = ['Gr54...5Fd5', { 'commitment': 'finalised', 'encoding': 'base64' }];
+  /// final p2 = ['Gr54...5Fd5', { 'commitment': 'finalized', 'encoding': 'base64' }];
   /// final r2 = RpcRequest(Method.getAccountInfo, params: p2, id: 1);
   /// 
   /// assert(r0.hash() == r1.hash()); // true

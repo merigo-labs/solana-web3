@@ -1,3 +1,7 @@
+## 0.0.1+3
+
+* Normalise naming.
+
 ## 0.0.1+2
 
 * Fix subscription handler issues.

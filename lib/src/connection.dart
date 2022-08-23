@@ -352,40 +352,37 @@ class Connection {
     
   }
 
-  String debugState() {
-    return 
-      'Connection State:\n'
-      '\tExchanges      $_webSocketExchangeManager\n'
-      '\tSubscriptions  $_webSocketSubscriptionManager';
-  }
-
   /// Prints the contents of a JSON-RPC request.
-  Object _debugRequest(final Object request) {
+  void _debugRequest(final Object request) {
     print("\n--------------------------------------------------------------------------------");
     print("[REQUEST BODY]:          $request");
     print("--------------------------------------------------------------------------------\n");
-    return request;
   }
 
   /// Prints the contents of a JSON-RPC response.
-  http.Response _debugResponse(final http.Response response) {
+  void _debugResponse(final http.Response response) {
     final Map<String, dynamic>? body = json.decode(response.body);
     print("\n--------------------------------------------------------------------------------");
     print("[RESPONSE BODY]:           $body");
     print("[RESPONSE RESULT TYPE]:    ${(body ?? {})['result']?.runtimeType}");
-    // print("[RESPONSE HEADERS]:        ${response.headers}");
     print("[RESPONSE STATUS CODE]:    ${response.statusCode}");
     print("[RESPONSE REASON PHRASE]:  ${response.reasonPhrase}");
     print("--------------------------------------------------------------------------------\n");
-    return response;
   }
 
   /// Prints the contents of a web socket data request.
-  RpcRequest _debugWebSocketRequest(final RpcRequest request) {
+  void _debugWebSocketRequest(final RpcRequest request) {
     print("\n--------------------------------------------------------------------------------");
-    print("[WEB SOCKET DATA]:         ${request.toJson()}");
+    print("[WEBSOCKET DATA]:          ${request.toJson()}");
     print("--------------------------------------------------------------------------------\n");
-    return request;
+  }
+
+  /// Prints the web socket exchanges and subscriptions.
+  void debugWebSocketState() {
+    print("\n--------------------------------------------------------------------------------");
+    print("[WEBSOCKET EXCHANGES]:     $_webSocketExchangeManager");
+    print("[WEBSOCKET SUBSCRIPTIONS]: $_webSocketSubscriptionManager");
+    print("--------------------------------------------------------------------------------\n");
   }
 
   /// Creates a callback function that converts a [http.Response] into an [RpcResponse].
@@ -734,7 +731,7 @@ class Connection {
     final GetFeeForMessageConfig? config,
   }) {
     final parse = _contextParser(utils.cast<u64?>);
-    final String encoded = message.serialise().getString(BufferEncoding.base64);
+    final String encoded = message.serialize().getString(BufferEncoding.base64);
     final defaultConfig = config ?? const GetFeeForMessageConfig();
     return _request(Method.getFeeForMessage, [encoded], parse, config: defaultConfig);
   }
@@ -1431,7 +1428,7 @@ class Connection {
 
     final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment); 
     final BufferEncoding bufferEncoding = BufferEncoding.fromName(defaultConfig.encoding.name);
-    final String signedTransaction = transaction.serialise().getString(bufferEncoding);
+    final String signedTransaction = transaction.serialize().getString(bufferEncoding);
     return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: defaultConfig);
   }
 
@@ -1499,7 +1496,7 @@ class Connection {
         : null,
     );
 
-    final String signedTransaction = transaction.serialise().getString(BufferEncoding.base64);
+    final String signedTransaction = transaction.serialize().getString(BufferEncoding.base64);
     parse(result) => RpcContextResult.parse(result, TransactionStatus.fromJson);
     return _request(Method.simulateTransaction, [signedTransaction], parse, config: config);
   }
@@ -1668,7 +1665,7 @@ class Connection {
       // Check that existing requests have an id and new requests do not.
       assert(
         exchange == null ? request.id == null : request.id == exchange.id, 
-        'A [WebSocketExchange] must be initialised with a new or existing exchange request.',
+        'A [WebSocketExchange] must be initialized with a new or existing exchange request.',
       );
 
       // Create a WebSocketExchange for the subscription's request/response cycle.

@@ -34,7 +34,7 @@ class SendTransactionConfig extends RpcRequestConfig {
   final TransactionEncoding encoding;
 
   /// The maximum number of times for the RPC node to retry sending the transaction to the leader. 
-  /// If this parameter not provided, the RPC node will retry the transaction until it is finalised 
+  /// If this parameter not provided, the RPC node will retry the transaction until it is finalized 
   /// or until the blockhash expires.
   final usize? maxRetries;
 

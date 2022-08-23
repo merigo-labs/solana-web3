@@ -1,4 +1,4 @@
-## Publish Package Test
+## Publish Package Dry Run
 
     $ dart pub publish --dry-run
 
