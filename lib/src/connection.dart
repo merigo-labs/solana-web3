@@ -7,8 +7,6 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:solana_web3/rpc/rpc_notification.dart';
-import 'package:solana_web3/rpc_models/account_notification.dart';
 import 'package:solana_web3/rpc_models/logs_notification.dart';
 import 'package:solana_web3/rpc_models/signature_notification.dart';
 import 'package:solana_web3/rpc_models/slot_notification.dart';
@@ -320,15 +318,15 @@ class Connection {
     if (notification != null) {
       switch (notification) {
         case NotificationMethod.accountNotification:
-          return _onWebSocketNotification(json, AccountInfo.parse);
+          return _onWebSocketNotification(json, _unwrapValueParser(AccountInfo.parse));
         case NotificationMethod.logsNotification:
-          return _onWebSocketNotification(json, LogsNotification.fromJson);
+          return _onWebSocketNotification(json, _unwrapValueParser(LogsNotification.fromJson));
         case NotificationMethod.programNotification:
-          return _onWebSocketNotification(json, ProgramAccount.fromJson);
+          return _onWebSocketNotification(json, _unwrapValueParser(ProgramAccount.parse));
         case NotificationMethod.rootNotification:
           return _onWebSocketNotification(json, utils.cast<u64>);
         case NotificationMethod.signatureNotification:
-          return _onWebSocketNotification(json, SignatureNotification.fromJson);
+          return _onWebSocketNotification(json, _unwrapValueParser(SignatureNotification.fromJson));
         case NotificationMethod.slotNotification:
           return _onWebSocketNotification(json, SlotNotification.fromJson);
       }
@@ -337,7 +335,7 @@ class Connection {
 
   void _onWebSocketNotification<T, U>(final Map<String, dynamic> json, final RpcParser<T, U> parser) 
     => _webSocketSubscriptionManager.onNotification(RpcNotificationResponse.parse(json, parser));
-
+  
   void _onWebSocketError(final Object error, [final StackTrace? stackTrace]) {
     print("\n--------------------------------------------------------------------------------");
     print("[ON SOCKET ERROR]        $error");
@@ -352,6 +350,13 @@ class Connection {
 
   void _onWebSocketDisconnect() {
     
+  }
+
+  String debugState() {
+    return 
+      'Connection State:\n'
+      '\tExchanges      $_webSocketExchangeManager\n'
+      '\tSubscriptions  $_webSocketSubscriptionManager';
   }
 
   /// Prints the contents of a JSON-RPC request.
@@ -373,6 +378,14 @@ class Connection {
     print("[RESPONSE REASON PHRASE]:  ${response.reasonPhrase}");
     print("--------------------------------------------------------------------------------\n");
     return response;
+  }
+
+  /// Prints the contents of a web socket data request.
+  RpcRequest _debugWebSocketRequest(final RpcRequest request) {
+    print("\n--------------------------------------------------------------------------------");
+    print("[WEB SOCKET DATA]:         ${request.toJson()}");
+    print("--------------------------------------------------------------------------------\n");
+    return request;
   }
 
   /// Creates a callback function that converts a [http.Response] into an [RpcResponse].
@@ -410,6 +423,15 @@ class Connection {
   /// The [parse] method converts context result's `value` property from type `U` into `T`.
   RpcJsonParser<RpcContextResult<T>> _contextParser<T, U>(final RpcParser<T, U> parse) {
     return (final Map<String, dynamic> body) => RpcContextResult.parse(body, parse);
+  }
+
+  /// Creates a callback function that returns the [RpcContextResult.value] of a `context response`.
+  /// 
+  /// The caller must ensure that [RpcContextResult.value] will `not be null`.
+  /// 
+  /// The [parse] method converts context result's `value` property from type `U` into `T`.
+  RpcJsonParser<T> _unwrapValueParser<T, U>(final RpcParser<T, U> parse) {
+    return (final Map<String, dynamic> body) => RpcContextResult.parse(body, parse).value!;
   }
 
   /// Creates a callback function that converts a list returned by a [http.Response]'s into a list 
@@ -454,7 +476,7 @@ class Connection {
     if (object.containsKey(commitmentKey)) {
       object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
     }
-    return object.isEmpty ? values : values..add(object);
+    return object.isEmpty ? values : (values..add(object));
   }
 
   /// Makes a JSON-RPC POST request to the [cluster], invoking a single [method].
@@ -1538,7 +1560,7 @@ class Connection {
     => () => Future.error(TimeoutException('Transaction signature confirmation timed out.'));
 
   /// Confirms a transaction.
-  Future<RpcNotification<SignatureNotification>> confirmTransaction(
+  Future<SignatureNotification> confirmTransaction(
     final TransactionSignature signature, {
     final List<Signer> signers = const [],
     final BlockhashWithExpiryBlockHeight? blockhash,
@@ -1556,7 +1578,7 @@ class Connection {
     utils.require(decodedSignature.length == signatureLength, 'Invalid signature length.');
 
     final Commitment? commitment = config?.commitment ?? this.commitment;
-    final Completer<RpcNotification<SignatureNotification>> completer = Completer.sync();
+    final Completer<SignatureNotification> completer = Completer.sync();
 
     try {
 
@@ -1657,6 +1679,7 @@ class Connection {
 
       // Send the request to the JSON-RPC web socket server (the response will be recevied by 
       // `onSocketData`).
+      //_debugWebSocketRequest(exchange.request);
       connection.add(json.encode(exchange.request.toJson()));
 
       // Return the pending subscription that completes when a success response is received from the 
@@ -1787,7 +1810,7 @@ class Connection {
 
   /// Subscribes to an account to receive notifications when the lamports or data for a given 
   /// account's [publicKey] changes.
-  Future<WebSocketSubscription<AccountNotification>> accountSubscribe(
+  Future<WebSocketSubscription<AccountInfo>> accountSubscribe(
     final PublicKey publicKey, {
     final AccountSubscribeConfig? config,
   }) async {

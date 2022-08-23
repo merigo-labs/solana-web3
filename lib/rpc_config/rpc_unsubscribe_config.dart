@@ -11,8 +11,9 @@ class RpcUnsubscribeConfig extends RpcRequestConfig {
 
   /// Defines the configurations for JSON-RPC `unsubscribe` requests.
   const RpcUnsubscribeConfig({
+    super.id,
     super.timeout,
-  }): super(id: null, headers: null);
+  }): super(headers: null);
 
   @override
   Map<String, Object> object() => {};

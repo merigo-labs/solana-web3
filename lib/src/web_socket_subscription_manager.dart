@@ -32,7 +32,7 @@ class WebSocketSubscription<T> {
 
   /// The stream subscription.
   @protected
-  final StreamSubscription<RpcNotification<T>> streamSubscription;
+  final StreamSubscription<T> streamSubscription;
 
   /// The UTC created date time.
   final DateTime createdAt;
@@ -43,7 +43,7 @@ class WebSocketSubscription<T> {
 
   /// Attaches the provided handlers to the stream subscription.
   void on(
-    void Function(RpcNotification<T> data)? onData, {
+    void Function(T data)? onData, {
     void Function(Object error, [StackTrace? stackTrace])? onError,
     void Function()? onDone,
   }) {
@@ -58,15 +58,13 @@ class WebSocketSubscription<T> {
 /// Web Socket Subscription Manager
 /// ------------------------------------------------------------------------------------------------
 
-typedef NotificationController<T> = StreamController<RpcNotification<T>>;
-
 class WebSocketSubscriptionManager {
 
   /// Adds and removes stream listeners for a web socket subscription.
   WebSocketSubscriptionManager();
 
   /// Maps a subscription `id` to a [StreamController].
-  final _subscriptionIdToController = WebSocketManagerLookup<MultiKey<int>, NotificationController>();
+  final _subscriptionIdToController = WebSocketManagerLookup<MultiKey<int>, StreamController>();
 
   /// Returns `true` if there are no subscriptions.
   bool get isEmpty => _subscriptionIdToController.isEmpty;
@@ -75,8 +73,8 @@ class WebSocketSubscriptionManager {
   bool get isNotEmpty => _subscriptionIdToController.isNotEmpty;
 
   /// Returns the stream controller for [subscriptionId].
-  NotificationController<T>? _controller<T>({ required final SubscriptionId subscriptionId })
-    => _subscriptionIdToController.at(subscriptionId, index: 0) as NotificationController<T>?;
+  StreamController<T>? _controller<T>({ required final SubscriptionId subscriptionId })
+    => _subscriptionIdToController.at(subscriptionId, index: 0) as StreamController<T>?;
 
   /// Closes all stream controllers.
   void dispose() {
@@ -112,7 +110,7 @@ class WebSocketSubscriptionManager {
     final int exchangeId = response.id!;
 
     // Get or create a stream controller for the subscription.
-    StreamController<RpcNotification<T>>? controller = _controller<T>(subscriptionId: subscriptionId);
+    StreamController<T>? controller = _controller<T>(subscriptionId: subscriptionId);
     if (controller == null || controller.isClosed) {
       final MultiKey<int> key = MultiKey([subscriptionId, exchangeId]);
       _subscriptionIdToController[key] = controller = StreamController.broadcast(sync: true);
@@ -139,7 +137,7 @@ class WebSocketSubscriptionManager {
 
   /// Sends a [notification] to all stream subscribers.
   void onNotification<T>(final RpcNotificationResponse<T> notification) {
-    _controller(subscriptionId: notification.params.subscription)?.add(notification.params);
+    _controller(subscriptionId: notification.params.subscription)?.add(notification.params.result);
   }
 
   @override

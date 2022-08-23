@@ -23,6 +23,16 @@ class ProgramAccount extends Serialisable {
   /// The account information.
   final AccountInfo account;
 
+  /// Creates an instance of `this` class from the data defined in the [json] object.
+  /// 
+  /// ```
+  /// ProgramAccount.parse({ '<parameter>': <value> });
+  /// ```
+  factory ProgramAccount.parse(final Map<String, dynamic> json) => ProgramAccount(
+    pubkey: PublicKey.fromString(json['pubkey']),
+    account: AccountInfo.parse(json['account']),
+  );
+
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
   /// object.
   /// 
