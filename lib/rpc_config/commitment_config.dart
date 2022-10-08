@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
 import '../types/commitment.dart';
 
 
 /// Commitment Config
 /// ------------------------------------------------------------------------------------------------
 
-class CommitmentConfig extends RpcRequestConfig {
+class CommitmentConfig extends JsonRpcRequestConfig {
 
   /// JSON-RPC configurations for `commitment`.
   const CommitmentConfig({

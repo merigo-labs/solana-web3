@@ -1,17 +1,17 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' show list;
+import 'package:solana_common/utils/types.dart' show u64;
 import '../src/public_key.dart';
 import '../rpc_config/get_supply_config.dart';
-import '../src/utils/convert.dart' show list;
-import '../src/utils/types.dart' show u64;
 
 
 /// Supply
 /// ------------------------------------------------------------------------------------------------
 
-class Supply extends Serialisable {
+class Supply extends Serializable {
   
   /// Information about the current supply.
   const Supply({
@@ -45,7 +45,7 @@ class Supply extends Serialisable {
     total: json['total'],
     circulating: json['circulating'],
     nonCirculating: json['nonCirculating'],
-    nonCirculatingAccounts: list.decode(json['nonCirculatingAccounts'], PublicKey.fromString),
+    nonCirculatingAccounts: list.decode(json['nonCirculatingAccounts'], PublicKey.fromBase58),
   );
 
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 

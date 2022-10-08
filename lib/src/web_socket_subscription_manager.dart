@@ -3,11 +3,11 @@
 
 import 'dart:async';
 import 'package:flutter/foundation.dart' show protected;
-import '../rpc/rpc_notification.dart';
-import '../rpc/rpc_notification_response.dart';
-import '../rpc/rpc_subscribe_response.dart';
-import 'subscription_id.dart';
+import 'package:solana_common/protocol/json_rpc_subscribe_response.dart';
+import 'package:solana_common/utils/types.dart';
+import 'package:solana_web3/exceptions/subscription_exception.dart';
 import 'web_socket_manager_lookup.dart';
+import '../rpc/rpc_notification_response.dart';
 
 
 /// Web Socket Subscription
@@ -21,8 +21,9 @@ class WebSocketSubscription<T> {
   WebSocketSubscription(
     this.id, {
     required this.exchangeId,
-    required this.streamSubscription,
-  }): createdAt = DateTime.now().toUtc();
+    required final StreamSubscription<T> streamSubscription,
+  }): _streamSubscription = streamSubscription,
+      createdAt = DateTime.now().toUtc();
 
   /// The subscription id.
   final int id;
@@ -32,14 +33,30 @@ class WebSocketSubscription<T> {
 
   /// The stream subscription.
   @protected
-  final StreamSubscription<T> streamSubscription;
+  final StreamSubscription<T> _streamSubscription;
 
   /// The UTC created date time.
   final DateTime createdAt;
 
+  /// The completer used to convert the subscription into a future.
+  Completer<T>? _completer;
+
+  /// Converts the subscription into a future. This will override all methods set by any previous 
+  /// calls to [on].
+  Future<T> asFuture() {
+    Completer<T>? completer = (_completer ??= Completer());
+    on(completer.complete, 
+      onError: completer.completeError,
+      onDone: () => _completeError(completer));
+    return completer.future;
+  }
+
   /// Cancels the stream subscription.
   @protected
-  Future<void> cancel() => streamSubscription.cancel();
+  Future<void> cancel() {
+    _completeError(_completer);
+    return _streamSubscription.cancel();
+  }
 
   /// Attaches the provided handlers to the stream subscription.
   void on(
@@ -47,10 +64,22 @@ class WebSocketSubscription<T> {
     void Function(Object error, [StackTrace? stackTrace])? onError,
     void Function()? onDone,
   }) {
-    streamSubscription
+    assert(_completer == null, 'The method [on] cannot be called after a call to [asFuture].');
+    _streamSubscription
       ..onData(onData)
       ..onError(onError)
       ..onDone(onDone);
+  }
+
+  /// Completes the [completer] with an error.
+  void _completeError(
+    final Completer<T>? completer, [
+    final Object? error, 
+    final StackTrace? stackTrace,
+  ]) {
+    if (completer != null && !completer.isCompleted) {
+      completer.completeError(error ?? const SubscriptionException('Cancelled.'), stackTrace);
+    }
   }
 }
 
@@ -97,7 +126,7 @@ class WebSocketSubscriptionManager {
   }
 
   /// Adds a subscriber to the [Stream] associated with the `subscribe` [response].
-  WebSocketSubscription<T> subscribe<T>(final RpcSubscribeResponse response) {
+  WebSocketSubscription<T> subscribe<T>(final JsonRpcSubscribeResponse response) {
 
     // Debug the response.
     assert(response.id != null, 'The response.id must not be null.');

@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Version
 /// ------------------------------------------------------------------------------------------------
 
-class Version extends Serialisable {
+class Version extends Serializable {
   
   /// The solana version running on a node.
   const Version({

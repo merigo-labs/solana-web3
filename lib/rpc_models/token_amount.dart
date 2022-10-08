@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u8;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u8;
 
 
 /// Token Amount
 /// ------------------------------------------------------------------------------------------------
 
-class TokenAmount extends Serialisable {
+class TokenAmount extends Serializable {
   
   /// The token balance of an SPL Token account.
   const TokenAmount({

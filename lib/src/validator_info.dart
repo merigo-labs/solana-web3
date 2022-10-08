@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_web3/src/buffer.dart';
+import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_web3/src/buffer_layout.dart' as layout show rustString;
 import 'package:solana_web3/src/nacl.dart' as nacl show publicKeyLength;
 import 'package:solana_web3/src/public_key.dart';
@@ -12,7 +12,7 @@ import 'package:solana_web3/src/utils/shortvec.dart' as shortvec;
 /// Validator Info Public Key
 /// ------------------------------------------------------------------------------------------------
 
-final PublicKey validatorInfoPublicKey = PublicKey.fromString(
+final PublicKey validatorInfoPublicKey = PublicKey.fromBase58(
   'Va1idator1nfo111111111111111111111111111111',
 );
 

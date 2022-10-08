@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Large Account
 /// ------------------------------------------------------------------------------------------------
 
-class LargeAccount extends Serialisable {
+class LargeAccount extends Serializable {
 
   /// A large account (by lamport balance).
   const LargeAccount({
@@ -30,7 +30,7 @@ class LargeAccount extends Serialisable {
   /// LargeAccount.fromJson({ '<parameter>': <value> });
   /// ```
   factory LargeAccount.fromJson(final Map<String, dynamic> json) => LargeAccount(
-    address: PublicKey.fromString(json['address']), 
+    address: PublicKey.fromBase58(json['address']), 
     lamports: json['lamports'],
   );
   

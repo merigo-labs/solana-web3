@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import 'ui_token_amount.dart';
 
 
 /// Token Balance
 /// ------------------------------------------------------------------------------------------------
 
-class TokenBalance extends Serialisable {
+class TokenBalance extends Serializable {
 
   /// The Solana runtime records the cross-program instructions that are invoked during transaction 
   /// processing and makes these available for greater transparency of what was executed on-chain 

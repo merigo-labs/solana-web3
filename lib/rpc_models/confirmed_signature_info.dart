@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show i64, u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show i64, u64;
 
 
 /// Confirmed Signature Info
 /// ------------------------------------------------------------------------------------------------
 
-class ConfirmedSignatureInfo extends Serialisable {
+class ConfirmedSignatureInfo extends Serializable {
   
   /// Confirmed signature info.
   const ConfirmedSignatureInfo({

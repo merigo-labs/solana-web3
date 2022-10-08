@@ -1,11 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/library.dart' show check;
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/instruction.dart';
 import '../src/public_key.dart';
 import '../src/transaction/transaction.dart';
-import '../src/utils/library.dart' show require;
 
 
 /// Compute Budget Instruction
@@ -77,7 +77,7 @@ class ComputeBudgetInstruction {
   /// 
   /// Throws an [AssertionError].
   static _checkProgramId(final PublicKey programId) {
-    require(
+    check(
       programId.equals(ComputeBudgetProgram.programId), 
       'Invalid instruction; programId is not ComputeBudgetProgram',
     );
@@ -227,7 +227,7 @@ class ComputeBudgetProgram {
   const ComputeBudgetProgram();
 
   /// The public key that identifies the Compute Budget program.
-  static final PublicKey programId = PublicKey.fromString(
+  static final PublicKey programId = PublicKey.fromBase58(
     'ComputeBudget111111111111111111111111111111',
   );
 

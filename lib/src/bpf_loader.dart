@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'buffer.dart';
+import 'package:solana_common/utils/buffer.dart';
 import 'connection.dart';
 import 'keypair.dart';
 import 'loader.dart';
@@ -12,7 +12,7 @@ import 'public_key.dart';
 /// ------------------------------------------------------------------------------------------------
 
 /// BPF loader program id.
-final bpfLoaderProgramId = PublicKey.fromString(
+final bpfLoaderProgramId = PublicKey.fromBase58(
   'BPFLoader2111111111111111111111111111111111',
 );
 

@@ -1,17 +1,17 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import 'package:solana_web3/src/public_key.dart';
 
 
-/// Identity
+/// Node Identity
 /// ------------------------------------------------------------------------------------------------
 
-class Identity extends Serialisable {
+class NodeIdentity extends Serializable {
   
   /// The identity public key for a node.
-  const Identity({
+  const NodeIdentity({
     required this.identity,
   });
 
@@ -24,8 +24,8 @@ class Identity extends Serialisable {
   /// ```
   /// Identity.fromJson({ '<parameter>': <value> });
   /// ```
-  factory Identity.fromJson(final Map<String, dynamic> json) => Identity(
-    identity: PublicKey.fromString(json['identity']),
+  factory NodeIdentity.fromJson(final Map<String, dynamic> json) => NodeIdentity(
+    identity: PublicKey.fromBase58(json['identity']),
   );
 
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
@@ -34,10 +34,10 @@ class Identity extends Serialisable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// Identity.tryFromJson({ '<parameter>': <value> });
+  /// NodeIdentity.tryFromJson({ '<parameter>': <value> });
   /// ```
-  static Identity? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? Identity.fromJson(json) : null;
+  static NodeIdentity? tryFromJson(final Map<String, dynamic>? json) {
+    return json != null ? NodeIdentity.fromJson(json) : null;
   }
 
   @override

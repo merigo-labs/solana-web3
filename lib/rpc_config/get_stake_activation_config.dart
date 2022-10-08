@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/types.dart' show u64;
 import 'commitment_and_min_context_slot_config.dart';
-import '../src/utils/types.dart' show u64;
 
 
 /// Get Stake Activation Config

@@ -1,16 +1,16 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart';
 import 'account_encoding.dart';
-import '../src/models/serialisable.dart';
 import '../src/public_key.dart';
-import '../src/utils/convert.dart';
 
 
 /// Accounts Filter
 /// ------------------------------------------------------------------------------------------------
 
-class AccountsFilter extends Serialisable {
+class AccountsFilter extends Serializable {
 
   /// JSON-RPC parameters for `simulateTransaction` methods.
   AccountsFilter({

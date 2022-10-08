@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Data Slice
 /// ------------------------------------------------------------------------------------------------
 
-class DataSlice extends Serialisable {
+class DataSlice extends Serializable {
 
   /// Defines a range to query a subset of account data.
   const DataSlice({

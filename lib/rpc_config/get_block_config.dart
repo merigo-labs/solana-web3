@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/types.dart' show u64;
 import 'commitment_config.dart';
-import '../src/utils/types.dart' show u64;
 import '../types/transaction_detail.dart';
 import '../types/commitment.dart';
 import '../types/transaction_encoding.dart';

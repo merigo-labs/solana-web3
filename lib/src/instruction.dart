@@ -2,11 +2,11 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'buffer.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/buffer.dart';
 import 'buffer_layout.dart' as buffer_layout;
 import 'layout.dart' as layout;
 import 'message/message.dart';
-import 'models/serialisable.dart';
 import '../exceptions/instruction_exception.dart';
 
 
@@ -37,7 +37,7 @@ class InstructionType<T extends buffer_layout.Layout> {
 /// Instruction
 /// ------------------------------------------------------------------------------------------------
 
-class Instruction extends Serialisable {
+class Instruction extends Serializable {
   
   /// An instruction to execute by a program.
   const Instruction({

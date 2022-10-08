@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_subscribe_config.dart';
+import 'json_rpc_subscribe_config.dart';
 import '../types/commitment.dart';
 
 
 /// Commitment Subscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-class CommitmentSubscribeConfig extends RpcSubscribeConfig {
+class CommitmentSubscribeConfig extends JsonRpcSubscribeConfig {
 
   /// JSON-RPC PubSub configurations for `subscribe` methods.
   const CommitmentSubscribeConfig({

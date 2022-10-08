@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 import '../rpc_models/account_info.dart';
-import '../src/models/serialisable.dart';
-import '../src/utils/types.dart' show u64;
 
 
 /// Transaction Status
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionStatus extends Serialisable {
+class TransactionStatus extends Serializable {
   
   /// Transaction status.
   const TransactionStatus({

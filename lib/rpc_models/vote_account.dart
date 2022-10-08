@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import 'package:solana_web3/src/public_key.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Vote Account
 /// ------------------------------------------------------------------------------------------------
 
-class VoteAccount extends Serialisable {
+class VoteAccount extends Serializable {
   
   /// Account info and associated stake of a voting account.
   const VoteAccount({
@@ -58,8 +58,8 @@ class VoteAccount extends Serialisable {
   /// VoteAccount.fromJson({ '<parameter>': <value> });
   /// ```
   factory VoteAccount.fromJson(final Map<String, dynamic> json) => VoteAccount(
-    votePubkey: PublicKey.fromString(json['votePubkey']),
-    nodePubkey: PublicKey.fromString(json['nodePubkey']),
+    votePubkey: PublicKey.fromBase58(json['votePubkey']),
+    nodePubkey: PublicKey.fromBase58(json['nodePubkey']),
     activatedStake: json['activatedStake'],
     epochVoteAccount: json['epochVoteAccount'],
     commission: json['commission'],

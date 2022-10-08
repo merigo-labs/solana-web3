@@ -2,6 +2,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
+import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/types.dart' show u64;
 import 'system.dart';
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/instruction.dart';
@@ -9,8 +11,6 @@ import '../src/layout.dart' as layout;
 import '../src/public_key.dart';
 import '../src/sysvar.dart';
 import '../src/transaction/transaction.dart';
-import '../src/utils/library.dart' show require;
-import '../src/utils/types.dart' show u64;
 
 
 /// Stake Config Public Key
@@ -18,7 +18,7 @@ import '../src/utils/types.dart' show u64;
 
 /// Address of the stake config account which configures the rate of stake warmup and cooldown as 
 /// well as the slashing penalty.
-final stakeConfigId = PublicKey.fromString(
+final stakeConfigId = PublicKey.fromBase58(
   'StakeConfig11111111111111111111111111111111',
 );
 
@@ -392,7 +392,7 @@ class StakeInstruction {
       lockup: Lockup(
         unixTimestamp: lockup['unixTimestamp'],
         epoch: lockup['epoch'],
-        custodian: PublicKey.fromString(lockup['custodian']),
+        custodian: PublicKey.fromBase58(lockup['custodian']),
       ),
     );
   }
@@ -426,7 +426,7 @@ class StakeInstruction {
     return AuthorizeStakeParams(
       stakePublicKey: instruction.keys[0].publicKey,
       authorizedPublicKey: instruction.keys[2].publicKey,
-      newAuthorizedPublicKey: PublicKey.fromString(data['newAuthorized']),
+      newAuthorizedPublicKey: PublicKey.fromBase58(data['newAuthorized']),
       stakeAuthorizationType: StakeAuthorizationType(data['stakeAuthorizationType']),
       custodianPublicKey: instruction.keys.length > 3 ? instruction.keys[3].publicKey : null,
     );
@@ -448,8 +448,8 @@ class StakeInstruction {
       stakePublicKey: instruction.keys[0].publicKey,
       authorityBase: instruction.keys[1].publicKey,
       authoritySeed: data['authoritySeed'],
-      authorityOwner: PublicKey.fromString(data['authorityOwner']),
-      newAuthorizedPublicKey: PublicKey.fromString(data['newAuthorized']),
+      authorityOwner: PublicKey.fromBase58(data['authorityOwner']),
+      newAuthorizedPublicKey: PublicKey.fromBase58(data['newAuthorized']),
       stakeAuthorizationType: StakeAuthorizationType(data['stakeAuthorizationType']),
       custodianPublicKey: instruction.keys.length > 3 ? instruction.keys[3].publicKey : null,
     );
@@ -527,7 +527,7 @@ class StakeInstruction {
   /// 
   /// Throws an [AssertionError].
   static _checkProgramId(final PublicKey programId) {
-    require(
+    check(
       programId.equals(StakeProgram.programId), 
       'Invalid instruction; programId is not StakeProgram',
     );
@@ -537,7 +537,7 @@ class StakeInstruction {
   /// 
   /// Throws an [AssertionError].
   static _checkKeyLength(final Iterable keys, final int expectedLength) {
-    require(
+    check(
       keys.length >= expectedLength, 
       'Invalid instruction; found ${keys.length} keys, expected at least $expectedLength',
     );
@@ -687,7 +687,7 @@ class StakeProgram {
   const StakeProgram();
 
   /// The public key that identifies the Stake Program.
-  static final PublicKey programId = PublicKey.fromString(
+  static final PublicKey programId = PublicKey.fromBase58(
     'Stake11111111111111111111111111111111111111',
   );
 

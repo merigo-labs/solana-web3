@@ -2,17 +2,17 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data' show Uint8List;
+import 'package:solana_common/utils/convert.dart' as convert show base58;
 import 'message.dart';
 import '../instruction.dart';
-import '../models/serialisable.dart';
-import '../utils/convert.dart' as convert show base58;
+import 'package:solana_common/models/serializable.dart';
 import '../utils/shortvec.dart' as shortvec;
 
 
 /// Message Instruction
 /// ------------------------------------------------------------------------------------------------
 
-class MessageInstruction extends Serialisable {
+class MessageInstruction extends Serializable {
 
   /// Message instruction.
   MessageInstruction({

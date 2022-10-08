@@ -1,14 +1,17 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:solana_common/exceptions/json_rpc_exception.dart';
+import 'package:solana_web3/solana_web3.dart';
+import 'package:solana_web3/src/keypair.dart';
 import 'package:solana_web3/types/account_encoding.dart';
 import 'package:solana_web3/types/transaction_detail.dart';
 import 'package:solana_web3/types/transaction_encoding.dart';
-import 'package:solana_web3/exceptions/rpc_exception.dart';
 import 'package:solana_web3/types/commitment.dart';
 import 'package:solana_web3/types/health_status.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import 'package:solana_web3/src/public_key.dart';
 import 'package:solana_web3/rpc_config/get_account_info_config.dart';
 import 'package:solana_web3/rpc_config/get_balance_config.dart';
@@ -69,6 +72,8 @@ import 'package:solana_web3/solana_web3.dart' as web3 show Cluster, Connection, 
 
 void main() {
 
+  WidgetsFlutterBinding.ensureInitialized();
+
   /// Cluster connections.
   final cluster = web3.Cluster.testnet;//localhost('192.168.0.63:8899');
   final wsCluster = web3.Cluster.custom('192.168.0.63:8900');
@@ -76,9 +81,9 @@ void main() {
 
 
   /// Accounts
-  final pubKey1 = PublicKey.fromString("BKY3nztnk29ugvyMXtFyXVDvUp4uenUt9oBC6bMq97yA");
-  final pubKey2 = PublicKey.fromString("2HabZecqJ74vXBx63iy9k3Lu6mSL1tf73jJAz95SmBX9");
-  final programId = PublicKey.fromString('B6evYB1Jq3WUcZpPrw2z5Xu3FQ5WAwVcGHCWX6h4LKSC');
+  final pubKey1 = PublicKey.fromBase58("BKY3nztnk29ugvyMXtFyXVDvUp4uenUt9oBC6bMq97yA");
+  final pubKey2 = PublicKey.fromBase58("2HabZecqJ74vXBx63iy9k3Lu6mSL1tf73jJAz95SmBX9");
+  final programId = PublicKey.fromBase58('B6evYB1Jq3WUcZpPrw2z5Xu3FQ5WAwVcGHCWX6h4LKSC');
 
   /// Print RPC response.
   void _printResponse(String method, dynamic response) {
@@ -86,7 +91,7 @@ void main() {
   }
 
   /// Print [RpcException]
-  void _printRpcException(String method, RpcException error) {
+  void _printRpcException(String method, JsonRpcException error) {
     print('[RpcException] $method = ${error.code} : ${error.message} : ${error.data}');
   }
   
@@ -101,7 +106,7 @@ void main() {
     final Object error, { 
     final StackTrace? stack, 
   }) {
-    error is RpcException 
+    error is JsonRpcException 
       ? _printRpcException(method, error) 
       : _printUnknownException(method, error);
     if (stack != null) { 
@@ -124,7 +129,7 @@ void main() {
   Future<T> _testRequest<T>(final String method, final Future<T> request) async {
     try {
       final response = await request;
-      _printResponse(method, response is Serialisable ? response.toJson() : response);
+      _printResponse(method, response is Serializable ? response.toJson() : response);
       return response;
     } catch(e, stack) {
       _printException(method, e, stack: stack);
@@ -467,8 +472,8 @@ void main() {
   });
 
   const getInflationRewardConfig = GetInflationRewardConfig();
-  final addr1 = PublicKey.fromString('6dmNQ5jwLeLk5REvio1JcMshcbvkYMwy26sJ8pbkvStu');
-  final addr2 = PublicKey.fromString('BGsqMegLpV6n6Ve146sSX2dTjUMj3M92HnU8BbNRMhF2');
+  final addr1 = PublicKey.fromBase58('6dmNQ5jwLeLk5REvio1JcMshcbvkYMwy26sJ8pbkvStu');
+  final addr2 = PublicKey.fromBase58('BGsqMegLpV6n6Ve146sSX2dTjUMj3M92HnU8BbNRMhF2');
   test('get inflation reward raw', () async {
     await _testRequest(
       'get inflation reward raw',
@@ -511,7 +516,7 @@ void main() {
   });
 
   final getLeaderScheduleConfig = GetLeaderScheduleConfig(
-    identity: PublicKey.fromString('XkCriyrNwS3G4rzAXtG5B1nnvb5Ka1JtCku93VqeKAr'),
+    identity: PublicKey.fromBase58('XkCriyrNwS3G4rzAXtG5B1nnvb5Ka1JtCku93VqeKAr'),
   );
   test('get leader schedule raw', () async {
     await _testRequest(
@@ -730,7 +735,7 @@ void main() {
   });
 
   const getStakeActivationConfig = GetStakeActivationConfig();
-  final PublicKey stakeAccount = PublicKey.fromString('GREENr9zSeapgunqdMeTg8MCh2cDDn2y3py1mBGUzJYe');
+  final PublicKey stakeAccount = PublicKey.fromBase58('GREENr9zSeapgunqdMeTg8MCh2cDDn2y3py1mBGUzJYe');
   test('get stake activation raw', () async {
     await _testRequest(
       'get stake activation raw',
@@ -760,10 +765,10 @@ void main() {
 
   const getTokenAccountBalanceConfig = GetTokenAccountBalanceConfig();
   /// USDT Mint Address.
-  final usdtMint = PublicKey.fromString('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB');
-  final usdcMintTestnet = PublicKey.fromString('CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp');
+  final usdtMint = PublicKey.fromBase58('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB');
+  final usdcMintTestnet = PublicKey.fromBase58('CpMah17kQEL2wqyMKt3mZBdTnZbkbfx4nqmQMFDP5vwp');
   final getTokenAccountFilter = TokenAccountsFilter.mint(usdcMintTestnet);
-  final tokenOwner = PublicKey.fromString('HzWpBN6ucpsA9wcfmhLAFYqEUmHjE9n2cGHwunG5avpL');
+  final tokenOwner = PublicKey.fromBase58('DmkBSr5YVxHmoFdkzZ8VqBw4RVPWBE6nGppyViRsoXge');
   test('get token account balance raw', () async {
     final tokenAccounts = await connection.getTokenAccountsByOwner(tokenOwner, filter: getTokenAccountFilter);
     await _testRequest(

@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 import '../types/stake_activation_state.dart';
-import '../src/models/serialisable.dart';
-import '../src/utils/types.dart' show u64;
 
 
 /// Stake Activation
 /// ------------------------------------------------------------------------------------------------
 
-class StakeActivation extends Serialisable {
+class StakeActivation extends Serializable {
   
   /// Epoch activation information for a stake account.
   const StakeActivation({

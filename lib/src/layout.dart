@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'buffer_layout.dart' as buffer_layout;
-import 'utils/types.dart';
+import 'package:solana_common/utils/types.dart' show u8;
 
 
 /// Layouts

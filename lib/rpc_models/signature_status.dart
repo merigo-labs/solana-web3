@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64, usize;
 import '../types/commitment.dart';
-import '../src/models/serialisable.dart';
-import '../src/utils/types.dart' show u64, usize;
 
 
 /// Signature Status
 /// ------------------------------------------------------------------------------------------------
 
-class SignatureStatus extends Serialisable {
+class SignatureStatus extends Serializable {
   
   /// Signature Status.
   const SignatureStatus({

@@ -3,7 +3,7 @@
 
 import 'package:pinenacl/ed25519.dart';
 import 'package:solana_web3/solana_web3.dart' as web3;
-import 'package:solana_web3/src/buffer.dart';
+import 'package:solana_common/utils/buffer.dart';
 
 
 /// Test Utilities

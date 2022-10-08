@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' show list;
 import '../rpc_models/vote_account.dart';
-import '../src/models/serialisable.dart';
-import '../src/utils/convert.dart' show list;
 
 
 /// Vote Account Status
 /// ------------------------------------------------------------------------------------------------
 
-class VoteAccountStatus extends Serialisable {
+class VoteAccountStatus extends Serializable {
   
   /// Current and delinquent vote accounts.
   const VoteAccountStatus({

@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show f64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show f64;
 
 
 /// Inflation Governor
 /// ------------------------------------------------------------------------------------------------
 
-class InflationGovernor extends Serialisable {
+class InflationGovernor extends Serializable {
   
   /// Inflation governor.
   const InflationGovernor({

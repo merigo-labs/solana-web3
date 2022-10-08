@@ -22,6 +22,7 @@ The library is modelled on the [solana-web3.js](https://github.com/solana-labs/s
 * Compute Budget Program
 * ED25519 Program
 * JSON RPC API
+* Memo Program
 * Stake Program
 * System Program
 
@@ -119,8 +120,8 @@ connection.disconnect();
 ## Bugs and Feature Requests
 
 ### Bugs
-Please feel free to report any bugs found by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
+Report a bug by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
 
 ### Feature Requests
-If you'd like to see a feature added to the library, let us know by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
+Request a feature by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
 

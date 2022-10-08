@@ -4,7 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:solana_web3/src/config/cluster.dart';
+import 'package:solana_common/config/cluster.dart';
 
 
 /// Web Socket Connection

@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'library_exception.dart';
+import 'package:solana_common/exceptions/solana_exception.dart';
 
 
 /// Instruction Exception
 /// ------------------------------------------------------------------------------------------------
 
-class InstructionException extends LibraryException {
+class InstructionException extends SolanaException {
 
   /// Creates an exception for an invalid keypair.
   const InstructionException(

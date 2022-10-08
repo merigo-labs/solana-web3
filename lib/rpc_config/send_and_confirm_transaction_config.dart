@@ -1,12 +1,12 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/types.dart';
 import 'commitment_config.dart';
 import 'confirm_transaction_config.dart';
 import 'send_transaction_config.dart';
 import '../types/commitment.dart';
 import '../types/transaction_encoding.dart';
-import '../src/utils/types.dart';
 
 
 /// Send And Confirm Transaction Config

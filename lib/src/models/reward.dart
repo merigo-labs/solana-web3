@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart';
 import '../../types/reward_type.dart';
-import '../utils/types.dart';
 
 
 /// Reward
 /// ------------------------------------------------------------------------------------------------
 
-class Reward extends Serialisable {
+class Reward extends Serializable {
   
   /// Rewards
   const Reward({

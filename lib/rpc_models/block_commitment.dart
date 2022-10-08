@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/convert.dart' as convert;
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' as convert;
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Block Commitment
 /// ------------------------------------------------------------------------------------------------
 
-class BlockCommitment extends Serialisable {
+class BlockCommitment extends Serializable {
   
   /// The block commitment for a particular block.
   const BlockCommitment({

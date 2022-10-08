@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import '../src/public_key.dart';
 
 
 ///  Token Accounts Filter
 /// ------------------------------------------------------------------------------------------------
 
-class TokenAccountsFilter extends Serialisable {
+class TokenAccountsFilter extends Serializable {
 
   /// JSON-RPC parameters for `getTokenAccountsBy` methods.
   TokenAccountsFilter._({

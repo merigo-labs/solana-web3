@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' as convert show list;
 import '../message/message.dart';
-import '../utils/convert.dart' as convert show list;
 
 
 /// Transaction
 /// ------------------------------------------------------------------------------------------------
 
-class Transaction extends Serialisable {
+class Transaction extends Serializable {
   
   /// Transaction.
   const Transaction({

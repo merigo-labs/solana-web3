@@ -1,6 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/types.dart' show u64;
 import '../src/instruction.dart';
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/layout.dart' as layout;
@@ -8,8 +10,6 @@ import '../src/nonce_account.dart';
 import '../src/public_key.dart';
 import '../src/sysvar.dart';
 import '../src/transaction/transaction.dart';
-import '../src/utils/library.dart';
-import '../src/utils/types.dart' show u64;
 
 
 /// Create Account Params
@@ -510,8 +510,8 @@ class SystemInstruction {
       fromPublicKey: instruction.keys[0].publicKey,
       newAccountPublicKey: instruction.keys[1].publicKey,
       lamports: data['lamports'],
-      space: data['seeds'],
-      programId: PublicKey.fromString(data['programId']),
+      space: data['space'],
+      programId: PublicKey.fromBase58(data['programId']),
     );
   }
 
@@ -550,7 +550,7 @@ class SystemInstruction {
       toPublicKey: instruction.keys[2].publicKey,
       lamports: data['lamports'],
       seed: data['seed'],
-      programId: PublicKey.fromString(data['programId']),
+      programId: PublicKey.fromBase58(data['programId']),
     );
   }
 
@@ -584,10 +584,10 @@ class SystemInstruction {
 
     return AllocateWithSeedParams(
       accountPublicKey: instruction.keys[0].publicKey,
-      basePublicKey: PublicKey.fromString(data['base']),
+      basePublicKey: PublicKey.fromBase58(data['base']),
       seed: data['seed'],
       space: data['space'],
-      programId: PublicKey.fromString(data['programId']),
+      programId: PublicKey.fromBase58(data['programId']),
     );
   }
 
@@ -603,7 +603,7 @@ class SystemInstruction {
 
     return AssignParams(
       accountPublicKey: instruction.keys[0].publicKey,
-      programId: PublicKey.fromString(data['programId']),
+      programId: PublicKey.fromBase58(data['programId']),
     );
   }
 
@@ -642,11 +642,11 @@ class SystemInstruction {
     return CreateAccountWithSeedParams(
       fromPublicKey: instruction.keys[0].publicKey,
       newAccountPublicKey: instruction.keys[1].publicKey,
-      basePublicKey: PublicKey.fromString(data['base']),
+      basePublicKey: PublicKey.fromBase58(data['base']),
       seed: data['seed'],
       lamports: data['lamports'],
       space: data['space'],
-      programId: PublicKey.fromString(data['programId']),
+      programId: PublicKey.fromBase58(data['programId']),
     );
   }
 
@@ -664,7 +664,7 @@ class SystemInstruction {
 
     return InitializeNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
-      authorizedPublicKey: PublicKey.fromString(data['authorized']),
+      authorizedPublicKey: PublicKey.fromBase58(data['authorized']),
     );
   }
 
@@ -721,7 +721,7 @@ class SystemInstruction {
     return AuthorizeNonceParams(
       noncePublicKey: instruction.keys[0].publicKey,
       authorizedPublicKey: instruction.keys[1].publicKey,
-      newAuthorizedPublicKey: PublicKey.fromString(data['authorized']),
+      newAuthorizedPublicKey: PublicKey.fromBase58(data['authorized']),
     );
   }
   
@@ -729,7 +729,7 @@ class SystemInstruction {
   /// 
   /// Throws an [AssertionError].
   static _checkProgramId(final PublicKey programId) {
-    require(
+    check(
       programId.equals(SystemProgram.programId), 
       'Invalid instruction; programId is not SystemProgram',
     );
@@ -739,7 +739,7 @@ class SystemInstruction {
   /// 
   /// Throws an [AssertionError].
   static _checkKeyLength(final Iterable keys, final int expectedLength) {
-    require(
+    check(
       keys.length >= expectedLength, 
       'Invalid instruction; found ${keys.length} keys, expected at least $expectedLength',
     );
@@ -753,7 +753,7 @@ class SystemInstruction {
 class SystemInstructionLayout {
 
   /// System instruction layout.
-  const SystemInstructionLayout();
+  const SystemInstructionLayout._();
 
   /// Create.
   static InstructionType<buffer_layout.Structure> create() {

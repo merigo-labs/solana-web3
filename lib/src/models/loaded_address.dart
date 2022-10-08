@@ -1,13 +1,12 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
-
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Loaded Address
 /// ------------------------------------------------------------------------------------------------
 
-class LoadedAddress extends Serialisable {
+class LoadedAddress extends Serializable {
   
   /// Transaction addresses loaded from the address lookup tables.
   const LoadedAddress({

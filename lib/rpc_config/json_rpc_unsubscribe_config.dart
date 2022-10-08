@@ -1,16 +1,16 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
 
 
-/// RPC Unsubscribe Config
+/// JSON RPC Unsubscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-class RpcUnsubscribeConfig extends RpcRequestConfig {
+class JsonRpcUnsubscribeConfig extends JsonRpcRequestConfig {
 
   /// Defines the configurations for JSON-RPC `unsubscribe` requests.
-  const RpcUnsubscribeConfig({
+  const JsonRpcUnsubscribeConfig({
     super.id,
     super.timeout,
   }): super(headers: null);

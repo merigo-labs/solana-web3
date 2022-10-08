@@ -5,8 +5,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import 'buffer.dart';
-import 'utils/library.dart' as utils show require;
+import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/utils/library.dart' as utils show check;
 
 
 /// Layout Mixin
@@ -17,8 +17,8 @@ mixin LayoutMixin {
   /// Asserts that [condition] is `true`.
   /// 
   /// Throws an [AssertionError] with the provided [message] if [condition] is `false`.
-  void require(final bool condition, final String message) {
-    return utils.require(condition, '[$runtimeType] $message');
+  void check(final bool condition, final String message) {
+    return utils.check(condition, '[$runtimeType] $message');
   }
 
   /// Formats the [property] text to be used as the prefix of an error message.
@@ -152,7 +152,7 @@ abstract class Layout<T> extends LayoutProperties with LayoutMixin {
   /// @throws {RangeError} - if the length of the value cannot be
   /// determined.
   int getSpan(final Buffer b, [int offset = 0]) {
-    require(span >= 0, 'indeterminate span.');
+    check(span >= 0, 'indeterminate span.');
     return span;
   }
 
@@ -1962,8 +1962,8 @@ class BitField extends LayoutProperties with LayoutMixin {
   /// Layout#encode|Layout.encode} and there is no return value. */
   void encode(dynamic value) {
     value is int;
-    require(value == fixBitwiseResult(value & valueMask), 
-            '${debugProperty(property)} encode() value must not exceed $valueMask.');
+    check(value == fixBitwiseResult(value & valueMask), 
+          '${debugProperty(property)} encode() value must not exceed $valueMask.');
     final word = container._packedGetValue();
     final wordValue = fixBitwiseResult(value << start);
     container._packedSetValue(fixBitwiseResult(word & ~wordMask) | wordValue);
@@ -2079,8 +2079,8 @@ class Blob<T> extends Layout<Iterable<int>> {
   @override
   int encode(final Iterable<int> src, final Buffer b, [int offset = 0]) {
     final int span = length is int ? length as int : src.length;
-    require(span == src.length, '${debugProperty(property)} encode() requires (length $span)');
-    require((offset + span) <= b.length, 
+    check(span == src.length, '${debugProperty(property)} encode() requires (length $span)');
+    check((offset + span) <= b.length, 
             'encoding overruns Buffer (offset: $offset) - (span: $span) - (buffer: ${b.length})');
     b.setString(Buffer.fromList(src).getString(BufferEncoding.hex), BufferEncoding.hex, offset, span);
     if (length is ExternalLayout) {
@@ -2132,7 +2132,7 @@ class CString extends Layout<String> {
   int encode(final String src, final Buffer b, [int offset = 0]) {
     final Buffer srcb = Buffer.fromString(src);
     final int span = srcb.length;
-    require((offset + span) <= b.length, 'encoding overruns Buffer');
+    check((offset + span) <= b.length, 'encoding overruns Buffer');
     srcb.copy(b, offset);
     b[offset + span] = 0;
     return span + 1;
@@ -2187,7 +2187,7 @@ class UTF8 extends Layout<String> {
   @override
   String decode(final Buffer b, [int offset = 0]) {
     int span = getSpan(b, offset);
-    require(maxSpan < 0 || span <= maxSpan, 'text span exceeds maxSpan.');
+    check(maxSpan < 0 || span <= maxSpan, 'text span exceeds maxSpan.');
     return b.getString(BufferEncoding.utf8, offset, span);
   }
 
@@ -2198,8 +2198,8 @@ class UTF8 extends Layout<String> {
     /// src
     final Buffer srcb = Buffer.fromString(src);
     final span = srcb.length;
-    require(maxSpan < 0 || span <= maxSpan, 'text span exceeds maxSpan.');
-    require((offset + span) <= b.length, 'encoding overruns Buffer.');
+    check(maxSpan < 0 || span <= maxSpan, 'text span exceeds maxSpan.');
+    check((offset + span) <= b.length, 'encoding overruns Buffer.');
     srcb.copy(b, offset);
     return span;
   }

@@ -5,16 +5,16 @@ import '../../exceptions/transaction_error.dart';
 import '../models/inner_instruction.dart';
 import '../models/loaded_address.dart';
 import '../../rpc_config/get_block_config.dart';
-import '../models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import '../models/token_balance.dart';
-import '../utils/convert.dart' as convert show list;
-import '../utils/types.dart';
+import 'package:solana_common/utils/convert.dart' as convert show list;
+import 'package:solana_common/utils/types.dart';
 
 
 /// Meta
 /// ------------------------------------------------------------------------------------------------
 
-class Meta extends Serialisable {
+class Meta extends Serializable {
   
   /// Transaction status metadata.
   const Meta({

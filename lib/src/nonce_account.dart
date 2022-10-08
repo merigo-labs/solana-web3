@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/buffer.dart';
 import 'blockhash.dart';
-import 'buffer.dart';
 import 'buffer_layout.dart' as buffer_layout;
 import 'fee_calculator.dart';
 import 'layout.dart' as layout;
@@ -60,8 +60,8 @@ class NonceAccount {
   factory NonceAccount.fromAccountData(final Buffer buffer) {
     final Map<String, dynamic> nonceAccount = nonceAccountLayout.decode(buffer);
     return NonceAccount(
-      authorizedPubkey: PublicKey.fromString(nonceAccount['authorizedPubkey']),
-      nonce: PublicKey.fromString(nonceAccount['nonce']).toString(),
+      authorizedPubkey: PublicKey.fromBase58(nonceAccount['authorizedPubkey']),
+      nonce: PublicKey.fromBase58(nonceAccount['nonce']).toString(),
       feeCalculator: FeeCalculator.fromJson(nonceAccount['feeCalculator']),
     );
   }

@@ -1,19 +1,19 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' as convert;
+import 'package:solana_common/utils/types.dart' show i64, u64;
 import '../rpc_config/get_block_config.dart';
 import '../src/models/reward.dart';
-import '../src/models/serialisable.dart';
 import '../src/models/transaction_data.dart';
-import '../src/utils/convert.dart' as convert;
-import '../src/utils/types.dart' show i64, u64;
 import '../types/transaction_detail.dart';
 
 
 /// Block
 /// ------------------------------------------------------------------------------------------------
 
-class Block extends Serialisable {
+class Block extends Serializable {
   
   /// A confirmed transaction block.
   const Block({

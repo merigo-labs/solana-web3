@@ -69,36 +69,39 @@ class BlockhashCache {
   /// [waitForLatest] to `true`.
   FutureOr<BlockhashWithExpiryBlockHeight> get(
     final Connection connection, { 
-    required bool disabled, 
-    bool waitForLatest = false,
+    required final bool disabled, 
   }) async {
 
     /// Make a request to fetch the latest blockhash if the cache is [disabled].
     if (disabled) {
       return _fetch(connection);
     }
-    
-    /// Wait for any pending requests to complete.
-    if (waitForLatest) {
-      await _fetchCompleter?.future; 
-    }
 
     /// Return the cached value or make a request to fetch the latest blockhash.
-    return value ?? _fetch(connection);
+    return value ?? _syncFetch(connection);
   }
 
   /// Set the cache's [value] and update the state.
-  void _set(BlockhashWithExpiryBlockHeight value) {
+  void _set(final BlockhashWithExpiryBlockHeight value) {
     simulatedSignatures.clear();
     transactionSignatures.clear();
     _latestBlockhash = value;
     _latestBlockhashTimestamp = _timestamp();
   }
   
-  /// Returns the latest `blockhash`.
+  /// Waits for the pending request to complete (if any) or makes a request to get the latest 
+  /// `blockhash`.
   /// 
   /// Throws a [TransactionException] if the latest blockhash could not be retrieved.
-  FutureOr<BlockhashWithExpiryBlockHeight> _fetch(Connection connection) async {
+  FutureOr<BlockhashWithExpiryBlockHeight> _syncFetch(final Connection connection) async {
+    await _fetchCompleter?.future;
+    return value ?? _fetch(connection);
+  }
+
+  /// Makes a request to get the latest `blockhash`.
+  /// 
+  /// Throws a [TransactionException] if the latest blockhash could not be retrieved.
+  FutureOr<BlockhashWithExpiryBlockHeight> _fetch(final Connection connection) async {
 
     /// Create a local [fetchCompleter] to be resolved when this method completes.
     final Completer<void> fetchCompleter = Completer.sync();

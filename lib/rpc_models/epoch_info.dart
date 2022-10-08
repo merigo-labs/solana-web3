@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Epoch Info
 /// ------------------------------------------------------------------------------------------------
 
-class EpochInfo extends Serialisable {
+class EpochInfo extends Serializable {
   
   /// Information about an epoch.
   const EpochInfo({

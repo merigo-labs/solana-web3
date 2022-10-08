@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// AddressTableLookup
 /// ------------------------------------------------------------------------------------------------
 
-class AddressTableLookup extends Serialisable {
+class AddressTableLookup extends Serializable {
   
   /// Used by a transaction to dynamically load addresses from on-chain address lookup tables.
   const AddressTableLookup({

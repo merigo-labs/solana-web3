@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/types.dart' show i64, u64;
 import '../src/models/transaction_data.dart';
-import '../src/utils/types.dart' show i64, u64;
 
 
 /// Transaction Info

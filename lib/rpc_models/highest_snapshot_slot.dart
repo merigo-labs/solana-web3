@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Highest Snapshot Slot
 /// ------------------------------------------------------------------------------------------------
 
-class HighestSnapshotSlot extends Serialisable {
+class HighestSnapshotSlot extends Serializable {
   
   /// The highest slot information that the node has snapshots for.
   const HighestSnapshotSlot({

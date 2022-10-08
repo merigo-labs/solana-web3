@@ -1,10 +1,10 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/convert.dart' show list;
 import 'commitment_subscribe_config.dart';
 import '../types/account_encoding.dart';
 import '../src/models/program_filter.dart';
-import '../src/utils/convert.dart' show list;
 
 
 /// Program Subscribe Config

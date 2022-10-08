@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
-import '../utils/types.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart';
 
 
 /// Slot Range
 /// ------------------------------------------------------------------------------------------------
 
-class SlotRange extends Serialisable {
+class SlotRange extends Serializable {
 
   /// Defines the slot range to return block production for.
   const SlotRange({

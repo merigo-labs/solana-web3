@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
-import '../utils/types.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart';
 
 
 /// Memory Comparison
 /// ------------------------------------------------------------------------------------------------
 
-class MemCmp extends Serialisable {
+class MemCmp extends Serializable {
 
   /// Compares a provided series of [bytes] with program account data at a particular [offset].
   const MemCmp({

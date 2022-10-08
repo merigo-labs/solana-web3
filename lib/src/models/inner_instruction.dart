@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import '../instruction.dart';
-import '../utils/convert.dart' as convert show list;
+import 'package:solana_common/utils/convert.dart' as convert show list;
 
 
 /// Inner Instruction
 /// ------------------------------------------------------------------------------------------------
 
-class InnerInstruction extends Serialisable {
+class InnerInstruction extends Serializable {
 
   /// The Solana runtime records the cross-program instructions that are invoked during transaction 
   /// processing and makes these available for greater transparency of what was executed on-chain 

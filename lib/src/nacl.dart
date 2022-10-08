@@ -4,10 +4,10 @@
 library nacl;
 
 import 'dart:typed_data';
+import 'keypair.dart';
 import 'package:flutter/material.dart';
 import 'package:pinenacl/tweetnacl.dart' show TweetNaCl;
-import 'keypair.dart';
-import 'utils/library.dart' show require;
+import 'package:solana_common/utils/library.dart' show check;
 
 
 /// NaCl
@@ -63,7 +63,7 @@ class NaClKeypair {
   /// 
   /// Throws an [AssertionError] if the [secretKey] is invalid.
   Ed25519Keypair fromSecretKey(final Uint8List secretKey) {
-    require(secretKey.length == secretKeyLength, 'Invalid secret key length ${secretKey.length}.');
+    check(secretKey.length == secretKeyLength, 'Invalid secret key length ${secretKey.length}.');
     final Uint8List publicKey = secretKey.sublist(secretKey.length - publicKeyLength);
     return Ed25519Keypair(publicKey: publicKey, secretKey: secretKey);
   }
@@ -72,11 +72,11 @@ class NaClKeypair {
   /// 
   /// Throws an [AssertionError] if the [seed] is invalid.
   Ed25519Keypair fromSeed(final Uint8List seed) {
-    require(seed.length == maxSeedLength, 'Invalid seed length ${seed.length}.');
+    check(seed.length == maxSeedLength, 'Invalid seed length ${seed.length}.');
     final publicKey = Uint8List(publicKeyLength);
     final secretKey = Uint8List(secretKeyLength)..setAll(0, seed);
     final int result = TweetNaCl.crypto_sign_keypair(publicKey, secretKey, seed);
-    require(result == 0, 'Failed to create keypair from seed $seed.');
+    check(result == 0, 'Failed to create keypair from seed $seed.');
     return Ed25519Keypair(publicKey: publicKey, secretKey: secretKey);
   }
 }
@@ -97,14 +97,14 @@ class NaClDetached {
     final int result = TweetNaCl.crypto_sign(
       signedMessage, -1, message, 0, message.length, secretKey,
     );
-    require(result == 0, 'Failed to sign message.');
+    check(result == 0, 'Failed to sign message.');
     return signedMessage.sublist(0, signatureLength);
   }
 
   /// Returns true if the [signature] was derived by signing the [message] using [publicKey]'s 
   /// `secret key`.
   bool verify(final Uint8List message, final Uint8List signature, final Uint8List publicKey) {
-    require(signature.length == signatureLength, 'Invalid signature length.');
+    check(signature.length == signatureLength, 'Invalid signature length.');
     final Uint8List signedMessage = Uint8List.fromList(signature + message);
     final Uint8List buffer = Uint8List(signedMessage.length);
     final int result = TweetNaCl.crypto_sign_open(

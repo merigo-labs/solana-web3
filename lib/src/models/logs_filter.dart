@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import '../public_key.dart';
-import '../utils/convert.dart';
+import 'package:solana_common/utils/convert.dart';
 
 
 /// Logs Filter

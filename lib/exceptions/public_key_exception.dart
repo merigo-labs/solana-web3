@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'library_exception.dart';
+import 'package:solana_common/exceptions/solana_exception.dart';
 import '../src/nacl.dart' as nacl show publicKeyLength;
 
 
 /// Public Key Exception
 /// ------------------------------------------------------------------------------------------------
 
-class PublicKeyException extends LibraryException {
+class PublicKeyException extends SolanaException {
 
   /// Creates an exception for an invalid public key.
   const PublicKeyException(

@@ -1,23 +1,24 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert' show base64;
 import 'dart:typed_data' show ByteBuffer, Uint8List;
 import 'package:crypto/crypto.dart' show sha256;
-import '../exceptions/ed25519_exception.dart';
-import '../exceptions/public_key_exception.dart';
-import 'extensions/big_int.dart';
+import 'package:solana_common/extensions/big_int.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart' show base58;
+import 'package:solana_common/utils/library.dart' show check;
 import 'models/program_address.dart';
-import 'models/serialisable.dart';
 import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
 import 'nacl_low_level.dart' as nacl_low_level;
-import 'utils/convert.dart' show base58;
-import 'utils/library.dart' show require;
+import '../exceptions/ed25519_exception.dart';
+import '../exceptions/public_key_exception.dart';
 
 
 /// Public Key
 /// ------------------------------------------------------------------------------------------------
 
-class PublicKey extends Serialisable {
+class PublicKey extends Serializable {
 
   /// Creates a [PublicKey] from an `ed25519` public key [value].
   const PublicKey(
@@ -31,22 +32,37 @@ class PublicKey extends Serialisable {
   factory PublicKey.zero() {
     return PublicKey(BigInt.zero);
   }
+  
+  /// Creates a [PublicKey] from a `base-58` encoded [publicKey].
+  factory PublicKey.fromString(final String publicKey) = PublicKey.fromBase58;
 
   /// Creates a [PublicKey] from a `base-58` encoded [publicKey].
-  factory PublicKey.fromString(final String publicKey) {
+  factory PublicKey.fromBase58(final String publicKey) {
     return PublicKey.fromUint8List(base58.decode(publicKey));
   }
   
   /// Creates a [PublicKey] from a `base-58` encoded [publicKey].
   /// 
   /// Returns `null` if [publicKey] is omitted.
-  static PublicKey? tryFromString(final String? publicKey) {
-    return publicKey != null ? PublicKey.fromString(publicKey) : null;
+  static PublicKey? tryFromBase58(final String? publicKey) {
+    return publicKey != null ? PublicKey.fromBase58(publicKey) : null;
+  }
+
+  /// Creates a [PublicKey] from a `base-64` encoded [publicKey].
+  factory PublicKey.fromBase64(final String publicKey) {
+    return PublicKey.fromUint8List(base64.decode(publicKey));
+  }
+
+  /// Creates a [PublicKey] from a `base-64` encoded [publicKey].
+  /// 
+  /// Returns `null` if [publicKey] is omitted.
+  static PublicKey? tryFromBase64(final String? publicKey) {
+    return publicKey != null ? PublicKey.fromBase64(publicKey) : null;
   }
 
   /// Creates a [PublicKey] from a byte array [publicKey].
   factory PublicKey.fromUint8List(final Iterable<int> publicKey) {
-    require(publicKey.length <= nacl.publicKeyLength, 'Invalid public key length.');
+    check(publicKey.length <= nacl.publicKeyLength, 'Invalid public key length.');
     return PublicKey(BigIntExtension.fromUint8List(publicKey));
   }
 
@@ -75,6 +91,11 @@ class PublicKey extends Serialisable {
   /// Returns this [PublicKey] as a `base-58` encoded string.
   String toBase58() {
     return base58.encode(toBytes());
+  }
+
+  /// Returns this [PublicKey] as a `base-64` encoded string.
+  String toBase64() {
+    return base64.encode(toBytes());
   }
 
   /// Returns this [PublicKey] as a byte array.
@@ -125,7 +146,7 @@ class PublicKey extends Serialisable {
     final List<int> buffer = [];
     
     for (final List<int> seed in seeds) {
-      require(seed.length <= nacl.maxSeedLength, 'Invalid seed length.');
+      check(seed.length <= nacl.maxSeedLength, 'Invalid seed length.');
       buffer.addAll(seed);
     }
 

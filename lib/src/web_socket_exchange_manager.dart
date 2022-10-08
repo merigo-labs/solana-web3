@@ -3,8 +3,8 @@
 
 import 'dart:async';
 import 'dart:io';
-import '../rpc/rpc_request.dart';
-import '../rpc/rpc_response.dart';
+import 'package:solana_common/protocol/json_rpc_request.dart';
+import 'package:solana_common/protocol/json_rpc_response.dart';
 import 'web_socket_manager_lookup.dart';
 
 
@@ -33,7 +33,7 @@ class WebSocketExchange<T> {
   /// The async [response] returns when a call is made to [complete] or [completeError].
   /// 
   /// ```
-  /// const RpcRequest request = RpcRequest(
+  /// const JsonRpcRequest request = JsonRpcRequest(
   ///   Method.getAccountInfo,
   ///   params: ['3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK'],
   ///   id: null // Must be null
@@ -43,14 +43,14 @@ class WebSocketExchange<T> {
   /// print(exchange.id); // 1
   /// 
   /// responseHandler(final Map<String, dynamic> json) { // Async handler
-  ///   final RpcResponse<int> response = RpcResponse.parse(json, cast<int>);
+  ///   final JsonRpcResponse<int> response = JsonRpcResponse.parse(json, cast<int>);
   ///   exchange.complete(response);
   /// }
   /// 
-  /// final RpcResponse response = await exchange.response;
+  /// final JsonRpcResponse response = await exchange.response;
   /// ```
   WebSocketExchange(
-    final RpcRequest request,
+    final JsonRpcRequest request,
   ):  request = request.id != null ? request : request.copyWith(id: ++_id), // Add a unique id.
       createdAt = DateTime.now().toUtc(),
       _completer = Completer.sync();
@@ -59,13 +59,13 @@ class WebSocketExchange<T> {
   static int _id = 0;
 
   /// The JSON-RPC request.
-  final RpcRequest request;
+  final JsonRpcRequest request;
 
   /// The response completer.
-  final Completer<RpcResponse<T>> _completer;
+  final Completer<JsonRpcResponse<T>> _completer;
 
   /// The JSON-RPC response.
-  Future<RpcResponse<T>> get response => _completer.future;
+  Future<JsonRpcResponse<T>> get response => _completer.future;
 
   /// The UTC timestamp at which this exchange was created.
   final DateTime createdAt;
@@ -85,7 +85,7 @@ class WebSocketExchange<T> {
   }
 
   /// Completes the [WebSocketExchange] with a [response].
-  void complete(final RpcResponse<T> response) {
+  void complete(final JsonRpcResponse<T> response) {
     if (!_completer.isCompleted) {
       if (id == response.id) {
         _completer.complete(response);
@@ -112,7 +112,7 @@ class WebSocketExchange<T> {
 
 class WebSocketExchangeManager {
 
-  /// Maps an [RpcRequest.hash] and [RpcRequest.id]/[RpcResponse.id] to a single 
+  /// Maps an [JsonRpcRequest.hash] and [JsonRpcRequest.id]/[JsonRpcResponse.id] to a single 
   /// [WebSocketExchange].
   WebSocketExchangeManager();
 
@@ -146,7 +146,7 @@ class WebSocketExchangeManager {
   }
 
   /// Completes the exchange for the provided [response].
-  void onResponse<T>(final RpcResponse<T> response) {
+  void onResponse<T>(final JsonRpcResponse<T> response) {
     final WebSocketExchange<T>? exchange = _keyToExchange[response.id];
     if (exchange != null) {
       if (response.isSuccess) {

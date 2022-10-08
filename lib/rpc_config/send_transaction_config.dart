@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
-import '../src/utils/types.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
+import 'package:solana_common/utils/types.dart';
 import '../types/commitment.dart';
 import '../types/transaction_encoding.dart';
 
@@ -10,7 +10,7 @@ import '../types/transaction_encoding.dart';
 /// Send Transaction Config
 /// ------------------------------------------------------------------------------------------------
 
-class SendTransactionConfig extends RpcRequestConfig {
+class SendTransactionConfig extends JsonRpcRequestConfig {
 
   /// JSON-RPC configurations for `sendTransaction` methods.
   const SendTransactionConfig({

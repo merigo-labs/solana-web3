@@ -97,7 +97,7 @@ void main() {
     assert(pubKey.toBase58() == '11111111111111111111111111111111');
   });
   test('public key from string', () {
-    final PublicKey pubKey = PublicKey.fromString(publicKeyBase58);
+    final PublicKey pubKey = PublicKey.fromBase58(publicKeyBase58);
     print('PUBKEY FROM STRING $pubKey');
     assertPublicKey(pubKey);
   });

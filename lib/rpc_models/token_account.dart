@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
 import '../rpc_models/account_info.dart';
-import '../src/models/serialisable.dart';
 import '../src/public_key.dart';
 
 
 /// Token Account
 /// ------------------------------------------------------------------------------------------------
 
-class TokenAccount extends Serialisable {
+class TokenAccount extends Serializable {
   
   /// An SPL token account.
   const TokenAccount({
@@ -30,7 +30,7 @@ class TokenAccount extends Serialisable {
   /// TokenAccount.fromJson({ '<parameter>': <value> });
   /// ```
   factory TokenAccount.fromJson(final Map<String, dynamic> json) => TokenAccount(
-    pubkey: PublicKey.fromString(json['pubkey']),
+    pubkey: PublicKey.fromBase58(json['pubkey']),
     account: AccountInfo.parse(json['account']),
   );
 

@@ -7,10 +7,11 @@ library solana_web3;
 /// Exports
 /// ------------------------------------------------------------------------------------------------
 
+export 'package:solana_common/config/cluster.dart';
+export 'package:solana_common/utils/buffer.dart';
+export 'package:solana_common/utils/convert.dart';
 export 'src/blockhash.dart';
 export 'src/bpf_loader.dart';
-export 'src/buffer.dart';
-export 'src/config/cluster.dart';
 export 'src/connection.dart';
 export 'src/epoch_schedule.dart';
 export 'src/fee_calculator.dart';

@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'library_exception.dart';
+import 'package:solana_common/exceptions/solana_exception.dart';
 
 
 /// ED25519 Exception
 /// ------------------------------------------------------------------------------------------------
 
-class ED25519Exception extends LibraryException {
+class ED25519Exception extends SolanaException {
 
   /// Creates an exception for the `ed25519` public key signature system.
   const ED25519Exception(

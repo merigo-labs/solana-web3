@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'library_exception.dart';
+import 'package:solana_common/exceptions/solana_exception.dart';
 
 
 /// Transaction Exception
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionException extends LibraryException {
+class TransactionException extends SolanaException {
 
   /// Creates an exception for an invalid keypair.
   const TransactionException(

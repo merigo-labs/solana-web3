@@ -1,26 +1,26 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/utils/convert.dart' as convert;
 import '../instruction.dart';
-import '../buffer.dart';
 import '../buffer_layout.dart' as buffer_layout;
 import '../layout.dart' as layout;
 import '../message/message_instruction.dart';
 import '../models/address_table_lookup.dart';
 import '../nacl.dart' as nacl show publicKeyLength;
 import '../../rpc_config/get_block_config.dart';
-import '../models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import '../models/transaction.dart';
 import '../public_key.dart';
 import '../transaction/constants.dart' show packetDataSize;
-import '../utils/convert.dart' as convert;
 import '../utils/shortvec.dart' as shortvec;
 
 
 /// Message Header
 /// ------------------------------------------------------------------------------------------------
 
-class MessageHeader extends Serialisable {
+class MessageHeader extends Serializable {
   
   /// Details the account types and signatures required by the transaction (signed and read-only 
   /// accounts).
@@ -73,7 +73,7 @@ class MessageHeader extends Serialisable {
 /// Message
 /// ------------------------------------------------------------------------------------------------
 
-class Message extends Serialisable {
+class Message extends Serializable {
   
   /// Defines the list of [instructions] to be processed atomically by a transaction.
   Message({
@@ -129,7 +129,7 @@ class Message extends Serialisable {
   /// Message.fromJson({ '<parameter>': <value> });
   /// ```
   factory Message.fromJson(final Map<String, dynamic> json) => Message(
-    accountKeys: convert.list.decode(json['accountKeys'], PublicKey.fromString),
+    accountKeys: convert.list.decode(json['accountKeys'], PublicKey.fromBase58),
     header: MessageHeader.fromJson(json['header']),
     recentBlockhash: json['recentBlockhash'],
     instructions: convert.list.decode(json['instructions'], Instruction.fromJson),

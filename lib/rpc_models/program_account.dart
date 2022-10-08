@@ -1,15 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
 import '../rpc_models/account_info.dart';
-import '../src/models/serialisable.dart';
 import '../src/public_key.dart';
 
 
 /// ProgramAccount
 /// ------------------------------------------------------------------------------------------------
 
-class ProgramAccount extends Serialisable {
+class ProgramAccount extends Serializable {
   
   /// The ProgramAccount public key for a node.
   const ProgramAccount({
@@ -29,7 +29,7 @@ class ProgramAccount extends Serialisable {
   /// ProgramAccount.parse({ '<parameter>': <value> });
   /// ```
   factory ProgramAccount.parse(final Map<String, dynamic> json) => ProgramAccount(
-    pubkey: PublicKey.fromString(json['pubkey']),
+    pubkey: PublicKey.fromBase58(json['pubkey']),
     account: AccountInfo.parse(json['account']),
   );
 
@@ -40,7 +40,7 @@ class ProgramAccount extends Serialisable {
   /// ProgramAccount.fromJson({ '<parameter>': <value> });
   /// ```
   factory ProgramAccount.fromJson(final Map<String, dynamic> json) => ProgramAccount(
-    pubkey: PublicKey.fromString(json['pubkey']),
+    pubkey: PublicKey.fromBase58(json['pubkey']),
     account: AccountInfo.fromJson(json['account']),
   );
 

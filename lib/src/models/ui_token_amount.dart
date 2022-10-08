@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// UI Token Amount
 /// ------------------------------------------------------------------------------------------------
 
-class UITokenAmount extends Serialisable {
+class UITokenAmount extends Serializable {
 
   /// Token amount.
   const UITokenAmount({

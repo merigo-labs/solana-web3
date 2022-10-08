@@ -1,20 +1,20 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
-import '../rpc/rpc_request.dart';
+import 'package:solana_common/protocol/json_rpc_request.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
 import '../types/commitment.dart';
 
 
-/// RPC Subscribe Config
+/// JSON RPC Subscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-abstract class RpcSubscribeConfig extends RpcRequestConfig {
+abstract class JsonRpcSubscribeConfig extends JsonRpcRequestConfig {
 
   /// Defines the configurations for JSON-RPC `subscribe` requests.
   /// 
   /// The [id] property is used internally to map requests to responses.
-  const RpcSubscribeConfig({
+  const JsonRpcSubscribeConfig({
     super.timeout,
   }): super(id: null, headers: null);
 
@@ -35,8 +35,8 @@ abstract class RpcSubscribeConfig extends RpcRequestConfig {
   /// }
   /// ```
   /// 
-  /// Classes derived from [RpcSubscribeConfig] cannot contain `null` valued properties. This is 
-  /// required to ensure that all JSON-RPC requests produce the same [RpcRequest.hash].
+  /// Classes derived from [JsonRpcSubscribeConfig] cannot contain `null` valued properties. This is 
+  /// required to ensure that all JSON-RPC requests produce the same [JsonRpcRequest.hash].
   /// 
   /// For example:
   /// 
@@ -46,8 +46,8 @@ abstract class RpcSubscribeConfig extends RpcRequestConfig {
   ///   { 'commitment': null } == { 'commitment': 'finalized' }
   /// ```
   /// 
-  ///   * However, allowing `null` valued properties produces two different [RpcRequest.hash] values 
-  ///     for the same request.
+  ///   * However, allowing `null` valued properties produces two different [JsonRpcRequest.hash] 
+  ///     values for the same request.
   /// 
   /// ```
   ///   { 'commitment': null }        -> "{ commitment: null }"

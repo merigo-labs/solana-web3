@@ -1,11 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/utils/convert.dart' as convert show list;
+import 'package:solana_common/utils/types.dart' show u64;
 import 'commitment_config.dart';
 import '../src/models/data_slice.dart';
 import '../src/models/program_filter.dart';
-import '../src/utils/convert.dart' as convert show list;
-import '../src/utils/types.dart' show u64;
 import '../types/account_encoding.dart';
 
 

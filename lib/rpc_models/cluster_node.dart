@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u16, u32;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u16, u32;
 
 
 /// Cluster Node
 /// ------------------------------------------------------------------------------------------------
 
-class ClusterNode extends Serialisable {
+class ClusterNode extends Serializable {
   
   /// Information about a cluster node.
   const ClusterNode({

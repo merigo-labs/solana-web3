@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u16, u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u16, u64;
 
 
 /// Performance Sample
 /// ------------------------------------------------------------------------------------------------
 
-class PerformanceSample extends Serialisable {
+class PerformanceSample extends Serializable {
   
   /// Performance Sample.
   const PerformanceSample({

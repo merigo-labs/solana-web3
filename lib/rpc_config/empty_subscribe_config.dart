@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_subscribe_config.dart';
+import 'json_rpc_subscribe_config.dart';
 
 
 /// Empty Subscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-class EmptySubscribeConfig extends RpcSubscribeConfig {
+class EmptySubscribeConfig extends JsonRpcSubscribeConfig {
 
   /// JSON-RPC configuration object with no additional properties.
   const EmptySubscribeConfig({

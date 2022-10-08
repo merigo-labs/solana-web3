@@ -4,13 +4,13 @@
 import 'package:solana_common/exceptions/solana_exception.dart';
 
 
-/// Keypair Exception
+/// Subscription Exception
 /// ------------------------------------------------------------------------------------------------
 
-class KeypairException extends SolanaException {
+class SubscriptionException extends SolanaException {
 
-  /// Creates an exception for an invalid keypair.
-  const KeypairException(
+  /// Creates an exception for an invalid subscription.
+  const SubscriptionException(
     super.message, {
     super.code,
   });
@@ -19,9 +19,9 @@ class KeypairException extends SolanaException {
   /// object.
   /// 
   /// ```
-  /// KeypairException.fromJson({ '<parameter>': <value> });
+  /// SubscriptionException.fromJson({ '<parameter>': <value> });
   /// ```
-  factory KeypairException.fromJson(final Map<String, dynamic> json) => KeypairException(
+  factory SubscriptionException.fromJson(final Map<String, dynamic> json) => SubscriptionException(
     json['message'],
     code: json['code'],
   );

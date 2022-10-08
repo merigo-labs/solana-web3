@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u8, u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u8, u64;
 
 
 /// Inflation Reward
 /// ------------------------------------------------------------------------------------------------
 
-class InflationReward extends Serialisable {
+class InflationReward extends Serializable {
   
   /// Inflation / staking reward.
   const InflationReward({

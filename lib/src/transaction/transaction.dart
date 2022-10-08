@@ -1,22 +1,25 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert';
 import 'dart:typed_data';
+import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/utils/convert.dart' as convert;
+import 'package:solana_common/utils/convert.dart';
+import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/types.dart' show u64;
+import 'package:solana_web3/rpc_models/blockhash_with_expiry_block_height.dart';
 import '../instruction.dart';
 import '../blockhash.dart';
-import '../buffer.dart';
 import '../keypair.dart';
 import '../message/message.dart';
-import '../models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 import '../nacl.dart' as nacl;
+import '../nacl.dart';
 import '../public_key.dart';
 import '../connection.dart';
 import '../transaction/constants.dart';
-import '../utils/convert.dart' as convert;
-import '../utils/convert.dart';
 import '../utils/shortvec.dart' as shortvec;
-import '../utils/library.dart' show require;
-import '../utils/types.dart';
 import '../../exceptions/transaction_exception.dart';
 
 
@@ -46,7 +49,7 @@ final Buffer defaultSignature = Buffer(nacl.signatureLength);
 /// Account Meta
 /// ------------------------------------------------------------------------------------------------
 
-class AccountMeta extends Serialisable {
+class AccountMeta extends Serializable {
 
   /// Account metadata used to define instructions.
   const AccountMeta(
@@ -71,7 +74,7 @@ class AccountMeta extends Serialisable {
   /// AccountMeta.fromJson({ '<parameter>': <value> });
   /// ```
   factory AccountMeta.fromJson(final Map<String, dynamic> json) => AccountMeta(
-    PublicKey.fromString(json['publicKey']),
+    PublicKey.fromBase58(json['publicKey']),
     isSigner: json['isSigner'],
     isWritable: json['isWritable'],
   );
@@ -120,7 +123,7 @@ class SerializeConfig {
 /// Transaction Instruction
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionInstruction extends Serialisable {
+class TransactionInstruction extends Serializable {
 
   /// A TransactionInstruction object.
   TransactionInstruction({
@@ -146,7 +149,7 @@ class TransactionInstruction extends Serialisable {
   /// ```
   factory TransactionInstruction.fromJson(final Map<String, dynamic> json) => TransactionInstruction(
     keys: convert.list.decode(json['keys'], AccountMeta.fromJson),
-    programId: PublicKey.fromString(json['programId']),
+    programId: PublicKey.fromBase58(json['programId']),
     data: json['data'],
   );
 
@@ -176,7 +179,7 @@ class TransactionInstruction extends Serialisable {
 /// Signature Public Key Pair
 /// ------------------------------------------------------------------------------------------------
 
-class SignaturePublicKeyPair extends Serialisable {
+class SignaturePublicKeyPair extends Serializable {
 
   /// A signature and its corresponding public key.
   const SignaturePublicKeyPair({
@@ -198,7 +201,7 @@ class SignaturePublicKeyPair extends Serialisable {
   /// ```
   factory SignaturePublicKeyPair.fromJson(final Map<String, dynamic> json) => SignaturePublicKeyPair(
     signature: json['signature'],
-    publicKey: PublicKey.fromString(json['publicKey']),
+    publicKey: PublicKey.fromBase58(json['publicKey']),
   );
 
   @override
@@ -223,7 +226,7 @@ class SignaturePublicKeyPair extends Serialisable {
 /// Nonce Information
 /// ------------------------------------------------------------------------------------------------
 
-class NonceInformation extends Serialisable {
+class NonceInformation extends Serializable {
 
   /// Nonce information to be used to build an offline Transaction.
   const NonceInformation({
@@ -271,7 +274,7 @@ class NonceInformation extends Serialisable {
 /// Transaction
 /// ------------------------------------------------------------------------------------------------
 
-class Transaction extends Serialisable {
+class Transaction extends Serializable {
 
   /// Transaction.
   Transaction({
@@ -320,7 +323,7 @@ class Transaction extends Serialisable {
   /// Transaction.fromJson({ '<parameter>': <value> });
   /// ```
   factory Transaction.fromJson(final Map<String, dynamic> json) => Transaction(
-    feePayer: PublicKey.tryFromString(json['feePayer']),
+    feePayer: PublicKey.tryFromBase58(json['feePayer']),
     signatures: convert.list.decode(json['signatures'], SignaturePublicKeyPair.fromJson),
     recentBlockhash: json['recentBlockhash'],
     lastValidBlockHeight: json['lastValidBlockHeight'],
@@ -359,6 +362,14 @@ class Transaction extends Serialisable {
     transaction._json = _json;
     return transaction;
   }
+
+  /// Creates a copy of this class applying the provided [blockhash].
+  Transaction copyWithBlockhash(
+    final BlockhashWithExpiryBlockHeight blockhash,
+  ) => copyWith(
+      recentBlockhash: blockhash.blockhash,
+      lastValidBlockHeight: blockhash.lastValidBlockHeight,
+    );
 
   /// Appends [instruction] to this [Transaction].
   void add(final TransactionInstruction instruction) {
@@ -531,9 +542,9 @@ class Transaction extends Serialisable {
 
     // Validate the indices of each instruction's program id and accounts.
     for (final Instruction instruction in transaction) {
-      require(instruction.programIdIndex >= 0, 'Instruction program id index is < 0');
+      check(instruction.programIdIndex >= 0, 'Instruction program id index is < 0');
       for (var index in instruction.accounts) {
-        require(index >= 0, 'Instruction account index is < 0');
+        check(index >= 0, 'Instruction account index is < 0');
       }
     }
 
@@ -601,7 +612,7 @@ class Transaction extends Serialisable {
   /// invalidate the signature and cause the [Transaction] to be rejected.
   ///
   /// The Transaction must be assigned a valid `recentBlockhash` before invoking this method.
-  sign(final List<Signer> signers, { final bool clear = true }) {
+  void sign(final List<Signer> signers, { final bool clear = true }) {
 
     if (signers.isEmpty) {
       throw const TransactionException(
@@ -671,19 +682,19 @@ class Transaction extends Serialisable {
     final List<int> signatureCount = shortvec.encodeLength(signatures.length);
     final int transactionLength = signatureCount.length + signatures.length * 64 + message.length;
     final Buffer wireTransaction = Buffer(transactionLength);
-    require(signatures.length < 256, 'The number of signatures must be < 256');
+    check(signatures.length < 256, 'The number of signatures must be < 256');
     Buffer.fromList(signatureCount).copy(wireTransaction, 0);
     
     for (int i = 0; i < signatures.length; ++i) {
       final Uint8List? signature = signatures[i].signature;
       if (signature != null) {
-        require(signature.length == nacl.signatureLength, 'Invalid signature length.');
+        check(signature.length == nacl.signatureLength, 'Invalid signature length.');
         Buffer.fromList(signature).copy(wireTransaction, signatureCount.length + i * 64);
       }
     }
 
     message.copy(wireTransaction, signatureCount.length + signatures.length * 64);
-    require(
+    check(
       wireTransaction.length <= packetDataSize,
       'Transaction is too large: ${wireTransaction.length} > $packetDataSize',
     );
@@ -699,7 +710,7 @@ class Transaction extends Serialisable {
     for (int i = 0; i < signatureCount; ++i) {
       final Buffer signature = buffer.slice(0, nacl.signatureLength);
       buffer = buffer.slice(nacl.signatureLength);
-      signatures.add(base58.encode(signature.asUint8List()));
+      signatures.add(convert.base58.encode(signature.asUint8List()));
     }
     return Transaction.populate(Message.fromList(Uint8List(0)), signatures);
   }
@@ -751,5 +762,16 @@ class Transaction extends Serialisable {
     transaction._json = transaction.toJson();
 
     return transaction;
+  }
+
+  static List<TransactionSignature> decodeSignatures(final String base64Encoded) {
+    final List<TransactionSignature> signatures = [];
+    final Uint8List base64Decoded = base64.decode(base64Encoded);
+    final BufferReader reader = BufferReader.fromUint8List(base64Decoded);
+    final int numberOfSignatures = reader.get(1).getUint8(0);
+    for (int i = 0; i < numberOfSignatures; ++i) {
+      signatures.add(base58.encode(reader.get(signatureLength).asUint8List()));
+    }
+    return signatures;
   }
 }

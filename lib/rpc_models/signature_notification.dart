@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Signature Notification
 /// ------------------------------------------------------------------------------------------------
 
-class SignatureNotification extends Serialisable {
+class SignatureNotification extends Serializable {
   
   /// Signature notification.
   const SignatureNotification({

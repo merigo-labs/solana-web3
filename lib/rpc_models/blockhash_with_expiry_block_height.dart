@@ -2,14 +2,14 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_web3/src/blockhash.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart';
 
 
 /// Blockhash With Expiry Block Height
 /// ------------------------------------------------------------------------------------------------
 
-class BlockhashWithExpiryBlockHeight extends Serialisable {
+class BlockhashWithExpiryBlockHeight extends Serializable {
   
   /// A confirmed transaction block.
   const BlockhashWithExpiryBlockHeight({

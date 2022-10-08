@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Logs Notification
 /// ------------------------------------------------------------------------------------------------
 
-class LogsNotification extends Serialisable {
+class LogsNotification extends Serializable {
   
   /// Logs notification.
   const LogsNotification({

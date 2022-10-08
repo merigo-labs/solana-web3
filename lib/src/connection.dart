@@ -4,23 +4,33 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math show min;
 import 'dart:typed_data';
 import 'package:async/async.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:solana_common/exceptions/json_rpc_exception.dart';
+import 'package:solana_common/protocol/json_rpc_context_response.dart';
+import 'package:solana_common/protocol/json_rpc_context_result.dart';
+import 'package:solana_common/protocol/json_rpc_http_headers.dart';
+import 'package:solana_common/protocol/json_rpc_request.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
+import 'package:solana_common/protocol/json_rpc_response.dart';
+import 'package:solana_common/protocol/json_rpc_subscribe_response.dart';
+import 'package:solana_common/protocol/json_rpc_unsubscribe_response.dart';
+import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
+import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_web3/rpc_config/commitment_config.dart';
 import 'package:solana_web3/rpc_models/logs_notification.dart';
 import 'package:solana_web3/rpc_models/signature_notification.dart';
 import 'package:solana_web3/rpc_models/slot_notification.dart';
+import 'package:solana_common/extensions/future.dart';
 import '../types/notification_method.dart';
-import 'buffer.dart';
-import 'config/cluster.dart';
+import 'package:solana_common/config/cluster.dart';
 import 'models/logs_filter.dart';
-import 'nacl.dart' show signatureLength;
-import '../exceptions/rpc_exception.dart';
+import 'nacl.dart' as nacl show signatureLength;
 import '../rpc/rpc_notification_response.dart';
-import '../rpc_config/rpc_subscribe_config.dart';
-import '../rpc/rpc_subscribe_response.dart';
-import '../rpc_config/rpc_unsubscribe_config.dart';
-import '../rpc/rpc_unsubscribe_response.dart';
+import '../rpc_config/json_rpc_subscribe_config.dart';
+import '../rpc_config/json_rpc_unsubscribe_config.dart';
 import '../rpc_config/account_subscribe_config.dart';
 import '../rpc_config/account_unsubscribe_config.dart';
 import '../types/accounts_filter.dart';
@@ -91,19 +101,12 @@ import '../types/token_accounts_filter.dart';
 import '../types/transaction_encoding.dart';
 import '../rpc_models/block.dart';
 import 'public_key.dart';
-import '../rpc_config/rpc_bulk_request_config.dart';
 import '../rpc_config/get_account_info_config.dart';
 import '../rpc_models/account_info.dart';
 import '../exceptions/transaction_exception.dart';
 import 'keypair.dart';
 import 'message/message.dart';
 import 'package:http/http.dart' as http;
-import '../rpc/rpc_context_response.dart';
-import '../rpc/rpc_context_result.dart';
-import '../rpc/rpc_http_headers.dart';
-import '../rpc/rpc_request.dart';
-import '../rpc_config/rpc_request_config.dart';
-import '../rpc/rpc_response.dart';
 import '../../rpc_config/get_balance_config.dart';
 import '../../rpc_config/get_block_config.dart';
 import '../rpc_models/block_commitment.dart';
@@ -115,7 +118,7 @@ import '../rpc_models/confirmed_signature_info.dart';
 import '../rpc_models/epoch_info.dart';
 import '../rpc_models/epoch_schedule.dart';
 import '../rpc_models/highest_snapshot_slot.dart';
-import '../rpc_models/identity.dart';
+import '../rpc_models/node_identity.dart';
 import '../rpc_models/inflation_governor.dart';
 import '../rpc_models/inflation_rate.dart';
 import '../rpc_models/inflation_reward.dart';
@@ -132,84 +135,22 @@ import '../rpc_models/transaction_status.dart';
 import '../rpc_models/version.dart';
 import '../rpc_models/vote_account_status.dart';
 import 'transaction/transaction.dart';
-import 'utils/convert.dart' as convert show base58, list;
-import 'utils/library.dart' as utils show cast, require;
-import 'utils/library.dart';
-import 'utils/types.dart' show RpcJsonParser, RpcListParser, RpcParser, u64, i64, usize;
-import 'web_socket_connection.dart';
+import 'package:solana_common/utils/convert.dart' as convert show base58, list;
+import 'package:solana_common/utils/library.dart' as utils show cast, check;
+import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcMapParser, JsonRpcParser, i64, u64, usize;
 import 'web_socket_exchange_manager.dart';
 import 'web_socket_subscription_manager.dart';
-
-
-/// Future Extension
-/// ------------------------------------------------------------------------------------------------
-
-/// Future extensions for [RpcResponse]s.
-extension FutureRpcResponse<T> on Future<RpcResponse<T>> {
-
-  /// Returns a new future that completes with the [RpcResponse.result].
-  /// 
-  /// The caller must ensure that [RpcResponse.result] will `not be null`.
-  Future<T> unwrap() => then((final RpcResponse<T> value) => value.result!);
-
-  /// Returns a new future that completes with the [RpcResponse.result].
-  Future<T?> optional() => then((final RpcResponse<T> value) => value.result);
-}
-
-/// Future extensions for [RpcContextResponse]s.
-extension FutureRpcContextResponse<T> on Future<RpcContextResponse<T>> {
-
-  /// Returns a new future that completes with the [RpcContextResult.value].
-  /// 
-  /// The caller must ensure that [RpcContextResult.value] will `not be null`.
-  Future<T> unwrap() => then((final RpcContextResponse<T> value) => value.result!.value!);
-
-  /// Returns a new future that completes with the [RpcContextResult.value].
-  Future<T?> optional() => then((final RpcContextResponse<T> value) => value.result?.value);
-}
-
-/// Future extensions.
-extension FutureRace<T> on Future<T> {
-
-  /// Creates a new future that completes with the result of [this] if it completes before [other].
-  /// 
-  /// An error is returned if [other] finishes first.
-  Future<T> before(final Future other) {
-    
-    final Completer<T> completer = Completer.sync();
-    final CancelableOperation operation = CancelableOperation.fromFuture(other);
-
-    operation.then(
-      (_) => completer.completeError('The future lost the race.'),
-      onError: completer.completeError,
-    );
-
-    then((value) {
-      operation.cancel();
-      completer.complete(value);
-    });
-    
-    catchError((error, stakeTrace) {
-      operation.cancel();
-      completer.completeError(error, stakeTrace);
-    });
-    
-    return completer.future;
-  }
-}
 
 
 /// Connection
 /// ------------------------------------------------------------------------------------------------
 
-class Connection {
+class Connection extends SolanaWebSocketConnection {
 
+  /// {@template solana_web3.Connection}
   /// Creates a connection to the [cluster].
   /// 
   /// Web socket method calls are made to the [wsCluster], which defaults to [cluster]. 
-  /// 
-  /// A web socket connection is established on creation, set [autoConnect] to `false` to connect on 
-  /// demand.
   /// 
   /// The [commitment] configuration will be set as the default value for all methods that accept a 
   /// commitment parameter. Use the `config` parameter of a method call to override the default 
@@ -219,7 +160,7 @@ class Connection {
   /// final connection = Connection(Cluster.mainnet);
   /// 
   /// final accountInfo = await connection.getAccountInfo(
-  ///   PublicKey.fromString('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'), 
+  ///   PublicKey.fromBase58('Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'), 
   ///   config: GetAccountInfoConfig(
   ///     commitment: Commitment.finalized, // override default.
   ///   ),
@@ -227,27 +168,17 @@ class Connection {
   /// 
   /// print('Account Info ${accountInfo?.toJson()}');
   /// ```
+  /// {@endtemplate}
   /// 
   /// TODO: Auto connect / resubscribe when the devices connection status changes.
   Connection(
     this.cluster, { 
     final Cluster? wsCluster, 
-    this.autoConnect = true,
     this.commitment = Commitment.confirmed,
-  }) {
-    socket = WebSocketConnection(
-      wsCluster ?? cluster, 
-      _onWebSocketData,
-      onError: _onWebSocketError,
-      onConnect: _onWebSocketConnect,
-      onDisconnect: _onWebSocketDisconnect,
-    );
+  }): super() {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       _onConnectivityChanged
     );
-    if (autoConnect) {
-      socket.connect();
-    }
   }
 
   /// A persistent connection.
@@ -259,22 +190,19 @@ class Connection {
   /// The default commitment level (applied to a subset of method invocations).
   final Commitment? commitment;
 
-  final bool autoConnect;
-
-  /// The websocket connection.
-  late final WebSocketConnection socket;
-
+  /// Listen to connectivity changes.
   late final StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   /// The latest blockhash.
   final BlockhashCache _blockhashCache = BlockhashCache();
 
-  /// Maps [RpcRequest]s to their corresponding [RpcResponse].
+  /// Maps [JsonRpcRequest]s to their corresponding [JsonRpcResponse].
   final WebSocketExchangeManager _webSocketExchangeManager = WebSocketExchangeManager();
 
   /// Adds and removes stream listeners for a web socket subscription.
   final WebSocketSubscriptionManager _webSocketSubscriptionManager = WebSocketSubscriptionManager();
 
+  /// Returns true if there's at least one subscriber.
   bool get hasSubscribers => _webSocketSubscriptionManager.isNotEmpty;
 
   /// Disposes of all the acquired resources.
@@ -286,30 +214,51 @@ class Connection {
     _connectivitySubscription.cancel();
   }
 
-
+  /// Reconnect the web socket.
   void _onConnectivityChanged(final ConnectivityResult result) {
     if (result == ConnectivityResult.ethernet
       || result == ConnectivityResult.mobile
       || result == ConnectivityResult.wifi) {
-      if (!socket.isConnected && (autoConnect || hasSubscribers)) {
-        socket.connect().ignore(); // This will still call onConnect.
+      if (!socket.isConnected && hasSubscribers) {
+        socket.connect(cluster.ws()).ignore(); // This will call onConnect.
       }
     }
   }
+  
+  /// Resubscribe all existing subscriptions.
+  @override
+  void onWebSocketConnect() {
+    // TODO: Check or set [WebSocketExchange.id] to the largest id found.
+    for(final WebSocketExchange exchange in _webSocketExchangeManager.values) {
+      resubscribe(exchange).ignore();
+    }
+  }
+  
+  @override
+  void onWebSocketData(final dynamic data) {
+    // print("\n--------------------------------------------------------------------------------");
+    // print("[ON SOCKET DATA]         $data");
+    // print("--------------------------------------------------------------------------------\n");
+    if (data is String && data.isNotEmpty) {
+      return _onWebSocketData(json.decode(data));
+    }
+  }
 
-  void _onWebSocketData(final Map<String, dynamic> json)  async {
-    
-    if (RpcResponse.isType<int>(json)) {
-      final RpcSubscribeResponse response = RpcResponse.parse(json, cast<int>);
+  void _onWebSocketData(final Map<String, dynamic> data) {
+
+    final Map<String, dynamic> json = Map.castFrom(data);
+
+    if (JsonRpcResponse.isType<int>(json)) {
+      final JsonRpcSubscribeResponse response = JsonRpcResponse.parse(json, utils.cast<int>);
       return _webSocketExchangeManager.onResponse(response);
     }
 
-    if (RpcResponse.isType<bool>(json)) {
-      final RpcUnsubscribeResponse response = RpcResponse.parse(json, cast<bool>);
+    if (JsonRpcResponse.isType<bool>(json)) {
+      final JsonRpcUnsubscribeResponse response = JsonRpcResponse.parse(json, utils.cast<bool>);
       return _webSocketExchangeManager.onResponse(response);
     }
 
-    final RpcResponse? response = RpcResponse.tryParse(json, cast<dynamic>);
+    final JsonRpcResponse? response = JsonRpcResponse.tryParse(json, utils.cast<dynamic>);
     if (response != null && response.isError) {
       return _webSocketExchangeManager.onResponse(response);
     }
@@ -332,24 +281,20 @@ class Connection {
       }
     }
   }
-
-  void _onWebSocketNotification<T, U>(final Map<String, dynamic> json, final RpcParser<T, U> parser) 
+  
+  void _onWebSocketNotification<T, U>(final Map<String, dynamic> json, final JsonRpcParser<T, U> parser) 
     => _webSocketSubscriptionManager.onNotification(RpcNotificationResponse.parse(json, parser));
   
-  void _onWebSocketError(final Object error, [final StackTrace? stackTrace]) {
+  @override
+  void onWebSocketError(Object error, [StackTrace? stackTrace]) {
     print("\n--------------------------------------------------------------------------------");
     print("[ON SOCKET ERROR]        $error");
     print("--------------------------------------------------------------------------------\n");
   }
 
-  void _onWebSocketConnect(final WebSocket connection) {
-    for(final WebSocketExchange exchange in _webSocketExchangeManager.values) {
-      resubscribe(exchange).ignore();
-    }
-  }
-
-  void _onWebSocketDisconnect() {
-    
+  @override
+  void onWebSocketDisconnect([int? code, String? reason]) {
+    // TODO: implement onWebSocketDisconnect
   }
 
   /// Prints the contents of a JSON-RPC request.
@@ -371,7 +316,7 @@ class Connection {
   }
 
   /// Prints the contents of a web socket data request.
-  void _debugWebSocketRequest(final RpcRequest request) {
+  void _debugWebSocketRequest(final JsonRpcRequest request) {
     print("\n--------------------------------------------------------------------------------");
     print("[WEBSOCKET DATA]:          ${request.toJson()}");
     print("--------------------------------------------------------------------------------\n");
@@ -385,57 +330,61 @@ class Connection {
     print("--------------------------------------------------------------------------------\n");
   }
 
-  /// Creates a callback function that converts a [http.Response] into an [RpcResponse].
+  /// Creates a callback function that converts a [http.Response] into an [JsonRpcResponse].
   /// 
   /// The [parse] callback function converts [http.Response]'s `result` value from type `U` into 
   /// `T`.
-  FutureOr<RpcResponse<T>> Function(http.Response) _responseParser<T, U>(
-    final RpcParser<T, U> parse,
+  FutureOr<JsonRpcResponse<T>> Function(http.Response) _responseParser<T, U>(
+    final JsonRpcParser<T, U> parse,
   ) {
     return (final http.Response response) {
       //_debugResponse(response);
       final Map<String, dynamic> body = json.decode(response.body);
-      final RpcResponse<T> rpc = RpcResponse.parse<T, U>(body, parse);
+      final JsonRpcResponse<T> rpc = JsonRpcResponse.parse<T, U>(body, parse);
       return rpc.isSuccess ? Future.value(rpc) : Future.error(rpc.error!);
     };
   }
 
   /// Creates a callback function that converts a bulk [http.Response] into a [List] of 
-  /// [RpcResponse].
+  /// [JsonRpcResponse].
   /// 
-  /// The [parsers] callback functions convert each [http.Response] `result` value from type `U` 
+  /// The [parseList] callback functions convert each [http.Response] `result` value from type `U` 
   /// into `T`.
-  List<RpcResponse> Function(http.Response) _bulkResponseParser(
-    final List<RpcParser> parsers,
+  List<JsonRpcResponse> Function(http.Response) _bulkResponseParser(
+    final List<JsonRpcParser> parseList,
   ) {
+    assert(parseList.isNotEmpty);
     return (final http.Response response) {
-      final List<Map<String, dynamic>> body = json.decode(response.body);
-      return List.generate(body.length, (final int i) => RpcResponse.parse(body[i], parsers[i]));
+      print('BULK REPONSE ${response.body}');
+      final List<Map<String, dynamic>> body = List.from(json.decode(response.body));
+      return List.generate(body.length, (final int i) {
+        return JsonRpcResponse.parse(body[i], i < parseList.length ? parseList[i] : parseList.last);
+      });
     };
   }
 
   /// Creates a callback function that converts the `body` of a `context response` into an 
-  /// [RpcContextResult].
+  /// [JsonRpcContextResult].
   /// 
   /// The [parse] method converts context result's `value` property from type `U` into `T`.
-  RpcJsonParser<RpcContextResult<T>> _contextParser<T, U>(final RpcParser<T, U> parse) {
-    return (final Map<String, dynamic> body) => RpcContextResult.parse(body, parse);
+  JsonRpcMapParser<JsonRpcContextResult<T>> _contextParser<T, U>(final JsonRpcParser<T, U> parse) {
+    return (final Map<String, dynamic> body) => JsonRpcContextResult.parse(body, parse);
   }
 
-  /// Creates a callback function that returns the [RpcContextResult.value] of a `context response`.
+  /// Creates a callback function that returns the [JsonRpcContextResult.value] of a `context response`.
   /// 
-  /// The caller must ensure that [RpcContextResult.value] will `not be null`.
+  /// The caller must ensure that [JsonRpcContextResult.value] will `not be null`.
   /// 
   /// The [parse] method converts context result's `value` property from type `U` into `T`.
-  RpcJsonParser<T> _unwrapValueParser<T, U>(final RpcParser<T, U> parse) {
-    return (final Map<String, dynamic> body) => RpcContextResult.parse(body, parse).value!;
+  JsonRpcMapParser<T> _unwrapValueParser<T, U>(final JsonRpcParser<T, U> parse) {
+    return (final Map<String, dynamic> body) => JsonRpcContextResult.parse(body, parse).value!;
   }
 
   /// Creates a callback function that converts a list returned by a [http.Response]'s into a list 
   /// of type T.
   /// 
   /// The [parse] method converts each item in the list from type `U` into `T`.
-  RpcListParser<T> _listParser<T, U>(final RpcParser<T, U> parse) {
+  JsonRpcListParser<T> _listParser<T, U>(final JsonRpcParser<T, U> parse) {
     return (final List items) => convert.list.decode(items, parse);
   }
 
@@ -449,14 +398,14 @@ class Connection {
   /// [{ method: 'getAccountInfo', ... }, { method: 'getBalance', ... }]  // Multiple method calls.
   /// ```
   /// 
-  /// The [config] object can be used to set the request's [RpcRequestConfig.headers] and 
-  /// [RpcRequestConfig.timeout] duration.
-  Future<http.Response> _post<T, U>(final Object body, { final RpcRequestConfig? config }) {
+  /// The [config] object can be used to set the request's [JsonRpcRequestConfig.headers] and 
+  /// [JsonRpcRequestConfig.timeout] duration.
+  Future<http.Response> _post<T, U>(final Object body, { final JsonRpcRequestConfig? config }) {
     //_debugRequest(body);
     final Future<http.Response> request = client.post(
       cluster.http(),
       body: json.encode(body).codeUnits,
-      headers: (config?.headers ?? const RpcHttpHeaders()).toJson(),
+      headers: (config?.headers ?? const JsonRpcHttpHeaders()).toJson(),
     );
     final Duration? timeout = config?.timeout;
     return timeout != null ? request.timeout(timeout) : request;
@@ -465,7 +414,7 @@ class Connection {
   /// Creates a list of ordered parameter values.
   List<Object> _buildParams(
     final List<Object> values,
-    final RpcRequestConfig config, [
+    final JsonRpcRequestConfig config, [
     final Commitment? commitment,
   ]) {
     final Map<String, dynamic> object = config.object();
@@ -473,50 +422,63 @@ class Connection {
     if (object.containsKey(commitmentKey)) {
       object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
     }
-    return object.isEmpty ? values : (values..add(object));
+    return object.isEmpty ? values : [...values, object];
+  }
+
+  JsonRpcRequest _buildRequest(
+    final Method method, 
+    final List<Object> values, {
+    required final JsonRpcRequestConfig config,
+  }) {
+    final List<Object> params = _buildParams(values, config);
+    return JsonRpcRequest(method.name, params: params, id: config.id);
   }
 
   /// Makes a JSON-RPC POST request to the [cluster], invoking a single [method].
   /// 
   /// The [method] is invoked with the provided ordered parameter [values] and configurations (
-  /// [RpcRequestConfig.id] and [RpcRequestConfig.object]).
+  /// [JsonRpcRequestConfig.id] and [JsonRpcRequestConfig.object]).
   /// 
   /// The [parse] callback function is applied to the `result` value of a `success` response.
   /// 
   /// Additional request configurations can be set using the [config] object's 
-  /// [RpcRequestConfig.headers] and [RpcRequestConfig.timeout] properties.
-  Future<RpcResponse<T>> _request<T, U>(
+  /// [JsonRpcRequestConfig.headers] and [JsonRpcRequestConfig.timeout] properties.
+  Future<JsonRpcResponse<T>> _request<T, U>(
     final Method method, 
     final List<Object> values, 
-    final RpcParser<T, U> parse, {
-    required final RpcRequestConfig config,
+    final JsonRpcParser<T, U> parse, {
+    required final JsonRpcRequestConfig config,
   }) {
     final List<Object> params = _buildParams(values, config);
-    final RpcRequest request = RpcRequest(method, params: params, id: config.id);
+    final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: config.id);
     return _post(request.toJson(), config: config).then(_responseParser(parse));
   }
   
   /// Makes a JSON-RPC POST request to the [cluster], invoking multiple methods in a single request.
   /// 
   /// Each of the [requests] defines a method to be invoked and their responses are handled by the 
-  /// provided [parsers]. The number of [requests] must match the number of [parsers].
+  /// parser found at the same index position in [parseList]. If the number of [requests] exceeds 
+  /// the number of parsers, the final parser in the list is applied.
   /// 
   /// Additional request configurations can be set using the [config] object's 
-  /// [RpcRequestConfig.headers] and [RpcRequestConfig.timeout] properties.
+  /// [JsonRpcRequestConfig.headers] and [JsonRpcRequestConfig.timeout] properties.
   /// 
   /// ```
   /// _bulkRequest(
-  ///   [RpcRequest(...), RpcRequest(...)], // The requests. 
-  ///   [(Map) => int, (String) => List]    // The corresponding parsers.
+  ///   [JsonRpcRequest(...), JsonRpcRequest(...)], // The requests. 
+  ///   [(Map) => int, (String) => List]            // The corresponding parsers.
   /// )
   /// ```
-  Future<List<RpcResponse>> _bulkRequest(
-    final List<RpcRequest> requests, 
-    final List<RpcParser> parsers, {
-    final RpcBulkRequestConfig? config,
+  Future<List<JsonRpcResponse>> _bulkRequest(
+    final Iterable<JsonRpcRequest> requests, 
+    final List<JsonRpcParser> parseList, {
+    final JsonRpcRequestConfig? config,
   }) {
-    assert(requests.length == parsers.length);
-    return _post(convert.list.encode(requests), config: config).then(_bulkResponseParser(parsers));
+    assert(requests.isNotEmpty && parseList.isNotEmpty);
+    Map<String, dynamic> _mapRequest(final JsonRpcRequest request) => request.toJson();
+    final List<Map<String, dynamic>> jsonList = requests.map(_mapRequest).toList(growable: false);
+    print('BULK REQUEST $jsonList');
+    return _post(jsonList, config: config).then(_bulkResponseParser(parseList));
   }
 
   /// Get the [cluster]'s health status.
@@ -526,7 +488,7 @@ class Connection {
   }
 
   /// Returns all information associated with the account of the provided [publicKey].
-  Future<RpcContextResponse<AccountInfo?>> getAccountInfoRaw(
+  Future<JsonRpcContextResponse<AccountInfo?>> getAccountInfoRaw(
     final PublicKey publicKey, {
     final GetAccountInfoConfig? config,
   }) {
@@ -544,11 +506,11 @@ class Connection {
   }
 
   /// Returns the `lamports` balance of the account for the provided [publicKey].
-  Future<RpcContextResponse<u64>> getBalanceRaw(
+  Future<JsonRpcContextResponse<u64>> getBalanceRaw(
     final PublicKey publicKey, {
     final GetBalanceConfig? config,
   }) {
-    final parse = _contextParser(cast<u64>);
+    final parse = _contextParser(utils.cast<u64>);
     final defaultConfig = config ?? const GetBalanceConfig();
     return _request(Method.getBalance, [publicKey.toBase58()], parse, config: defaultConfig);
   }
@@ -562,7 +524,7 @@ class Connection {
   }
 
   /// Returns identity and transaction information about a confirmed block at [slot] in the ledger.
-  Future<RpcResponse<Block?>> getBlockRaw(
+  Future<JsonRpcResponse<Block?>> getBlockRaw(
     final u64 slot, {
     final GetBlockConfig? config,
   }) {
@@ -580,7 +542,7 @@ class Connection {
   }
 
   /// Returns the current block height of the node.
-  Future<RpcResponse<u64>> getBlockHeightRaw({ final GetBlockHeightConfig? config }) {
+  Future<JsonRpcResponse<u64>> getBlockHeightRaw({ final GetBlockHeightConfig? config }) {
     final defaultConfig = config ?? const GetBlockHeightConfig();
     return _request(Method.getBlockHeight, [], utils.cast<u64>, config: defaultConfig);
   }
@@ -591,7 +553,7 @@ class Connection {
   }
 
   /// Returns the recent block production information from the current or previous epoch.
-  Future<RpcContextResponse<BlockProduction>> getBlockProductionRaw({ 
+  Future<JsonRpcContextResponse<BlockProduction>> getBlockProductionRaw({ 
     final GetBlockProductionConfig? config, 
   }) {
     final parse = _contextParser(BlockProduction.fromJson);
@@ -605,7 +567,7 @@ class Connection {
   }
 
   /// Returns the commitment for a particular block (slot).
-  Future<RpcResponse<BlockCommitment>> getBlockCommitmentRaw(
+  Future<JsonRpcResponse<BlockCommitment>> getBlockCommitmentRaw(
     final u64 slot, { 
     final GetBlockCommitmentConfig? config, 
   }) {
@@ -622,7 +584,7 @@ class Connection {
   }
 
   /// Returns a list of confirmed blocks between two slots.
-  Future<RpcResponse<List<u64>>> getBlocksRaw(
+  Future<JsonRpcResponse<List<u64>>> getBlocksRaw(
     final u64 startSlot, { 
     final u64? endSlot,
     final GetBlocksConfig? config, 
@@ -642,7 +604,7 @@ class Connection {
   }
 
   /// Returns a list of [limit] confirmed blocks starting at the given [slot].
-  Future<RpcResponse<List<u64>>> getBlocksWithLimitRaw(
+  Future<JsonRpcResponse<List<u64>>> getBlocksWithLimitRaw(
     final u64 slot, { 
     required final u64 limit,
     final GetBlocksWithLimitConfig? config, 
@@ -666,12 +628,12 @@ class Connection {
   /// adding a timestamp to a Vote for a particular block. A requested block's time is calculated 
   /// from the stake-weighted mean of the Vote timestamps in a set of recent blocks recorded on the 
   /// ledger.
-  Future<RpcResponse<i64?>> getBlockTimeRaw(
+  Future<JsonRpcResponse<i64?>> getBlockTimeRaw(
     final u64 slot, {
     final GetBlockTimeConfig? config,
   }) {
     final defaultConfig = config ?? const GetBlockTimeConfig();
-    return _request(Method.getBlockTime, [slot], cast<i64?>, config: defaultConfig);
+    return _request(Method.getBlockTime, [slot], utils.cast<i64?>, config: defaultConfig);
   }
 
   /// Returns the estimated production time of a block.
@@ -688,7 +650,7 @@ class Connection {
   }
 
   /// Returns information about all the nodes participating in the cluster.
-  Future<RpcResponse<List<ClusterNode>>> getClusterNodesRaw({ 
+  Future<JsonRpcResponse<List<ClusterNode>>> getClusterNodesRaw({ 
     final GetClusterNodesConfig? config, 
   }) {
     final parse = _listParser(ClusterNode.fromJson);
@@ -702,7 +664,7 @@ class Connection {
   }
 
   /// Returns information about the current epoch.
-  Future<RpcResponse<EpochInfo>> getEpochInfoRaw({ final GetEpochInfoConfig? config }) {
+  Future<JsonRpcResponse<EpochInfo>> getEpochInfoRaw({ final GetEpochInfoConfig? config }) {
     final defaultConfig = config ?? const GetEpochInfoConfig();
     return _request(Method.getEpochInfo, [], EpochInfo.fromJson, config: defaultConfig);
   }
@@ -713,7 +675,7 @@ class Connection {
   }
 
   /// Returns the epoch schedule information from the cluster's genesis config.
-  Future<RpcResponse<EpochSchedule>> getEpochScheduleRaw({ final GetEpochScheduleConfig? config }) {
+  Future<JsonRpcResponse<EpochSchedule>> getEpochScheduleRaw({ final GetEpochScheduleConfig? config }) {
     final defaultConfig = config ?? const GetEpochScheduleConfig();
     return _request(Method.getEpochSchedule, [], EpochSchedule.fromJson, config: defaultConfig);
   }
@@ -726,7 +688,7 @@ class Connection {
   /// Returns the network fee that will be charged to send [message].
   /// 
   /// TODO: Find out if a `null` return value means zero.
-  Future<RpcContextResponse<u64?>> getFeeForMessageRaw(
+  Future<JsonRpcContextResponse<u64?>> getFeeForMessageRaw(
     final Message message, {
     final GetFeeForMessageConfig? config,
   }) {
@@ -742,11 +704,11 @@ class Connection {
     final GetFeeForMessageConfig? config,
   }) async {
     final u64? fee = await getFeeForMessageRaw(message, config: config).unwrap();
-    return fee != null ? Future.value(fee) : Future.error(const RpcException('Invalid fee.'));
+    return fee != null ? Future.value(fee) : Future.error(const JsonRpcException('Invalid fee.'));
   }
 
   /// Returns the slot of the lowest confirmed block that has not been purged from the ledger.
-  Future<RpcResponse<u64>> getFirstAvailableBlockRaw({ 
+  Future<JsonRpcResponse<u64>> getFirstAvailableBlockRaw({ 
     final GetFirstAvailableBlockConfig? config, 
   }) {
     final defaultConfig = config ?? const GetFirstAvailableBlockConfig();
@@ -761,7 +723,7 @@ class Connection {
   }
 
   /// Returns the genesis hash.
-  Future<RpcResponse<String>> getGenesisHashRaw({ 
+  Future<JsonRpcResponse<String>> getGenesisHashRaw({ 
     final GetGenesisHashConfig? config, 
   }) {
     final defaultConfig = config ?? const GetGenesisHashConfig();
@@ -780,7 +742,7 @@ class Connection {
   /// If one or more --known-validator arguments are provided to solana-validator, "ok" is returned 
   /// when the node has within HEALTH_CHECK_SLOT_DISTANCE slots of the highest known validator, 
   /// otherwise an error is returned. "ok" is always returned if no known validators are provided.
-  Future<RpcResponse<HealthStatus>> getHealthRaw({ 
+  Future<JsonRpcResponse<HealthStatus>> getHealthRaw({ 
     final GetHealthConfig? config, 
   }) {
     final defaultConfig = config ?? const GetHealthConfig();
@@ -802,7 +764,7 @@ class Connection {
   /// 
   /// This will find the highest full snapshot slot, and the highest incremental snapshot slot based 
   /// on the full snapshot slot, if there is one.
-  Future<RpcResponse<HighestSnapshotSlot>> getHighestSnapshotSlotRaw({ 
+  Future<JsonRpcResponse<HighestSnapshotSlot>> getHighestSnapshotSlotRaw({ 
     final GetHighestSnapshotSlotConfig? config, 
   }) {
     final defaultConfig = config ?? const GetHighestSnapshotSlotConfig();
@@ -820,22 +782,22 @@ class Connection {
   }
 
   /// Returns the identity pubkey for the current node.
-  Future<RpcResponse<Identity>> getIdentityRaw({ 
+  Future<JsonRpcResponse<NodeIdentity>> getIdentityRaw({ 
     final GetIdentityConfig? config, 
   }) {
     final defaultConfig = config ?? const GetIdentityConfig();
-    return _request(Method.getIdentity, [], Identity.fromJson, config: defaultConfig);
+    return _request(Method.getIdentity, [], NodeIdentity.fromJson, config: defaultConfig);
   }
 
   /// Returns the identity pubkey for the current node.
-  Future<Identity> getIdentity({ 
+  Future<NodeIdentity> getIdentity({ 
     final GetIdentityConfig? config, 
   }) {
     return getIdentityRaw(config: config).unwrap();
   }
 
   /// Returns the current inflation governor.
-  Future<RpcResponse<InflationGovernor>> getInflationGovernorRaw({ 
+  Future<JsonRpcResponse<InflationGovernor>> getInflationGovernorRaw({ 
     final GetInflationGovernorConfig? config, 
   }) {
     final defaultConfig = config ?? const GetInflationGovernorConfig();
@@ -850,7 +812,7 @@ class Connection {
   }
 
   /// Returns the specific inflation values for the current epoch.
-  Future<RpcResponse<InflationRate>> getInflationRateRaw({ 
+  Future<JsonRpcResponse<InflationRate>> getInflationRateRaw({ 
     final GetInflationRateConfig? config, 
   }) {
     final defaultConfig = config ?? const GetInflationRateConfig();
@@ -865,7 +827,7 @@ class Connection {
   }
 
   /// Returns the inflation / staking reward for a list of [addresses] for an epoch.
-  Future<RpcResponse<List<InflationReward?>>> getInflationRewardRaw(
+  Future<JsonRpcResponse<List<InflationReward?>>> getInflationRewardRaw(
     final Iterable<PublicKey> addresses, { 
     final GetInflationRewardConfig? config, 
   }) {
@@ -884,10 +846,10 @@ class Connection {
   }
 
   /// Returns the 20 largest accounts, by lamport balance (results may be cached up to two hours).
-  Future<RpcContextResponse<List<LargeAccount>>> getLargestAccountsRaw({ 
+  Future<JsonRpcContextResponse<List<LargeAccount>>> getLargestAccountsRaw({ 
     final GetLargestAccountsConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, _listParser(LargeAccount.fromJson));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(LargeAccount.fromJson));
     final defaultConfig = config ?? const GetLargestAccountsConfig();
     return _request(Method.getLargestAccounts, [], parse, config: defaultConfig);
   }
@@ -900,7 +862,7 @@ class Connection {
   }
 
   /// Returns the latest blockhash.
-  Future<RpcContextResponse<BlockhashWithExpiryBlockHeight>> getLatestBlockhashRaw({
+  Future<JsonRpcContextResponse<BlockhashWithExpiryBlockHeight>> getLatestBlockhashRaw({
     final GetLatestBlockhashConfig? config,
   }) {
     final parser = _contextParser(BlockhashWithExpiryBlockHeight.fromJson);
@@ -919,7 +881,7 @@ class Connection {
   /// 
   /// The leader schedule with be fetched for the epoch that corresponds to the provided [slot]. If 
   /// omitted, the leader schedule for the current epoch is fetched.
-  Future<RpcResponse<Map<String, List>?>> getLeaderScheduleRaw({
+  Future<JsonRpcResponse<Map<String, List>?>> getLeaderScheduleRaw({
     final u64? slot,
     final GetLeaderScheduleConfig? config,
   }) {
@@ -941,7 +903,7 @@ class Connection {
   }
 
   /// Returns the max slot seen from retransmit stage.
-  Future<RpcResponse<u64>> getMaxRetransmitSlotRaw({
+  Future<JsonRpcResponse<u64>> getMaxRetransmitSlotRaw({
     final GetMaxRetransmitSlotConfig? config,
   }) {
     final defaultConfig = config ?? const GetMaxRetransmitSlotConfig();
@@ -956,7 +918,7 @@ class Connection {
   }
 
   /// Returns the max slot seen from after shred insert.
-  Future<RpcResponse<u64>> getMaxShredInsertSlotRaw({
+  Future<JsonRpcResponse<u64>> getMaxShredInsertSlotRaw({
     final GetMaxShredInsertSlotConfig? config,
   }) {
     final defaultConfig = config ?? const GetMaxShredInsertSlotConfig();
@@ -971,12 +933,12 @@ class Connection {
   }
 
   /// Returns the minimum balance required to make an account of size [length] rent exempt.
-  Future<RpcResponse<u64>> getMinimumBalanceForRentExemptionRaw(
+  Future<JsonRpcResponse<u64>> getMinimumBalanceForRentExemptionRaw(
     final int length, {
     final GetMinimumBalanceForRentExemptionConfig? config,
   }) {
     final defaultConfig = config ?? const GetMinimumBalanceForRentExemptionConfig();
-    return _request(Method.getMinimumBalanceForRentExemption, [length], cast<u64>, config: defaultConfig);
+    return _request(Method.getMinimumBalanceForRentExemption, [length], utils.cast<u64>, config: defaultConfig);
   }
 
   /// Returns the minimum balance required to make an account of size [length] rent exempt.
@@ -988,12 +950,12 @@ class Connection {
   }
 
   /// Returns the account information for a list of Pubkeys.
-  Future<RpcContextResponse<List<AccountInfo?>>> getMultipleAccountsRaw(
+  Future<JsonRpcContextResponse<List<AccountInfo?>>> getMultipleAccountsRaw(
     final List<PublicKey> accounts, {
     final GetMultipleAccountsConfig? config,
   }) {
-    require(accounts.length <= 100, 'getMultipleAccounts() can fetch up to a maximum of 100.');
-    parse(result) => RpcContextResult.parse(result, _listParser(AccountInfo.tryParse));
+    utils.check(accounts.length <= 100, 'getMultipleAccounts() can fetch up to a maximum of 100.');
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(AccountInfo.tryParse));
     final pubKeys = accounts.map((final PublicKey account) => account.toBase58()).toList(growable: false);
     final defaultConfig = config ?? GetMultipleAccountsConfig();
     return _request(Method.getMultipleAccounts, [pubKeys], parse, config: defaultConfig);
@@ -1008,7 +970,7 @@ class Connection {
   }
 
   /// Returns all accounts owned by the provided program Pubkey.
-  Future<RpcResponse<List<ProgramAccount>>> getProgramAccountsRaw(
+  Future<JsonRpcResponse<List<ProgramAccount>>> getProgramAccountsRaw(
     final PublicKey program, {
     final GetProgramAccountsConfig? config,
   }) {
@@ -1028,7 +990,7 @@ class Connection {
   /// Returns a list of recent performance samples, in reverse slot order. Performance samples are 
   /// taken every 60 seconds and include the number of transactions and slots that occur in a given 
   /// time window.
-  Future<RpcResponse<List<PerformanceSample>>> getRecentPerformanceSamplesRaw({
+  Future<JsonRpcResponse<List<PerformanceSample>>> getRecentPerformanceSamplesRaw({
     final usize? limit,
     final GetRecentPerformanceSamplesConfig? config,
   }) {
@@ -1051,7 +1013,7 @@ class Connection {
   /// Returns signatures for confirmed transactions that include the given address in their 
   /// accountKeys list. Returns signatures backwards in time from the provided signature or most 
   /// recent confirmed block.
-  Future<RpcResponse<List<ConfirmedSignatureInfo>>> getSignaturesForAddressRaw(
+  Future<JsonRpcResponse<List<ConfirmedSignatureInfo>>> getSignaturesForAddressRaw(
     final PublicKey address, {
     final GetSignaturesForAddressConfig? config,
   }) {
@@ -1075,11 +1037,11 @@ class Connection {
   /// Unless the [GetSignatureStatusesConfig.searchTransactionHistory] configuration parameter is 
   /// set to `true`, this method only searches the recent status cache of signatures, which retains 
   /// statuses for all active slots plus MAX_RECENT_BLOCKHASHES rooted slots.
-  Future<RpcContextResponse<List<SignatureStatus?>>> getSignatureStatusesRaw(
+  Future<JsonRpcContextResponse<List<SignatureStatus?>>> getSignatureStatusesRaw(
     final List<String> signatures, {
     final GetSignatureStatusesConfig? config,
   }) {
-    parse(result) => RpcContextResult.parse(result, _listParser(SignatureStatus.tryFromJson));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(SignatureStatus.tryFromJson));
     final defaultConfig = config ?? const GetSignatureStatusesConfig();
     return _request(Method.getSignatureStatuses, [signatures], parse, config: defaultConfig);
   }
@@ -1097,7 +1059,7 @@ class Connection {
   }
 
   /// Returns the slot that has reached the given or default [GetSlotConfig.commitment] level.
-  Future<RpcResponse<u64>> getSlotRaw({ final GetSlotConfig? config }) {
+  Future<JsonRpcResponse<u64>> getSlotRaw({ final GetSlotConfig? config }) {
     final defaultConfig = config ?? const GetSlotConfig();
     return _request(Method.getSlot, [], utils.cast<u64>, config: defaultConfig);
   }
@@ -1108,9 +1070,9 @@ class Connection {
   }
 
   /// Returns the current slot leader.
-  Future<RpcResponse<PublicKey>> getSlotLeaderRaw({ final GetSlotLeaderConfig? config }) {
+  Future<JsonRpcResponse<PublicKey>> getSlotLeaderRaw({ final GetSlotLeaderConfig? config }) {
     final defaultConfig = config ?? const GetSlotLeaderConfig();
-    return _request(Method.getSlotLeader, [], PublicKey.fromString, config: defaultConfig);
+    return _request(Method.getSlotLeader, [], PublicKey.fromBase58, config: defaultConfig);
   }
 
   /// Returns the current slot leader.
@@ -1119,12 +1081,12 @@ class Connection {
   }
 
   /// Returns the slot leaders for a given slot range.
-  Future<RpcResponse<List<PublicKey>>> getSlotLeadersRaw({ 
+  Future<JsonRpcResponse<List<PublicKey>>> getSlotLeadersRaw({ 
     required final u64 start,
     required final u64 limit,
     final GetSlotLeadersConfig? config, 
   }) {
-    final parse = _listParser(PublicKey.fromString);
+    final parse = _listParser(PublicKey.fromBase58);
     final defaultConfig = config ?? const GetSlotLeadersConfig();
     return _request(Method.getSlotLeaders, [start, limit], parse, config: defaultConfig);
   }
@@ -1139,7 +1101,7 @@ class Connection {
   }
 
   /// Returns epoch activation information for a stake account.
-  Future<RpcResponse<StakeActivation>> getStakeActivationRaw(
+  Future<JsonRpcResponse<StakeActivation>> getStakeActivationRaw(
     final PublicKey account, {
     final GetStakeActivationConfig? config, 
   }) {
@@ -1156,10 +1118,10 @@ class Connection {
   }
 
   /// Returns information about the current supply.
-  Future<RpcContextResponse<Supply>> getSupplyRaw({
+  Future<JsonRpcContextResponse<Supply>> getSupplyRaw({
     final GetSupplyConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, Supply.fromJson);
+    parse(result) => JsonRpcContextResult.parse(result, Supply.fromJson);
     final defaultConfig = config ?? const GetSupplyConfig();
     return _request(Method.getSupply, [], parse, config: defaultConfig);
   }
@@ -1172,11 +1134,11 @@ class Connection {
   }
 
   /// Returns the token balance of an SPL Token [account].
-  Future<RpcContextResponse<TokenAmount>> getTokenAccountBalanceRaw(
+  Future<JsonRpcContextResponse<TokenAmount>> getTokenAccountBalanceRaw(
     final PublicKey account, {
     final GetTokenAccountBalanceConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, TokenAmount.fromJson);
+    parse(result) => JsonRpcContextResult.parse(result, TokenAmount.fromJson);
     final defaultConfig = config ?? const GetTokenAccountBalanceConfig();
     return _request(Method.getTokenAccountBalance, [account.toBase58()], parse, config: defaultConfig);
   }
@@ -1190,13 +1152,13 @@ class Connection {
   }
 
   /// Returns all SPL Token accounts approved by [delegate].
-  Future<RpcContextResponse<List<TokenAccount>>> getTokenAccountsByDelegateRaw(
+  Future<JsonRpcContextResponse<List<TokenAccount>>> getTokenAccountsByDelegateRaw(
     final PublicKey delegate, {
     required final TokenAccountsFilter filter,
     final GetTokenAccountsByDelegateConfig? config, 
   }) {
     final params = [delegate.toBase58(), filter.toJson()];
-    parse(result) => RpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
     final defaultConfig = config ?? GetTokenAccountsByDelegateConfig();
     return _request(Method.getTokenAccountsByDelegate, params, parse, config: defaultConfig);
   }
@@ -1211,13 +1173,13 @@ class Connection {
   }
 
   /// Returns the token owner of an SPL Token [account].
-  Future<RpcContextResponse<List<TokenAccount>>> getTokenAccountsByOwnerRaw(
+  Future<JsonRpcContextResponse<List<TokenAccount>>> getTokenAccountsByOwnerRaw(
     final PublicKey account, {
     required final TokenAccountsFilter filter,
     final GetTokenAccountsByOwnerConfig? config, 
   }) {
     final params = [account.toBase58(), filter.toJson()];
-    parse(result) => RpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(TokenAccount.fromJson));
     final defaultConfig = config ?? GetTokenAccountsByOwnerConfig();
     return _request(Method.getTokenAccountsByOwner, params, parse, config: defaultConfig);
   }
@@ -1232,11 +1194,11 @@ class Connection {
   }
 
   /// Returns the 20 largest accounts of a particular SPL Token type.
-  Future<RpcContextResponse<List<TokenAmount>>> getTokenLargestAccountsRaw(
+  Future<JsonRpcContextResponse<List<TokenAmount>>> getTokenLargestAccountsRaw(
     final PublicKey mint, {
     final GetTokenLargestAccountsConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, _listParser(TokenAmount.fromJson));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(TokenAmount.fromJson));
     final defaultConfig = config ?? const GetTokenLargestAccountsConfig();
     return _request(Method.getTokenLargestAccounts, [mint.toBase58()], parse, config: defaultConfig);
   }
@@ -1250,11 +1212,11 @@ class Connection {
   }
 
   /// Returns the total supply of an SPL Token type.
-  Future<RpcContextResponse<TokenAmount>> getTokenSupplyRaw(
+  Future<JsonRpcContextResponse<TokenAmount>> getTokenSupplyRaw(
     final PublicKey mint, {
     final GetTokenSupplyConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, TokenAmount.fromJson);
+    parse(result) => JsonRpcContextResult.parse(result, TokenAmount.fromJson);
     final defaultConfig = config ?? const GetTokenSupplyConfig();
     return _request(Method.getTokenSupply, [mint.toBase58()], parse, config: defaultConfig);
   }
@@ -1268,7 +1230,7 @@ class Connection {
   }
 
   /// Returns transaction details for a confirmed transaction signature (base-58).
-  Future<RpcResponse<TransactionInfo?>> getTransactionRaw(
+  Future<JsonRpcResponse<TransactionInfo?>> getTransactionRaw(
     final String signature, {
     final GetTransactionConfig? config, 
   }) {
@@ -1285,7 +1247,7 @@ class Connection {
   }
 
   /// Returns the current [Transaction] count from the ledger.
-  Future<RpcResponse<u64>> getTransactionCountRaw({
+  Future<JsonRpcResponse<u64>> getTransactionCountRaw({
     final GetTransactionCountConfig? config, 
   }) {
     final defaultConfig = config ?? GetTransactionCountConfig(commitment: commitment); // asserts commitment.
@@ -1300,7 +1262,7 @@ class Connection {
   }
 
   /// Returns the current solana versions running on the node.
-  Future<RpcResponse<Version>> getVersionRaw({
+  Future<JsonRpcResponse<Version>> getVersionRaw({
     final GetVersionConfig? config, 
   }) {
     final defaultConfig = config ?? const GetVersionConfig();
@@ -1315,7 +1277,7 @@ class Connection {
   }
 
   /// Returns the account info and associated stake for all the voting accounts in the current bank.
-  Future<RpcResponse<VoteAccountStatus>> getVoteAccountsRaw({
+  Future<JsonRpcResponse<VoteAccountStatus>> getVoteAccountsRaw({
     final GetVoteAccountsConfig? config, 
   }) {
     final defaultConfig = config ?? const GetVoteAccountsConfig();
@@ -1330,11 +1292,11 @@ class Connection {
   }
 
   /// Returns whether a [blockhash] (base-58) is still valid or not.
-  Future<RpcContextResponse<bool>> isBlockhashValidRaw(
+  Future<JsonRpcContextResponse<bool>> isBlockhashValidRaw(
     final String blockhash, {
     final IsBlockhashValidConfig? config, 
   }) {
-    parse(result) => RpcContextResult.parse(result, utils.cast<bool>);
+    parse(result) => JsonRpcContextResult.parse(result, utils.cast<bool>);
     final defaultConfig = config ?? const IsBlockhashValidConfig();
     return _request(Method.isBlockhashValid, [blockhash], parse, config: defaultConfig);
   }
@@ -1349,7 +1311,7 @@ class Connection {
 
   /// Returns the lowest slot that the node has information about in its ledger. This value may 
   /// increase over time if the node is configured to purge older ledger data.
-  Future<RpcResponse<u64>> minimumLedgerSlotRaw({
+  Future<JsonRpcResponse<u64>> minimumLedgerSlotRaw({
     final MinimumLedgerSlotConfig? config, 
   }) {
     final defaultConfig = config ?? const MinimumLedgerSlotConfig();
@@ -1367,7 +1329,7 @@ class Connection {
   /// Requests an airdrop of [lamports] to [publicKey].
   /// 
   /// Returns the transaction signature as a base-58 encoded string.
-  Future<RpcResponse<String>> requestAirdropRaw(
+  Future<JsonRpcResponse<String>> requestAirdropRaw(
     final PublicKey publicKey, 
     final u64 lamports, {
     final RequestAirdropConfig? config,
@@ -1387,8 +1349,21 @@ class Connection {
     return requestAirdropRaw(publicKey, lamports, config: config).unwrap();
   }
 
+  /// Requests an airdrop of [lamports] to [publicKey] and wait for transaction confirmation.
+  /// 
+  /// Returns the transaction signature as a base-58 encoded string.
+  Future<TransactionSignature> requestAirdropAndConfirmTransaction(
+    final PublicKey publicKey, 
+    final u64 lamports, {
+    final CommitmentConfig? config,
+  }) async {
+    final TransactionSignature signature = await requestAirdrop(publicKey, lamports, config: config);
+    final SignatureNotification notification = await confirmTransaction(signature, config: config);
+    return notification.err != null ? Future.error(notification.err) : Future.value(signature);
+  }
+
   /// Sign and send a [transaction] to the cluster for processing.
-  Future<RpcResponse<TransactionSignature>> sendTransactionRaw(
+  Future<JsonRpcResponse<TransactionSignature>> sendTransactionRaw(
     Transaction transaction, {
     final List<Signer> signers = const [],
     SendTransactionConfig? config,
@@ -1440,9 +1415,79 @@ class Connection {
   }) async {
     return sendTransactionRaw(transaction, signers: signers, config: config).unwrap();
   }
+  
+  /// Send the transaction [signatures] to the cluster for processing.
+  Future<List<JsonRpcResponse>> sendSignedTransactions(
+    final List<String> signatures, {
+    final SendTransactionConfig? config,
+  }) async {
+    final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment);
+    final List<JsonRpcRequest> requests = signatures.map((final String signature) {
+      return _buildRequest(Method.sendTransaction, [signature], config: defaultConfig);
+    }).toList(growable: false);
+    return _bulkRequest(requests, [(r) => r]);
+  }
+
+  // Future<List<String>> walletAdapterSerialization(final List<Transaction> transactions) async {
+  //   final latestBlockhash = await _blockhashCache.get(this, disabled: true);
+  //   return transactions.map(
+  //     (final Transaction transaction) => transaction.copyWith(
+  //       recentBlockhash: latestBlockhash.blockhash,
+  //       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  //     ).serialize(
+  //       const SerializeConfig(
+  //         requireAllSignatures: false,
+  //         verifySignatures: false,
+  //       ),
+  //     ).getString(
+  //       BufferEncoding.base64,
+  //     ),
+  //   ).toList(
+  //     growable: false,
+  //   );
+  // }
+
+  // Future<List<String>> walletAdapterMessageSerialization(final List<Transaction> transactions) async {
+  //   final latestBlockhash = await _blockhashCache.get(this, disabled: true);
+  //   return transactions.map(
+  //     (final Transaction transaction) => transaction.copyWith(
+  //       recentBlockhash: latestBlockhash.blockhash,
+  //       lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  //     ).serializeMessage(
+  //     ).getString(
+  //       BufferEncoding.base64,
+  //     ),
+  //   ).toList(growable: false);
+  // }
+
+  // Future<SignTransactionsResult> signTransactions(
+  //   final JsonRpcWalletAdapter adapter, {
+  //   required final List<Transaction> transactions,
+  // }) async {
+  //   final List<String> payloads = await walletAdapterSerialization(transactions);
+  //   return adapter.signTransactions(payloads);
+  // }
+
+  // Future<SignAndSendTransactionsResult> signAndSendTransactions(
+  //   final JsonRpcWalletAdapter adapter, {
+  //   required final List<Transaction> transactions,
+  // }) async {
+  //   final List<String> payloads = await walletAdapterSerialization(transactions);
+  //   return adapter.signAndSendTransactions(payloads);
+  // }
+
+  // Future<SignMessagesResult> signMessages(
+  //   final JsonRpcWalletAdapter adapter, {
+  //   required final List<Transaction> transactions,
+  //   required final List<PublicKey> addresses,
+  // }) async {
+  //   final List<String> payloads = await walletAdapterMessageSerialization(transactions);
+  //   final List<Base64EncodedAddress> encoded = addresses.map((e) => e.toBase64()).toList(growable: false);
+  //   return adapter.signMessages(payloads: payloads, addresses: encoded);
+  // }
 
   /// Simulates sending a transaction.
-  Future<RpcContextResponse<TransactionStatus>> simulateTransactionRaw(
+  Future<JsonRpcContextResponse<TransactionStatus>> simulateTransactionRaw(
     Transaction transaction, {
     final List<Signer>? signers,
     final bool includeAccounts = false,
@@ -1497,7 +1542,7 @@ class Connection {
     );
 
     final String signedTransaction = transaction.serialize().getString(BufferEncoding.base64);
-    parse(result) => RpcContextResult.parse(result, TransactionStatus.fromJson);
+    parse(result) => JsonRpcContextResult.parse(result, TransactionStatus.fromJson);
     return _request(Method.simulateTransaction, [signedTransaction], parse, config: config);
   }
 
@@ -1535,7 +1580,7 @@ class Connection {
   }
 
   /// Returns an error when [blockhash.lastValidBlockHeight] has been exceeded.
-  Future<u64> _blockHeightExceeded(
+  Future<WebSocketSubscription<SignatureNotification>> _confirmTransactionBlockHeightExceeded(
     final BlockhashWithExpiryBlockHeight blockhash, 
     final Commitment? commitment,
   ) async {
@@ -1548,20 +1593,24 @@ class Connection {
     return Future.error('Transaction block height exceeded.');
   }
 
-  /// Returns the time out duration for a [signatureSubscribe] event.
-  Duration _confirmTransactionTimeLimit<T>(final Commitment? commitment) 
-    => Duration(seconds: commitment == null || commitment == Commitment.finalized ? 60 : 30);
-
-  /// Creates an `onTimeout` callback function for a [confirmTransaction].
-  Future<WebSocketSubscription<SignatureNotification>> Function() _confirmTransactionTimeout<T>() 
-    => () => Future.error(TimeoutException('Transaction signature confirmation timed out.'));
+  /// Returns an error when the timeout duration elapsed.
+  Future<WebSocketSubscription<SignatureNotification>> _confirmTransactionTimeout<T>(
+    final Commitment? commitment,
+  ) {
+    final Duration timeLimit = Duration(
+      seconds: commitment == null || commitment == Commitment.finalized ? 60 : 30,
+    );
+    return Future.delayed(
+      timeLimit,
+      () => Future.error(TimeoutException('Transaction signature confirmation timed out.')),
+    );
+  }
 
   /// Confirms a transaction.
   Future<SignatureNotification> confirmTransaction(
-    final TransactionSignature signature, {
-    final List<Signer> signers = const [],
-    final BlockhashWithExpiryBlockHeight? blockhash,
-    final ConfirmTransactionConfig? config,
+    final TransactionSignature signature, { 
+    final BlockhashWithExpiryBlockHeight? blockhash, 
+    final ConfirmTransactionConfig? config, 
   }) async {
 
     late Uint8List decodedSignature;
@@ -1572,64 +1621,44 @@ class Connection {
       throw TransactionException('Failed to decode base58 signature $signature.');
     }
 
-    utils.require(decodedSignature.length == signatureLength, 'Invalid signature length.');
+    utils.check(decodedSignature.length == nacl.signatureLength, 'Invalid signature length.');
 
     final Commitment? commitment = config?.commitment ?? this.commitment;
-    final Completer<SignatureNotification> completer = Completer.sync();
 
-    try {
+    final Future<WebSocketSubscription<SignatureNotification>> futureSubscription = signatureSubscribe(
+      signature, 
+      config: SignatureSubscribeConfig(commitment: commitment),
+    );
 
-      final Future<WebSocketSubscription<SignatureNotification>> futureSubscription = signatureSubscribe(
-        signature, 
-        config: SignatureSubscribeConfig(commitment: commitment),
-      );
+    final WebSocketSubscription<SignatureNotification> subscription = await Future.any([
+      futureSubscription,
+      blockhash != null 
+        ? _confirmTransactionBlockHeightExceeded(blockhash, commitment)
+        : _confirmTransactionTimeout(commitment),
+    ]);
 
-      final WebSocketSubscription<SignatureNotification> subscription = await (
-        blockhash != null 
-          ? futureSubscription.before(
-              _blockHeightExceeded(blockhash, commitment)
-            )
-          : futureSubscription.timeout(
-              _confirmTransactionTimeLimit(commitment), 
-              onTimeout: _confirmTransactionTimeout(),
-            )
-      );
-
-      subscription.on(
-        completer.complete,
-        onDone: () => completer.completeError('Subscription closed.'),
-      );
-
-    } catch (error, stackTrace) {
-      completer.completeError(error, stackTrace);
-    }
-
-    return completer.future;
+    return subscription.asFuture().then(
+      (final SignatureNotification notification) {
+        return notification.err != null 
+          ? Future.error(notification.err) 
+          : Future.value(notification);
+      }
+    );
   }
-
 
   /// Creates an `onTimeout` callback function for a [_webSocketExchange].
-  Future<RpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
+  Future<JsonRpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
     => () => Future.error(TimeoutException('Web socket request timed out.'));
-
-  /// Removes the [ids] and their associated values from [_webSocketExchangeManager].
-  void _webSocketExchangeRemove(List<int?> ids) {
-    for (final int? id in ids) {
-      if (id != null) {
-        _webSocketExchangeManager.remove(id);
-      }
-    }
-  }
 
   /// Makes a JSON-RPC data request to the web [socket] server.
   /// 
   /// The request's `timeout` duration can be set using the [config] object's 
-  /// [RpcRequestConfig.timeout] property. 
+  /// [JsonRpcRequestConfig.timeout] property. 
   /// 
   /// All other configurations are ignored.
-  Future<RpcResponse<T>> _webSocketExchange<T>(
-    final RpcRequest request, {
-    final RpcRequestConfig? config,
+  Future<JsonRpcResponse<T>> _webSocketExchange<T>(
+    final JsonRpcRequest request, {
+    final JsonRpcRequestConfig? config,
   }) async {
 
     // The subscription's request/response cycle.
@@ -1637,13 +1666,7 @@ class Connection {
 
     try {
       // Get the web socket connection.
-      final WebSocket connection = await socket.connect();
-
-      // Get the timestamp at which the current connection was established.
-      final DateTime? connectedAt = socket.connectedAt;
-      if (connectedAt == null) {
-        throw const WebSocketException('[WebSocketConnection.connectedAt] is null.');
-      }
+      final WebSocket connection = await socket.connect(cluster.ws());
       
       // Get the existing request/response cycle (if it exists).
       exchange = _webSocketExchangeManager.get(request.hash());
@@ -1651,11 +1674,15 @@ class Connection {
       // If an exchange created using the current connection exists, return the response (which may 
       // still be pending).
       if (exchange != null) {
+        final DateTime? connectedAt = socket.connectedAt;
+        if (connectedAt == null) {
+          throw const WebSocketException('[WebSocketConnection.connectedAt] is null.');
+        }
         if (exchange.createdAt.isBefore(connectedAt)) {
           if (exchange.isCompleted) {
             await _webSocketSubscriptionManager.close(exchangeId: exchange.id);
           } else {
-            throw const WebSocketException('The exchange request expired.');
+            throw const WebSocketException('The exchange request has expired.');
           }
         } else {
           return exchange.response;
@@ -1685,7 +1712,7 @@ class Connection {
       return await exchange.response.timeout(timeLimit, onTimeout: _onWebSocketExchangeTimeout());
 
     } catch (error, stackTrace) {
-      _webSocketExchangeRemove([exchange?.id]);
+      _webSocketExchangeManager.remove(exchange?.id);
       exchange?.completeError(error, stackTrace);
       return Future.error(error, stackTrace);
     }
@@ -1694,11 +1721,20 @@ class Connection {
   /// Re-subscribe to an existing subscription.
   Future<WebSocketSubscription> resubscribe(
     final WebSocketExchange exchange, {
-    final RpcRequestConfig? config,
+    final JsonRpcRequestConfig? config,
   }) async {
-    final RpcRequest request = exchange.request;
-    final RpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
+    final JsonRpcRequest request = exchange.request;
+    final JsonRpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
     return _webSocketSubscriptionManager.subscribe(response);
+  }
+
+  /// Check that the subscription [params] contains a configuration object will no null values.
+  void _assertSubscribeParams(final List<Object> params) {
+    assert(
+      params.isEmpty || 
+      params.last is! Map || 
+      (params.last as Map).values.every((value) => value != null),
+    );
   }
 
   /// Subscribes to the JSON-RPC PubSub [method] to receive notifications sent by the web socket 
@@ -1735,19 +1771,37 @@ class Connection {
   Future<WebSocketSubscription<T>> _subscribe<T>(
     final Method method,
     final List<Object> values, {
-    required final RpcSubscribeConfig config,
+    required final JsonRpcSubscribeConfig config,
   }) async {
     final List<Object> params = _buildParams(values, config, commitment ?? Commitment.finalized);
-    assert(params.isEmpty || params.last is! Map || (params.last as Map).values.every((value) => value != null));
-    final RpcRequest request = RpcRequest(method, params: params, id: config.id);
-    final RpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
+    _assertSubscribeParams(params);
+    final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: config.id);
+    final JsonRpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
     return _webSocketSubscriptionManager.subscribe<T>(response);
   }
+
+  /// NOTE: Bulk Subscriptions Are Not Supported.
+  // Future<List<WebSocketSubscription<T>>> _bulkSubscribe<T>(
+  //   final Method method,
+  //   final List<List<Object>>valuesList, {
+  //   required final JsonRpcSubscribeConfig config,
+  // }) async {
+  //   final List<JsonRpcRequest> requests = [];
+  //   for (final List<Object> values in valuesList) {
+  //     final List<Object> params = _buildParams(values, config, commitment ?? Commitment.finalized);
+  //     _assertSubscribeParams(params);
+  //     requests.add(JsonRpcRequest(method.name, params: params, id: config.id));
+  //   }
+  //   final List<JsonRpcSubscribeResponse> responses = await webSocketBulkRequest<int>(
+  //     cluster.ws(), requests, config: config, eagerError: true
+  //   );
+  //   return responses.map((e) => _webSocketSubscriptionManager.subscribe<T>(e)).toList(growable: false);
+  // }
 
   /// Unsubscribes from the JSON-RPC PubSub [method] to stop receiving notifications sent by the web 
   /// socket server.
   /// 
-  /// Returns a `success` response ([RpcUnsubscribeResponse.result] == `true`) for invalid 
+  /// Returns a `success` response ([JsonRpcUnsubscribeResponse.result] == `true`) for invalid 
   /// subscription ids (i.e. subscriptions that do not exist).
   /// 
   /// Request configurations can be set using the [config] object.
@@ -1761,41 +1815,42 @@ class Connection {
   ///   ['3C4iYswhNe7Z2LJvxc9qQmF55rsKDUGdiuKVUGpTbRsK'],
   /// );
   /// 
-  /// final RpcUnsubscribeResponse response = await connection.unsubscribe(
+  /// final JsonRpcUnsubscribeResponse response = await connection.unsubscribe(
   ///   method,
   ///   subscription,
   /// );
   /// 
   /// print(response.result); // true
   /// ```
-  Future<RpcUnsubscribeResponse> _unsubscribe<T>(
+  Future<JsonRpcUnsubscribeResponse> _unsubscribe<T>(
     final Method method,
     final WebSocketSubscription<T> subscription, {
-    required final RpcUnsubscribeConfig? config,
+    required final JsonRpcUnsubscribeConfig? config,
   }) async {
 
     // Cancel the stream listener.
     await _webSocketSubscriptionManager.unsubscribe<T>(subscription);
 
     // Create the return response (default to `success`).
-    RpcUnsubscribeResponse response = RpcUnsubscribeResponse.fromResult(true);
+    JsonRpcUnsubscribeResponse response = JsonRpcUnsubscribeResponse.fromResult(true);
 
     // If the stream has no more listeners, cancel the web socket subscription.
     if (!_webSocketSubscriptionManager.hasListener(subscription.id)) {
       try {
-        final defaultConfig = config ?? const RpcUnsubscribeConfig();
+        final defaultConfig = config ?? const JsonRpcUnsubscribeConfig();
         final List<Object> params = _buildParams([subscription.id], defaultConfig);
-        final RpcRequest request = RpcRequest(method, params: params, id: defaultConfig.id);
+        final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: defaultConfig.id);
         response = await _webSocketExchange<bool>(request, config: config);
-        _webSocketExchangeRemove([subscription.exchangeId, response.id]);
+        _webSocketExchangeManager.remove(subscription.exchangeId);
+        _webSocketExchangeManager.remove(response.id);
         
       } catch(error, stackTrace) {
         // Ignore errors related to subscription ids that do not exist.
         //
         // For example, if a user calls unsubscribe twice for a [subscription] with a single 
         // listener, an invalid subscription id error will be thrown for the second invocation.
-        if (RpcException.isType(error, RpcExceptionCode.invalidSubscriptionId)) {
-          _webSocketExchangeRemove([subscription.exchangeId]);
+        if (JsonRpcException.isType(error, JsonRpcExceptionCode.invalidParams)) {
+          _webSocketExchangeManager.remove(subscription.exchangeId);
         } else {
           return Future.error(error, stackTrace);
         }
@@ -1816,7 +1871,7 @@ class Connection {
   }
 
   /// Unsubscribes from account change notifications.
-  Future<RpcUnsubscribeResponse> accountUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> accountUnsubscribe(
     final WebSocketSubscription subscription, {
     final AccountUnsubscribeConfig? config,
   }) async {
@@ -1833,7 +1888,7 @@ class Connection {
   }
 
   /// Unsubscribes from transaction logging.
-  Future<RpcUnsubscribeResponse> logsUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> logsUnsubscribe(
     final WebSocketSubscription subscription, {
     final LogsUnsubscribeConfig? config,
   }) async {
@@ -1851,7 +1906,7 @@ class Connection {
   }
 
   /// Unsubscribes from program changes.
-  Future<RpcUnsubscribeResponse> programUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> programUnsubscribe(
     final WebSocketSubscription subscription, {
     final ProgramUnsubscribeConfig? config,
   }) async {
@@ -1872,12 +1927,12 @@ class Connection {
       [signature], 
       config: defaultConfig,
     );
-    _webSocketExchangeRemove([subscription.exchangeId]);
+    _webSocketExchangeManager.remove(subscription.exchangeId);
     return subscription;
   }
 
   /// Unsubscribes from signature confirmation notifications.
-  Future<RpcUnsubscribeResponse> signatureUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> signatureUnsubscribe(
     final WebSocketSubscription subscription, {
     final SignatureUnsubscribeConfig? config,
   }) async {
@@ -1893,7 +1948,7 @@ class Connection {
   }
 
   /// Unsubscribes from slot updates.
-  Future<RpcUnsubscribeResponse> slotUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> slotUnsubscribe(
     final WebSocketSubscription subscription, {
     final SlotUnsubscribeConfig? config,
   }) async {
@@ -1909,7 +1964,7 @@ class Connection {
   }
 
   /// Unsubscribes from root changes.
-  Future<RpcUnsubscribeResponse> rootUnsubscribe(
+  Future<JsonRpcUnsubscribeResponse> rootUnsubscribe(
     final WebSocketSubscription subscription, {
     final RootUnsubscribeConfig? config,
   }) async {

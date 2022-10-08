@@ -2,14 +2,14 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'mem_cmp.dart';
-import 'serialisable.dart';
-import '../utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Program Filter
 /// ------------------------------------------------------------------------------------------------
 
-class ProgramFilter extends Serialisable {
+class ProgramFilter extends Serializable {
 
   /// Filter results using a filter objects. The account must meet all filter criteria to be 
   /// included in results.

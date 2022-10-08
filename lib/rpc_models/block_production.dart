@@ -2,13 +2,13 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_web3/src/models/slot_range.dart';
-import 'package:solana_web3/src/models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Block Production
 /// ------------------------------------------------------------------------------------------------
 
-class BlockProduction extends Serialisable {
+class BlockProduction extends Serializable {
   
   /// Block production information.
   const BlockProduction({

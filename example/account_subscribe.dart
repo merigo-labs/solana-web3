@@ -34,10 +34,14 @@ Future<void> accountSubscribe() async {
 
       print('Airdrop $airdropAmount lamports to $address...\n');
 
-      // Check the account balances before making the transfer.
+      // Send SOL to the account.
       final airdropSignature = await connection.requestAirdrop(address, airdropAmount);
+
+      print('Airdrop Signature $airdropSignature');
+
+      // Wait for confirmation.
       await connection.confirmTransaction(airdropSignature);
-      
+
     } catch (error, stackTrace) {
       completer.completeError(error, stackTrace);
     }

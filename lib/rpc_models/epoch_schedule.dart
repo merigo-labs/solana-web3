@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_web3/src/models/serialisable.dart';
-import 'package:solana_web3/src/utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Epoch Schedule
 /// ------------------------------------------------------------------------------------------------
 
-class EpochSchedule extends Serialisable {
+class EpochSchedule extends Serializable {
   
   /// Epoch schedule information from a cluster's genesis config.
   const EpochSchedule({

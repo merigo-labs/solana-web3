@@ -2,8 +2,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert' show base64Decode;
-import '../models/serialisable.dart';
-import '../utils/convert.dart';
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/convert.dart';
 import '../../exceptions/data_exception.dart';
 import '../../types/data_encoding.dart';
 
@@ -11,7 +11,7 @@ import '../../types/data_encoding.dart';
 /// Data
 /// ------------------------------------------------------------------------------------------------
 
-class Data<T> extends Serialisable {
+class Data<T> extends Serializable {
 
   /// The `account` or `transaction` data received from a JSON-RPC method call.
   const Data(

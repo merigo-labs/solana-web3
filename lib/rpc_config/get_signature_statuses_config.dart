@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
 
 
 /// Get Signature Statuses Config
 /// ------------------------------------------------------------------------------------------------
 
-class GetSignatureStatusesConfig extends RpcRequestConfig {
+class GetSignatureStatusesConfig extends JsonRpcRequestConfig {
 
   /// JSON-RPC configurations for `getLeaderSchedule` methods.
   const GetSignatureStatusesConfig({

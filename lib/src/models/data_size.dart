@@ -1,14 +1,14 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'serialisable.dart';
-import '../utils/types.dart' show u64;
+import 'package:solana_common/models/serializable.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Data Size
 /// ------------------------------------------------------------------------------------------------
 
-class DataSize extends Serialisable {
+class DataSize extends Serializable {
 
   /// Program account filter.
   const DataSize({

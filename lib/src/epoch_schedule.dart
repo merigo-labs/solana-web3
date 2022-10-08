@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:math' as math show pow;
-import 'utils/types.dart';
+import 'package:solana_common/utils/types.dart';
 import '../solana_web3.dart';
 
 

@@ -1,13 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_request_config.dart';
+import 'package:solana_common/protocol/json_rpc_request_config.dart';
 
 
 /// Empty Request Config
 /// ------------------------------------------------------------------------------------------------
 
-class EmptyRequestConfig extends RpcRequestConfig {
+class EmptyRequestConfig extends JsonRpcRequestConfig {
 
   /// JSON-RPC configuration object with no additional properties.
   const EmptyRequestConfig({

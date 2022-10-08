@@ -5,13 +5,13 @@ import '../../rpc_config/get_block_config.dart';
 import '../../types/data_encoding.dart';
 import '../models/data.dart';
 import '../models/meta.dart';
-import '../models/serialisable.dart';
+import 'package:solana_common/models/serializable.dart';
 
 
 /// Transaction Data
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionData<T extends Object> extends Serialisable {
+class TransactionData<T extends Object> extends Serializable {
   
   /// Confirmed Transaction Block.
   const TransactionData({

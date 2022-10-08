@@ -2,13 +2,13 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:typed_data';
-import '../src/buffer.dart';
+import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/utils/library.dart' show check;
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/keypair.dart';
 import '../src/nacl.dart' as nacl;
 import '../src/public_key.dart';
 import '../src/transaction/transaction.dart';
-import '../src/utils/library.dart';
 
 
 /// Create Ed25519 Instruction With Public Key Params
@@ -73,7 +73,7 @@ class Ed25519Program {
   const Ed25519Program();
 
   /// The public key that identifies the ed25519 program.
-  static final PublicKey programId = PublicKey.fromString(
+  static final PublicKey programId = PublicKey.fromBase58(
     'Ed25519SigVerify111111111111111111111111111',
   );
 
@@ -85,12 +85,12 @@ class Ed25519Program {
     required final Uint8List signature,
     required final int? instructionIndex,
   }) {
-    require(
+    check(
       publicKey.length == nacl.publicKeyLength,
       'The public Key must be ${nacl.publicKeyLength} bytes but received ${publicKey.length} bytes.'
     );
 
-    require(
+    check(
       signature.length == nacl.signatureLength,
       'The signature must be ${nacl.signatureLength} bytes but received ${signature.length} bytes.'
     );
@@ -138,7 +138,7 @@ class Ed25519Program {
     required final Uint8List message,
     required final int? instructionIndex,
   }) {
-    require(
+    check(
       privateKey.length == nacl.secretKeyLength,
       'The private key must be ${nacl.secretKeyLength} bytes but received ${privateKey.length} bytes.'
     );

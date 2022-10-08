@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../src/utils/types.dart' show RpcParser;
+import 'package:solana_common/utils/types.dart' show JsonRpcParser;
 
 
 /// RPC Notification
@@ -31,7 +31,7 @@ class RpcNotification<T> {
   /// ```
   static RpcNotification<T> parse<T, U>(
     final Map<String, dynamic> json, 
-    final RpcParser<T, U> parse,
+    final JsonRpcParser<T, U> parse,
   ) {
     const String resultKey = 'result';
     json[resultKey] = parse.call(json[resultKey]);

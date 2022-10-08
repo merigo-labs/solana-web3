@@ -1,10 +1,10 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'rpc_unsubscribe_config.dart';
+import 'json_rpc_unsubscribe_config.dart';
 
 
 /// Root Unsubscribe Config
 /// ------------------------------------------------------------------------------------------------
 
-typedef RootUnsubscribeConfig = RpcUnsubscribeConfig;
+typedef RootUnsubscribeConfig = JsonRpcUnsubscribeConfig;
