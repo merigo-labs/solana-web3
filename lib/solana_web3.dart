@@ -8,6 +8,7 @@ library solana_web3;
 /// ------------------------------------------------------------------------------------------------
 
 export 'package:solana_common/config/cluster.dart';
+export 'package:solana_common/protocol/json_rpc_response.dart';
 export 'package:solana_common/utils/buffer.dart';
 export 'package:solana_common/utils/convert.dart';
 export 'src/blockhash.dart';

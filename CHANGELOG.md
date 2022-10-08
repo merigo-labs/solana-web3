@@ -1,3 +1,7 @@
+## 0.0.2+1
+
+* Export JsonRpcResponse.
+
 ## 0.0.2
 
 * Rename Identity to NodeIdentity.
