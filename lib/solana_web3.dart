@@ -27,7 +27,6 @@ export 'src/sysvar.dart';
 export 'src/transaction/constants.dart';
 export 'src/transaction/transaction.dart';
 export 'src/validator_info.dart';
-export 'src/web_socket_subscription_manager.dart';
 
 
 /// Solana Library

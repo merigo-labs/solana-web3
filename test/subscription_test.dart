@@ -3,7 +3,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_web3/rpc/rpc_notification.dart';
+import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
 import 'package:solana_web3/rpc_models/account_info.dart';
 import 'package:solana_web3/solana_web3.dart' as web3;
 import 'utils.dart' as utils;
@@ -24,7 +24,7 @@ void main() {
     final accountInfo = await connection.getAccountInfo(address);
     print('Account Info ${accountInfo?.toJson()}');
 
-    web3.WebSocketSubscription<AccountInfo> subscription = await connection.accountSubscribe(address);
+    WebSocketSubscription<AccountInfo> subscription = await connection.accountSubscribe(address);
     subscription.on((data) async {
       print('Account Info Changed ${data.toJson()}');
       await connection.accountUnsubscribe(subscription);

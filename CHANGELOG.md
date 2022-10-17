@@ -1,3 +1,8 @@
+## 0.0.2+2
+
+* Refactor web socket exchange.
+* Fix web socket uri.
+
 ## 0.0.2+1
 
 * Export JsonRpcResponse.

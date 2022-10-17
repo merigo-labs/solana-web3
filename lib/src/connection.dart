@@ -3,15 +3,13 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'dart:math' as math show min;
 import 'dart:typed_data';
-import 'package:async/async.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:solana_common/exceptions/json_rpc_exception.dart';
 import 'package:solana_common/protocol/json_rpc_context_response.dart';
 import 'package:solana_common/protocol/json_rpc_context_result.dart';
 import 'package:solana_common/protocol/json_rpc_http_headers.dart';
+import 'package:solana_common/protocol/json_rpc_notification_response.dart';
 import 'package:solana_common/protocol/json_rpc_request.dart';
 import 'package:solana_common/protocol/json_rpc_request_config.dart';
 import 'package:solana_common/protocol/json_rpc_response.dart';
@@ -19,6 +17,8 @@ import 'package:solana_common/protocol/json_rpc_subscribe_response.dart';
 import 'package:solana_common/protocol/json_rpc_unsubscribe_response.dart';
 import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/web_socket/web_socket_exchange_manager.dart';
+import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
 import 'package:solana_web3/rpc_config/commitment_config.dart';
 import 'package:solana_web3/rpc_models/logs_notification.dart';
 import 'package:solana_web3/rpc_models/signature_notification.dart';
@@ -28,7 +28,6 @@ import '../types/notification_method.dart';
 import 'package:solana_common/config/cluster.dart';
 import 'models/logs_filter.dart';
 import 'nacl.dart' as nacl show signatureLength;
-import '../rpc/rpc_notification_response.dart';
 import '../rpc_config/json_rpc_subscribe_config.dart';
 import '../rpc_config/json_rpc_unsubscribe_config.dart';
 import '../rpc_config/account_subscribe_config.dart';
@@ -138,8 +137,6 @@ import 'transaction/transaction.dart';
 import 'package:solana_common/utils/convert.dart' as convert show base58, list;
 import 'package:solana_common/utils/library.dart' as utils show cast, check;
 import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcMapParser, JsonRpcParser, i64, u64, usize;
-import 'web_socket_exchange_manager.dart';
-import 'web_socket_subscription_manager.dart';
 
 
 /// Connection
@@ -196,21 +193,21 @@ class Connection extends SolanaWebSocketConnection {
   /// The latest blockhash.
   final BlockhashCache _blockhashCache = BlockhashCache();
 
-  /// Maps [JsonRpcRequest]s to their corresponding [JsonRpcResponse].
-  final WebSocketExchangeManager _webSocketExchangeManager = WebSocketExchangeManager();
+  // /// Maps [JsonRpcRequest]s to their corresponding [JsonRpcResponse].
+  // final WebSocketExchangeManager _webSocketExchangeManager = WebSocketExchangeManager();
 
-  /// Adds and removes stream listeners for a web socket subscription.
-  final WebSocketSubscriptionManager _webSocketSubscriptionManager = WebSocketSubscriptionManager();
+  // /// Adds and removes stream listeners for a web socket subscription.
+  // final WebSocketSubscriptionManager _webSocketSubscriptionManager = WebSocketSubscriptionManager();
 
   /// Returns true if there's at least one subscriber.
-  bool get hasSubscribers => _webSocketSubscriptionManager.isNotEmpty;
+  bool get hasSubscribers => webSocketSubscriptionManager.isNotEmpty;
 
   /// Disposes of all the acquired resources.
   void disconnect() {
     client.close();
     socket.disconnect().ignore();
-    _webSocketExchangeManager.dispose();
-    _webSocketSubscriptionManager.dispose();
+    webSocketExchangeManager.dispose();
+    webSocketSubscriptionManager.dispose();
     _connectivitySubscription.cancel();
   }
 
@@ -229,7 +226,7 @@ class Connection extends SolanaWebSocketConnection {
   @override
   void onWebSocketConnect() {
     // TODO: Check or set [WebSocketExchange.id] to the largest id found.
-    for(final WebSocketExchange exchange in _webSocketExchangeManager.values) {
+    for(final WebSocketExchange exchange in webSocketExchangeManager.values) {
       resubscribe(exchange).ignore();
     }
   }
@@ -250,17 +247,17 @@ class Connection extends SolanaWebSocketConnection {
 
     if (JsonRpcResponse.isType<int>(json)) {
       final JsonRpcSubscribeResponse response = JsonRpcResponse.parse(json, utils.cast<int>);
-      return _webSocketExchangeManager.onResponse(response);
+      return webSocketExchangeManager.complete(response);
     }
 
     if (JsonRpcResponse.isType<bool>(json)) {
       final JsonRpcUnsubscribeResponse response = JsonRpcResponse.parse(json, utils.cast<bool>);
-      return _webSocketExchangeManager.onResponse(response);
+      return webSocketExchangeManager.complete(response);
     }
 
     final JsonRpcResponse? response = JsonRpcResponse.tryParse(json, utils.cast<dynamic>);
     if (response != null && response.isError) {
-      return _webSocketExchangeManager.onResponse(response);
+      return webSocketExchangeManager.complete(response);
     }
 
     final notification = NotificationMethod.tryFromName(json['method']);
@@ -283,7 +280,7 @@ class Connection extends SolanaWebSocketConnection {
   }
   
   void _onWebSocketNotification<T, U>(final Map<String, dynamic> json, final JsonRpcParser<T, U> parser) 
-    => _webSocketSubscriptionManager.onNotification(RpcNotificationResponse.parse(json, parser));
+    => webSocketSubscriptionManager.notify(JsonRpcNotificationResponse.parse(json, parser));
   
   @override
   void onWebSocketError(Object error, [StackTrace? stackTrace]) {
@@ -325,8 +322,8 @@ class Connection extends SolanaWebSocketConnection {
   /// Prints the web socket exchanges and subscriptions.
   void debugWebSocketState() {
     print("\n--------------------------------------------------------------------------------");
-    print("[WEBSOCKET EXCHANGES]:     $_webSocketExchangeManager");
-    print("[WEBSOCKET SUBSCRIPTIONS]: $_webSocketSubscriptionManager");
+    print("[WEBSOCKET EXCHANGES]:     $webSocketExchangeManager");
+    print("[WEBSOCKET SUBSCRIPTIONS]: $webSocketSubscriptionManager");
     print("--------------------------------------------------------------------------------\n");
   }
 
@@ -1404,7 +1401,7 @@ class Connection extends SolanaWebSocketConnection {
     final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment); 
     final BufferEncoding bufferEncoding = BufferEncoding.fromName(defaultConfig.encoding.name);
     final String signedTransaction = transaction.serialize().getString(bufferEncoding);
-    return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: defaultConfig);
+    return sendSignedTransactionRaw(signedTransaction, config: config);
   }
 
   /// Sign and send a [transaction] to the cluster for processing.
@@ -1415,15 +1412,32 @@ class Connection extends SolanaWebSocketConnection {
   }) async {
     return sendTransactionRaw(transaction, signers: signers, config: config).unwrap();
   }
+
+  /// Send a signed [Transaction] to the cluster for processing.
+  Future<JsonRpcResponse<TransactionSignature>> sendSignedTransactionRaw(
+    final String signedTransaction, {
+    final SendTransactionConfig? config,
+  }) async {
+    final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment); 
+    return _request(Method.sendTransaction, [signedTransaction], utils.cast<String>, config: defaultConfig);
+  }
+
+    /// Send a signed [Transaction] to the cluster for processing.
+  Future<TransactionSignature> sendSignedTransaction(
+    final String signedTransaction, {
+    final SendTransactionConfig? config,
+  }) {
+    return sendSignedTransactionRaw(signedTransaction, config: config).unwrap();
+  }
   
-  /// Send the transaction [signatures] to the cluster for processing.
-  Future<List<JsonRpcResponse>> sendSignedTransactions(
-    final List<String> signatures, {
+  /// Send the signed [Transaction]s to the cluster for processing.
+  Future<List<JsonRpcResponse>> sendSignedTransactionsRaw(
+    final List<String> signedTransactions, {
     final SendTransactionConfig? config,
   }) async {
     final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment);
-    final List<JsonRpcRequest> requests = signatures.map((final String signature) {
-      return _buildRequest(Method.sendTransaction, [signature], config: defaultConfig);
+    final List<JsonRpcRequest> requests = signedTransactions.map((final String signedTransaction) {
+      return _buildRequest(Method.sendTransaction, [signedTransaction], config: defaultConfig);
     }).toList(growable: false);
     return _bulkRequest(requests, [(r) => r]);
   }
@@ -1646,9 +1660,9 @@ class Connection extends SolanaWebSocketConnection {
     );
   }
 
-  /// Creates an `onTimeout` callback function for a [_webSocketExchange].
-  Future<JsonRpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
-    => () => Future.error(TimeoutException('Web socket request timed out.'));
+  // /// Creates an `onTimeout` callback function for a [_webSocketExchange].
+  // Future<JsonRpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
+  //   => () => Future.error(TimeoutException('Web socket request timed out.'));
 
   /// Makes a JSON-RPC data request to the web [socket] server.
   /// 
@@ -1659,64 +1673,65 @@ class Connection extends SolanaWebSocketConnection {
   Future<JsonRpcResponse<T>> _webSocketExchange<T>(
     final JsonRpcRequest request, {
     final JsonRpcRequestConfig? config,
-  }) async {
+  }) => webSocketRequest(cluster.ws(), request, config: config);
+  // async {
 
-    // The subscription's request/response cycle.
-    WebSocketExchange<T>? exchange;
+  //   // The subscription's request/response cycle.
+  //   WebSocketExchange<T>? exchange;
 
-    try {
-      // Get the web socket connection.
-      final WebSocket connection = await socket.connect(cluster.ws());
+  //   try {
+  //     // Get the web socket connection.
+  //     final WebSocket connection = await socket.connect(cluster.ws());
       
-      // Get the existing request/response cycle (if it exists).
-      exchange = _webSocketExchangeManager.get(request.hash());
+  //     // Get the existing request/response cycle (if it exists).
+  //     exchange = _webSocketExchangeManager.get(request.hash());
 
-      // If an exchange created using the current connection exists, return the response (which may 
-      // still be pending).
-      if (exchange != null) {
-        final DateTime? connectedAt = socket.connectedAt;
-        if (connectedAt == null) {
-          throw const WebSocketException('[WebSocketConnection.connectedAt] is null.');
-        }
-        if (exchange.createdAt.isBefore(connectedAt)) {
-          if (exchange.isCompleted) {
-            await _webSocketSubscriptionManager.close(exchangeId: exchange.id);
-          } else {
-            throw const WebSocketException('The exchange request has expired.');
-          }
-        } else {
-          return exchange.response;
-        }
-      }
+  //     // If an exchange created using the current connection exists, return the response (which may 
+  //     // still be pending).
+  //     if (exchange != null) {
+  //       final DateTime? connectedAt = socket.connectedAt;
+  //       if (connectedAt == null) {
+  //         throw const WebSocketException('[WebSocketConnection.connectedAt] is null.');
+  //       }
+  //       if (exchange.createdAt.isBefore(connectedAt)) {
+  //         if (exchange.isCompleted) {
+  //           await _webSocketSubscriptionManager.close(exchangeId: exchange.id);
+  //         } else {
+  //           throw const WebSocketException('The exchange request has expired.');
+  //         }
+  //       } else {
+  //         return exchange.response;
+  //       }
+  //     }
 
-      // Check that existing requests have an id and new requests do not.
-      assert(
-        exchange == null ? request.id == null : request.id == exchange.id, 
-        'A [WebSocketExchange] must be initialized with a new or existing exchange request.',
-      );
+  //     // Check that existing requests have an id and new requests do not.
+  //     assert(
+  //       exchange == null ? request.id == null : request.id == exchange.id, 
+  //       'A [WebSocketExchange] must be initialized with a new or existing exchange request.',
+  //     );
 
-      // Create a WebSocketExchange for the subscription's request/response cycle.
-      exchange = WebSocketExchange<T>(request);
+  //     // Create a WebSocketExchange for the subscription's request/response cycle.
+  //     exchange = WebSocketExchange<T>(request);
 
-      // Store the exchange (request/response) to be used for future subscriptions or cancellation.
-      _webSocketExchangeManager.set(exchange);
+  //     // Store the exchange (request/response) to be used for future subscriptions or cancellation.
+  //     _webSocketExchangeManager.set(exchange);
 
-      // Send the request to the JSON-RPC web socket server (the response will be recevied by 
-      // `onSocketData`).
-      //_debugWebSocketRequest(exchange.request);
-      connection.add(json.encode(exchange.request.toJson()));
+  //     // Send the request to the JSON-RPC web socket server (the response will be recevied by 
+  //     // `onSocketData`).
+  //     //_debugWebSocketRequest(exchange.request);
+  //     connection.add(json.encode(exchange.request.toJson()));
 
-      // Return the pending subscription that completes when a success response is received from the 
-      // web socket server (onSocketData) or the request times out.
-      final Duration timeLimit = config?.timeout ?? const Duration(seconds: 60);
-      return await exchange.response.timeout(timeLimit, onTimeout: _onWebSocketExchangeTimeout());
+  //     // Return the pending subscription that completes when a success response is received from the 
+  //     // web socket server (onSocketData) or the request times out.
+  //     final Duration timeLimit = config?.timeout ?? const Duration(seconds: 60);
+  //     return await exchange.response.timeout(timeLimit, onTimeout: _onWebSocketExchangeTimeout());
 
-    } catch (error, stackTrace) {
-      _webSocketExchangeManager.remove(exchange?.id);
-      exchange?.completeError(error, stackTrace);
-      return Future.error(error, stackTrace);
-    }
-  }
+  //   } catch (error, stackTrace) {
+  //     _webSocketExchangeManager.remove(exchange?.id);
+  //     exchange?.completeError(error, stackTrace);
+  //     return Future.error(error, stackTrace);
+  //   }
+  // }
 
   /// Re-subscribe to an existing subscription.
   Future<WebSocketSubscription> resubscribe(
@@ -1725,7 +1740,7 @@ class Connection extends SolanaWebSocketConnection {
   }) async {
     final JsonRpcRequest request = exchange.request;
     final JsonRpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
-    return _webSocketSubscriptionManager.subscribe(response);
+    return webSocketSubscriptionManager.subscribe(response);
   }
 
   /// Check that the subscription [params] contains a configuration object will no null values.
@@ -1777,7 +1792,7 @@ class Connection extends SolanaWebSocketConnection {
     _assertSubscribeParams(params);
     final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: config.id);
     final JsonRpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
-    return _webSocketSubscriptionManager.subscribe<T>(response);
+    return webSocketSubscriptionManager.subscribe<T>(response);
   }
 
   /// NOTE: Bulk Subscriptions Are Not Supported.
@@ -1829,20 +1844,20 @@ class Connection extends SolanaWebSocketConnection {
   }) async {
 
     // Cancel the stream listener.
-    await _webSocketSubscriptionManager.unsubscribe<T>(subscription);
+    await webSocketSubscriptionManager.unsubscribe<T>(subscription);
 
     // Create the return response (default to `success`).
     JsonRpcUnsubscribeResponse response = JsonRpcUnsubscribeResponse.fromResult(true);
 
     // If the stream has no more listeners, cancel the web socket subscription.
-    if (!_webSocketSubscriptionManager.hasListener(subscription.id)) {
+    if (!webSocketSubscriptionManager.hasListener(subscription.id)) {
       try {
         final defaultConfig = config ?? const JsonRpcUnsubscribeConfig();
         final List<Object> params = _buildParams([subscription.id], defaultConfig);
         final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: defaultConfig.id);
         response = await _webSocketExchange<bool>(request, config: config);
-        _webSocketExchangeManager.remove(subscription.exchangeId);
-        _webSocketExchangeManager.remove(response.id);
+        webSocketExchangeManager.remove(subscription.exchangeId);
+        webSocketExchangeManager.remove(response.id);
         
       } catch(error, stackTrace) {
         // Ignore errors related to subscription ids that do not exist.
@@ -1850,7 +1865,7 @@ class Connection extends SolanaWebSocketConnection {
         // For example, if a user calls unsubscribe twice for a [subscription] with a single 
         // listener, an invalid subscription id error will be thrown for the second invocation.
         if (JsonRpcException.isType(error, JsonRpcExceptionCode.invalidParams)) {
-          _webSocketExchangeManager.remove(subscription.exchangeId);
+          webSocketExchangeManager.remove(subscription.exchangeId);
         } else {
           return Future.error(error, stackTrace);
         }
@@ -1927,7 +1942,7 @@ class Connection extends SolanaWebSocketConnection {
       [signature], 
       config: defaultConfig,
     );
-    _webSocketExchangeManager.remove(subscription.exchangeId);
+    webSocketExchangeManager.remove(subscription.exchangeId);
     return subscription;
   }
 

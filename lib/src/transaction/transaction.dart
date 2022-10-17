@@ -54,18 +54,24 @@ class AccountMeta extends Serializable {
   /// Account metadata used to define instructions.
   const AccountMeta(
     this.publicKey, {
-    required this.isSigner,
-    required this.isWritable,
+    this.isSigner = false,
+    this.isWritable = false,
   });
 
   /// An account's public key.
-  final  PublicKey publicKey;
+  final PublicKey publicKey;
   
   /// True if an instruction requires a transaction signature matching `pubkey`.
   final bool isSigner;
 
   /// True if the `pubkey` can be loaded as a read-write account.
   final bool isWritable;
+
+  factory AccountMeta.signer(final PublicKey publicKey, { final bool isWritable = false }) 
+    => AccountMeta(publicKey, isSigner: true, isWritable: isWritable);
+  
+  factory AccountMeta.writable(final PublicKey publicKey, { final bool isSigner = false }) 
+    => AccountMeta(publicKey, isSigner: isSigner, isWritable: true);
   
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
   /// object.
