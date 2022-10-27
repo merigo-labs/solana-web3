@@ -5,13 +5,13 @@ import 'package:solana_common/models/serializable.dart';
 import 'package:solana_web3/src/public_key.dart';
 
 
-/// Node Identity
+/// Identity
 /// ------------------------------------------------------------------------------------------------
 
-class NodeIdentity extends Serializable {
+class Identity extends Serializable {
   
   /// The identity public key for a node.
-  const NodeIdentity({
+  const Identity({
     required this.identity,
   });
 
@@ -24,7 +24,7 @@ class NodeIdentity extends Serializable {
   /// ```
   /// Identity.fromJson({ '<parameter>': <value> });
   /// ```
-  factory NodeIdentity.fromJson(final Map<String, dynamic> json) => NodeIdentity(
+  factory Identity.fromJson(final Map<String, dynamic> json) => Identity(
     identity: PublicKey.fromBase58(json['identity']),
   );
 
@@ -34,10 +34,10 @@ class NodeIdentity extends Serializable {
   /// Returns `null` if [json] is omitted.
   /// 
   /// ```
-  /// NodeIdentity.tryFromJson({ '<parameter>': <value> });
+  /// Identity.tryFromJson({ '<parameter>': <value> });
   /// ```
-  static NodeIdentity? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? NodeIdentity.fromJson(json) : null;
+  static Identity? tryFromJson(final Map<String, dynamic>? json) {
+    return json != null ? Identity.fromJson(json) : null;
   }
 
   @override

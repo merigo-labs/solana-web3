@@ -405,21 +405,21 @@ class Transaction extends Serializable {
 
     // Return the cached message if no changes have been made.
     final Message? _message = this._message;
-    if (_message != null && _json == toJson()) {
+    if (_message != null && json.encode(_json) == json.encode(toJson())) {
       return _message;
     }
 
     // Add any `nonce` information to the transaction.
-    String? nonce;
+    final List<TransactionInstruction> instructions = List.from(this.instructions);
     final NonceInformation? nonceInfo = this.nonceInfo;
-    if (nonceInfo != null 
-        && (instructions.isEmpty || instructions.first != nonceInfo.nonceInstruction)) {
-      nonce = nonceInfo.nonce;
-      instructions.insert(0, nonceInfo.nonceInstruction);
+    if (nonceInfo != null) {
+      if (instructions.isEmpty || instructions.first != nonceInfo.nonceInstruction) {
+        instructions.insert(0, nonceInfo.nonceInstruction);
+      }
     }
 
     // Check that a bloch hash has been provided.
-    final Blockhash? recentBlockhash = nonce ?? this.recentBlockhash;
+    final Blockhash? recentBlockhash = nonceInfo?.nonce ?? this.recentBlockhash;
     if(recentBlockhash == null) {
       throw const TransactionException('Transaction requires a recentBlockhash');
     }
@@ -542,12 +542,12 @@ class Transaction extends Serializable {
 
     // Convert the [TransactionInstruction]s into [Instructions].
     final List<PublicKey> accountKeys = signedKeys + unsignedKeys;
-    final Iterable<Instruction> transaction = instructions.map(
+    final Iterable<Instruction> compiledInstructions = instructions.map(
       (final TransactionInstruction instruction) => instruction.toInstruction(accountKeys)
     );
 
     // Validate the indices of each instruction's program id and accounts.
-    for (final Instruction instruction in transaction) {
+    for (final Instruction instruction in compiledInstructions) {
       check(instruction.programIdIndex >= 0, 'Instruction program id index is < 0');
       for (var index in instruction.accounts) {
         check(index >= 0, 'Instruction account index is < 0');
@@ -556,14 +556,14 @@ class Transaction extends Serializable {
 
     // Return the compiled transaction.
     return Message(
-      accountKeys: accountKeys, 
       header: MessageHeader(
+        numRequiredSignatures: numRequiredSignatures,
         numReadonlySignedAccounts: numReadonlySignedAccounts, 
         numReadonlyUnsignedAccounts: numReadonlyUnsignedAccounts, 
-        numRequiredSignatures: numRequiredSignatures,
       ), 
+      accountKeys: accountKeys, 
       recentBlockhash: recentBlockhash, 
-      instructions: transaction,
+      instructions: compiledInstructions,
     );
   }
 
@@ -618,7 +618,7 @@ class Transaction extends Serializable {
   /// invalidate the signature and cause the [Transaction] to be rejected.
   ///
   /// The Transaction must be assigned a valid `recentBlockhash` before invoking this method.
-  void sign(final List<Signer> signers, { final bool clear = true }) {
+  void sign(final Iterable<Signer> signers, { final bool clear = true }) {
 
     if (signers.isEmpty) {
       throw const TransactionException(
@@ -635,19 +635,69 @@ class Transaction extends Serializable {
       unsign(publicKeys: uniqueSigners.map((final Signer pair) => pair.publicKey));
     }
     
-    final Buffer message = serializeMessage();
+    final Message message = compileMessage();
+    _partialSign(message, signers);
+    
+    // final Buffer message = serializeMessage();
 
-    for (final Signer signer in uniqueSigners) {
-      final Uint8List signature = nacl.sign.detached(message.asUint8List(), signer.secretKey);
-      final int index = signatures.indexWhere(
-        (final SignaturePublicKeyPair pair) => signer.publicKey == pair.publicKey,
-      );
-      if (index < 0) {
-        throw TransactionException('Unknown signer ${signer.publicKey}');
-      }
+    // for (final Signer signer in uniqueSigners) {
+    //   final Uint8List signature = nacl.sign.detached(message.asUint8List(), signer.secretKey);
+    //   final int index = signatures.indexWhere(
+    //     (final SignaturePublicKeyPair pair) => signer.publicKey == pair.publicKey,
+    //   );
+    //   if (index < 0) {
+    //     throw TransactionException('Unknown signer ${signer.publicKey}');
+    //   }
 
-      signatures[index] = signatures[index].copyWith(signature: signature);
+    //   signatures[index] = signatures[index].copyWith(signature: signature);
+    // }
+  }
+
+  /// Partially sign a transaction with the specified accounts. All accounts must correspond to 
+  /// either the fee payer or a signer account in the transaction instructions.
+  /// 
+  /// All the caveats from the `sign` method apply to `partialSign`.
+  void partialSign(final Iterable<Signer> signers) {
+    if (signers.isEmpty) {
+      throw const TransactionException('No signers');
     }
+
+    // Dedupe signers
+    final Set<PublicKey> unique = {};
+    final List<Signer> uniqueSigners = signers.where(
+      (final Signer signer) => unique.add(signer.publicKey)
+    ).toList(growable: false); // consume and store the result of the lazy iterable.
+
+    final message = compileMessage();
+    _partialSign(message, uniqueSigners);
+  }
+
+  /// @internal
+  void _partialSign(final Message message, final Iterable<Signer> signers) {
+    final signData = message.serialize().asUint8List();
+    for (final Signer signer in signers) {
+      final Uint8List signature = nacl.sign.detached(signData, signer.secretKey);
+      _addSignature(signer.publicKey, Buffer.fromUint8List(signature));
+    }
+  }
+
+  /// Add an externally created signature to a transaction. The public key must correspond to either 
+  /// the fee payer or a signer account in the transaction instructions.
+  void addSignature(final PublicKey pubkey, final Buffer signature) {
+    compileMessage(); // Ensure signatures array is populated
+    _addSignature(pubkey, signature);
+  }
+
+  /// @internal
+  void _addSignature(final PublicKey publicKey, final Buffer signature) {
+    check(signature.length == nacl.signatureLength);
+    final int index = signatures.indexWhere(
+      (final SignaturePublicKeyPair pair) => publicKey == pair.publicKey,
+    );
+    if (index < 0) {
+      throw TransactionException('Unknown signer $publicKey');
+    }
+    signatures[index] = signatures[index].copyWith(signature: signature.asUint8List());
   }
 
   /// Verifies signatures of a complete, signed Transaction.
@@ -708,17 +758,26 @@ class Transaction extends Serializable {
     return wireTransaction;
   }
 
+  factory Transaction.fromBase64(final String encoded)
+    => Transaction.fromList(base64.decode(encoded));
+
   /// Parses a wire transaction into a [Transaction] object.
   factory Transaction.fromList(final List<int> bytes) {
     final List<String> signatures = [];
     Buffer buffer = Buffer.fromList(bytes);
-    final int signatureCount = shortvec.decodeLength(buffer.asUint8List());
+    final int signatureCount = shortvec.decodeLength(buffer);
     for (int i = 0; i < signatureCount; ++i) {
       final Buffer signature = buffer.slice(0, nacl.signatureLength);
       buffer = buffer.slice(nacl.signatureLength);
       signatures.add(convert.base58.encode(signature.asUint8List()));
     }
-    return Transaction.populate(Message.fromList(Uint8List(0)), signatures);
+    final prefix = buffer[0];
+    final maskedPrefix = prefix & versionPrefixMask;
+    if (maskedPrefix != prefix) {
+      // TODO: Add versioned transactions.
+      throw UnimplementedError('Versioned Transactions have not been implemented.');
+    }
+    return Transaction.populate(Message.fromBuffer(buffer), signatures);
   }
 
   /// Populates a [Transaction] object with the contents of [message] and the provided [signatures].

@@ -255,7 +255,7 @@ class Message extends Serializable {
     final int numReadonlyUnsignedAccounts = buffer[2];
     buffer = buffer.slice(3);
 
-    final int accountCount = shortvec.decodeLength(buffer.asUint8List());
+    final int accountCount = shortvec.decodeLength(buffer);
     final List<PublicKey> accountKeys = [];
     for (int i = 0; i < accountCount; ++i) {
       final Buffer account = buffer.slice(0, nacl.publicKeyLength);
@@ -266,23 +266,24 @@ class Message extends Serializable {
     final Buffer recentBlockhash = buffer.slice(0, nacl.publicKeyLength);
     buffer = buffer.slice(nacl.publicKeyLength);
 
-    final int instructionCount = shortvec.decodeLength(buffer.asUint8List());
+    final int instructionCount = shortvec.decodeLength(buffer);
     final List<Instruction> instructions = [];
-    for (int i = 0; i < instructionCount; ++i) {
-      final int programIdIndex = buffer.asUint8List().removeAt(0);
-      final int accountCount = shortvec.decodeLength(buffer.asUint8List());
-      final Buffer accounts = buffer.slice(0, accountCount);
+    for (int _i = 0; _i < instructionCount; ++_i) {
+      final int programIdIndex = buffer[0];
+      buffer = buffer.slice(1);
+      final int accountCount = shortvec.decodeLength(buffer);
+      final accounts = buffer.slice(0, accountCount);
       buffer = buffer.slice(accountCount);
-      final int dataLength = shortvec.decodeLength(buffer.asUint8List());
+      final int dataLength = shortvec.decodeLength(buffer);
       final Buffer dataSlice = buffer.slice(0, dataLength);
       final String data = convert.base58.encode(dataSlice.asUint8List());
       buffer = buffer.slice(dataLength);
       instructions.add(
         Instruction(
           programIdIndex: programIdIndex, 
-          accounts: accounts.asUint8List(), 
+          accounts: accounts, 
           data: data,
-        )
+        ),
       );
     }
 

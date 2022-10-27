@@ -75,9 +75,8 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   /// Cluster connections.
-  final cluster = web3.Cluster.testnet;//localhost('192.168.0.63:8899');
-  final wsCluster = web3.Cluster.custom('192.168.0.63:8900');
-  final connection = web3.Connection(cluster, wsCluster: wsCluster);
+  final cluster = web3.Cluster.testnet;//localhost('192.168.0.63:8899', wsDomain: '192.168.0.63:8900');
+  final connection = web3.Connection(cluster);
 
 
   /// Accounts

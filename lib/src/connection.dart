@@ -117,7 +117,7 @@ import '../rpc_models/confirmed_signature_info.dart';
 import '../rpc_models/epoch_info.dart';
 import '../rpc_models/epoch_schedule.dart';
 import '../rpc_models/highest_snapshot_slot.dart';
-import '../rpc_models/node_identity.dart';
+import '../rpc_models/identity.dart';
 import '../rpc_models/inflation_governor.dart';
 import '../rpc_models/inflation_rate.dart';
 import '../rpc_models/inflation_reward.dart';
@@ -170,7 +170,6 @@ class Connection extends SolanaWebSocketConnection {
   /// TODO: Auto connect / resubscribe when the devices connection status changes.
   Connection(
     this.cluster, { 
-    final Cluster? wsCluster, 
     this.commitment = Commitment.confirmed,
   }): super() {
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
@@ -418,6 +417,9 @@ class Connection extends SolanaWebSocketConnection {
     const String commitmentKey = 'commitment';
     if (object.containsKey(commitmentKey)) {
       object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
+      if (object[commitmentKey] == null) {
+        object.remove(commitmentKey);
+      }
     }
     return object.isEmpty ? values : [...values, object];
   }
@@ -779,15 +781,15 @@ class Connection extends SolanaWebSocketConnection {
   }
 
   /// Returns the identity pubkey for the current node.
-  Future<JsonRpcResponse<NodeIdentity>> getIdentityRaw({ 
+  Future<JsonRpcResponse<Identity>> getIdentityRaw({ 
     final GetIdentityConfig? config, 
   }) {
     final defaultConfig = config ?? const GetIdentityConfig();
-    return _request(Method.getIdentity, [], NodeIdentity.fromJson, config: defaultConfig);
+    return _request(Method.getIdentity, [], Identity.fromJson, config: defaultConfig);
   }
 
   /// Returns the identity pubkey for the current node.
-  Future<NodeIdentity> getIdentity({ 
+  Future<Identity> getIdentity({ 
     final GetIdentityConfig? config, 
   }) {
     return getIdentityRaw(config: config).unwrap();

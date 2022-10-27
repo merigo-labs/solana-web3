@@ -1,3 +1,9 @@
+## 0.0.2+3
+
+* Add partial sign to Transaction.
+* Fix Message fromBuffer.
+* Fix shortvec decodeLength.
+
 ## 0.0.2+2
 
 * Refactor web socket exchange.
