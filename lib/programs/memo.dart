@@ -16,7 +16,7 @@ class MemoProgram {
 
   const MemoProgram._();
 
-  static const maxLength = 566;
+  static const int maxLength = 566;
 
   /// The public key that identifies the Memo Program.
   static final PublicKey programId = PublicKey.fromBase58(
@@ -37,7 +37,7 @@ class MemoProgram {
 
     /// A 32-byte public key takes up 44-bytes in length when converted to base58, each 8-bytes are 
     /// represented as 11-bytes.
-    check((data.length + keys.length * 44) > maxLength);
+    check((data.length + keys.length * 44) <= maxLength);
 
     return TransactionInstruction(
       keys: keys,
