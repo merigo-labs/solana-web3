@@ -93,18 +93,17 @@ class ValidatorInfo {
   /// required in the data.
   /// 
    /// Returns null if info was not found.
-  static ValidatorInfo? tryFromConfigData(Buffer data) {
+  static ValidatorInfo? tryFromConfigData(final Buffer data) {
     
-    const keyLength = 2;
+    const int keyLength = 2;
+    final BufferReader reader = data.reader;
 
-    if (shortvec.decodeLength(data) == keyLength) {
+    if (shortvec.decodeLength(reader) == keyLength) {
 
       final List<ConfigKey> configKeys = [];
       for (int i = 0; i < keyLength; ++i) {
-        final publicKey = PublicKey.fromUint8List(data.slice(0, nacl.publicKeyLength));
-        data = data.slice(nacl.publicKeyLength);
-        final bool isSigner = data.slice(0, 1)[0] == 1;
-        data = data.slice(1);
+        final publicKey = PublicKey.fromUint8List(reader.getBuffer(nacl.publicKeyLength));
+        final bool isSigner = reader.getUint8() == 1;
         configKeys.add(ConfigKey(publicKey, isSigner: isSigner));
       }
 

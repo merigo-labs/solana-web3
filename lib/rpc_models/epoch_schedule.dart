@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:math' as math show pow;
 import 'package:solana_common/models/serializable.dart';
 import 'package:solana_common/utils/types.dart' show u64;
 
@@ -19,6 +20,34 @@ class EpochSchedule extends Serializable {
     required this.firstNormalSlot,
   });
 
+   /// The minimum number of slots per epoch.
+  static const int minimumSlotPerEpoch = 32;
+
+  /// Returns the number of trailing zeros in the binary representation of [n].
+  int _trailingZeros(num n) {
+    int trailingZeros = 0;
+    while (n > 1) {
+      n /= 2;
+      ++trailingZeros;
+    }
+    return trailingZeros;
+  }
+
+  /// Returns the smallest power of two greater than or equal to [n].
+  int _nextPowerOfTwo(int n) {
+    if (n == 0) {
+      return 1;
+    }
+    --n;
+    n |= n >> 1;
+    n |= n >> 2;
+    n |= n >> 4;
+    n |= n >> 8;
+    n |= n >> 16;
+    n |= n >> 32;
+    return n + 1;
+  }
+
   /// The maximum number of slots in each epoch.
   final u64 slotsPerEpoch;
 
@@ -32,7 +61,7 @@ class EpochSchedule extends Serializable {
   final u64 firstNormalEpoch;
   
   /// MINIMUM_SLOTS_PER_EPOCH * (2.pow(firstNormalEpoch) - 1).
-  final u64? firstNormalSlot;
+  final u64 firstNormalSlot;
 
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
   /// object.
@@ -68,4 +97,40 @@ class EpochSchedule extends Serializable {
     'firstNormalEpoch': firstNormalEpoch,
     'firstNormalSlot': firstNormalSlot,
   };
+
+  u64 getEpoch(final u64 slot) => getEpochAndSlotIndex(slot)[0];
+
+  List<u64> getEpochAndSlotIndex(final u64 slot) {
+    if (slot < firstNormalSlot) {
+      final epoch =
+        _trailingZeros(_nextPowerOfTwo(slot + minimumSlotPerEpoch + 1)) -
+        _trailingZeros(minimumSlotPerEpoch) -
+        1;
+      final epochLen = getSlotsInEpoch(epoch);
+      final slotIndex = slot - (epochLen - minimumSlotPerEpoch);
+      return [epoch, slotIndex];
+    } else {
+      final normalSlotIndex = slot - firstNormalSlot;
+      final normalEpochIndex = (normalSlotIndex / slotsPerEpoch).floor();
+      final epoch = firstNormalEpoch + normalEpochIndex;
+      final slotIndex = normalSlotIndex % slotsPerEpoch;
+      return [epoch, slotIndex];
+    }
+  }
+
+  u64 getFirstSlotInEpoch(final u64 epoch) {
+    return epoch <= firstNormalEpoch
+      ? (math.pow(2, epoch).toInt() - 1) * minimumSlotPerEpoch
+      : (epoch - firstNormalEpoch) * slotsPerEpoch + firstNormalSlot;
+  }
+
+  u64 getLastSlotInEpoch(final u64 epoch) {
+    return getFirstSlotInEpoch(epoch) + getSlotsInEpoch(epoch) - 1;
+  }
+
+  u64 getSlotsInEpoch(final u64 epoch) {
+    return epoch < firstNormalEpoch
+      ? math.pow(2, epoch + _trailingZeros(minimumSlotPerEpoch)).toInt()
+      : slotsPerEpoch;
+  }
 }

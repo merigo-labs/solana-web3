@@ -4,7 +4,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:solana_common/config/cluster.dart';
+import 'package:solana_common/extensions/future.dart';
 import 'package:solana_common/exceptions/json_rpc_exception.dart';
 import 'package:solana_common/protocol/json_rpc_context_response.dart';
 import 'package:solana_common/protocol/json_rpc_context_result.dart';
@@ -15,128 +20,31 @@ import 'package:solana_common/protocol/json_rpc_request_config.dart';
 import 'package:solana_common/protocol/json_rpc_response.dart';
 import 'package:solana_common/protocol/json_rpc_subscribe_response.dart';
 import 'package:solana_common/protocol/json_rpc_unsubscribe_response.dart';
-import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_common/utils/convert.dart' as convert show base58, list;
+import 'package:solana_common/utils/library.dart' as utils show cast, check;
+import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcMapParser, 
+  JsonRpcParser, i64, u64, usize;
+import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/web_socket/web_socket_exchange_manager.dart';
 import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
-import 'package:solana_web3/rpc_config/commitment_config.dart';
-import 'package:solana_web3/rpc_models/logs_notification.dart';
-import 'package:solana_web3/rpc_models/signature_notification.dart';
-import 'package:solana_web3/rpc_models/slot_notification.dart';
-import 'package:solana_common/extensions/future.dart';
-import '../types/notification_method.dart';
-import 'package:solana_common/config/cluster.dart';
-import 'models/logs_filter.dart';
+
 import 'nacl.dart' as nacl show signatureLength;
-import '../rpc_config/json_rpc_subscribe_config.dart';
-import '../rpc_config/json_rpc_unsubscribe_config.dart';
-import '../rpc_config/account_subscribe_config.dart';
-import '../rpc_config/account_unsubscribe_config.dart';
+import 'keypair.dart';
+import 'message/message.dart';
+import 'models/logs_filter.dart';
+import 'public_key.dart';
+import 'transaction/transaction.dart';
+import '../exceptions/transaction_exception.dart';
+import '../rpc_config/index.dart';
+import '../rpc_models/index.dart';
 import '../types/accounts_filter.dart';
-import '../rpc_config/confirm_transaction_config.dart';
-import '../rpc_config/get_block_commitment_config.dart';
-import '../rpc_config/get_block_production_config.dart';
-import '../rpc_config/get_block_time_config.dart';
-import '../rpc_config/get_blocks_config.dart';
-import '../rpc_config/get_blocks_with_limit_config.dart';
-import '../rpc_config/get_cluster_nodes_config.dart';
-import '../rpc_config/get_epoch_info_config.dart';
-import '../rpc_config/get_epoch_schedule_config.dart';
-import '../rpc_config/get_first_available_block_config.dart';
-import '../rpc_config/get_genesis_hash_config.dart';
-import '../rpc_config/get_health_config.dart';
-import '../rpc_config/get_highest_snapshot_slot_config.dart';
-import '../rpc_config/get_identity_config.dart';
-import '../rpc_config/get_inflation_governor_config.dart';
-import '../rpc_config/get_inflation_rate_config.dart';
-import '../rpc_config/get_inflation_reward_config.dart';
-import '../rpc_config/get_largest_accounts_config.dart';
-import '../rpc_config/get_leader_schedule_config.dart';
-import '../rpc_config/get_max_retransmit_slot_config.dart';
-import '../rpc_config/get_max_shred_insert_slot_config.dart';
-import '../rpc_config/get_multiple_accounts_config.dart';
-import '../rpc_config/get_program_accounts_config.dart';
-import '../rpc_config/get_recent_performance_samples_config.dart';
-import '../rpc_config/get_signature_statuses_config.dart';
-import '../rpc_config/get_signatures_for_address_config.dart';
-import '../rpc_config/get_slot_config.dart';
-import '../rpc_config/get_slot_leader_config.dart';
-import '../rpc_config/get_slot_leaders_config.dart';
-import '../rpc_config/get_stake_activation_config.dart';
-import '../rpc_config/get_supply_config.dart';
-import '../rpc_config/get_token_account_balance_config.dart';
-import '../rpc_config/get_token_accounts_by_delegate_config.dart';
-import '../rpc_config/get_token_accounts_by_owner_config.dart';
-import '../rpc_config/get_token_largest_accounts_config.dart';
-import '../rpc_config/get_token_supply_config.dart';
-import '../rpc_config/get_transaction_config.dart';
-import '../rpc_config/get_transaction_count_config.dart';
-import '../rpc_config/get_version_config.dart';
-import '../rpc_config/get_vote_accounts_config.dart';
-import '../rpc_config/is_blockhash_valid_config.dart';
-import '../rpc_config/logs_subscribe_config.dart';
-import '../rpc_config/logs_unsubscribe_config.dart';
-import '../rpc_config/minimum_ledger_slot.dart';
-import '../rpc_config/program_subscribe_config.dart';
-import '../rpc_config/program_unsubscribe_config.dart';
-import '../rpc_config/root_subscribe_config.dart';
-import '../rpc_config/root_unsubscribe_config.dart';
-import '../rpc_config/send_and_confirm_transaction_config.dart';
-import '../rpc_config/get_block_height_config.dart';
-import '../rpc_config/get_fee_for_message_config.dart';
-import '../rpc_config/get_latest_blockhash_config.dart';
-import '../rpc_config/get_minimum_balance_for_rent_exemption_config.dart';
-import '../rpc_config/request_airdrop_config.dart';
-import '../rpc_config/send_transaction_config.dart';
-import '../rpc_config/signature_subscribe_config.dart';
-import '../rpc_config/signature_unsubscribe_config.dart';
-import '../rpc_config/simulate_transaction_config.dart';
-import '../rpc_config/slot_subscribe_config.dart';
-import '../rpc_config/slot_unsubscribe_config.dart';
 import '../types/commitment.dart';
 import '../types/health_status.dart';
 import '../types/method.dart';
+import '../types/notification_method.dart';
 import '../types/token_accounts_filter.dart';
 import '../types/transaction_encoding.dart';
-import '../rpc_models/block.dart';
-import 'public_key.dart';
-import '../rpc_config/get_account_info_config.dart';
-import '../rpc_models/account_info.dart';
-import '../exceptions/transaction_exception.dart';
-import 'keypair.dart';
-import 'message/message.dart';
-import 'package:http/http.dart' as http;
-import '../../rpc_config/get_balance_config.dart';
-import '../../rpc_config/get_block_config.dart';
-import '../rpc_models/block_commitment.dart';
-import '../rpc_models/block_production.dart';
-import '../rpc_models/blockhash_cache.dart';
-import '../rpc_models/blockhash_with_expiry_block_height.dart';
-import '../rpc_models/cluster_node.dart';
-import '../rpc_models/confirmed_signature_info.dart';
-import '../rpc_models/epoch_info.dart';
-import '../rpc_models/epoch_schedule.dart';
-import '../rpc_models/highest_snapshot_slot.dart';
-import '../rpc_models/identity.dart';
-import '../rpc_models/inflation_governor.dart';
-import '../rpc_models/inflation_rate.dart';
-import '../rpc_models/inflation_reward.dart';
-import '../rpc_models/large_account.dart';
-import '../rpc_models/performance_sample.dart';
-import '../rpc_models/program_account.dart';
-import '../rpc_models/signature_status.dart';
-import '../rpc_models/stake_activation.dart';
-import '../rpc_models/supply.dart';
-import '../rpc_models/token_account.dart';
-import '../rpc_models/token_amount.dart';
-import '../rpc_models/transaction_info.dart';
-import '../rpc_models/transaction_status.dart';
-import '../rpc_models/version.dart';
-import '../rpc_models/vote_account_status.dart';
-import 'transaction/transaction.dart';
-import 'package:solana_common/utils/convert.dart' as convert show base58, list;
-import 'package:solana_common/utils/library.dart' as utils show cast, check;
-import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcMapParser, JsonRpcParser, i64, u64, usize;
 
 
 /// Connection
@@ -147,7 +55,8 @@ class Connection extends SolanaWebSocketConnection {
   /// {@template solana_web3.Connection}
   /// Creates a connection to the [cluster].
   /// 
-  /// Web socket method calls are made to the [wsCluster], which defaults to [cluster]. 
+  /// Web socket method calls are made to the [Cluster.wsDomain], which defaults to 
+  /// [Cluster.domain]. 
   /// 
   /// The [commitment] configuration will be set as the default value for all methods that accept a 
   /// commitment parameter. Use the `config` parameter of a method call to override the default 
@@ -302,6 +211,8 @@ class Connection extends SolanaWebSocketConnection {
 
   /// Prints the contents of a JSON-RPC response.
   void _debugResponse(final http.Response response) {
+    print("\n--------------------------------------------------------------------------------");
+    print("[RESPONSE BODY]:           ${response.body}");
     final Map<String, dynamic>? body = json.decode(response.body);
     print("\n--------------------------------------------------------------------------------");
     print("[RESPONSE BODY]:           $body");
@@ -973,7 +884,7 @@ class Connection extends SolanaWebSocketConnection {
     final PublicKey program, {
     final GetProgramAccountsConfig? config,
   }) {
-    final parse = _listParser(ProgramAccount.fromJson);
+    final parse = _listParser(ProgramAccount.parse);
     final defaultConfig = config ?? GetProgramAccountsConfig();
     return _request(Method.getProgramAccounts, [program.toBase58()], parse, config: defaultConfig);
   }

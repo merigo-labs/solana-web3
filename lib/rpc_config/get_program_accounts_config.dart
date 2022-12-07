@@ -1,11 +1,10 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/utils/convert.dart' as convert show list;
 import 'package:solana_common/utils/types.dart' show u64;
 import 'commitment_config.dart';
 import '../src/models/data_slice.dart';
-import '../src/models/program_filter.dart';
+import '../src/models/program_filters.dart';
 import '../types/account_encoding.dart';
 
 
@@ -39,7 +38,7 @@ class GetProgramAccountsConfig extends CommitmentConfig {
 
   /// The filters applied to the results. An account must meet all filter criteria to be included in 
   /// results.
-  final List<ProgramFilter>? filters;
+  final ProgramFilters? filters;
 
   /// The minimum slot that the request can be evaluated at.
   final u64? minContextSlot;
@@ -49,7 +48,7 @@ class GetProgramAccountsConfig extends CommitmentConfig {
     'commitment': commitment?.name,
     'encoding': encoding.name,
     'dataSlice': dataSlice?.toJson(),
-    'filters': convert.list.tryEncode(filters),
+    'filters': filters?.toJsonListCleaned(),
     'minContextSlot': minContextSlot,
   };
 }

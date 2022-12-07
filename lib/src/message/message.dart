@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/models/serializable.dart';
 import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/convert.dart' as convert;
 import '../instruction.dart';
@@ -9,12 +10,10 @@ import '../layout.dart' as layout;
 import '../message/message_instruction.dart';
 import '../models/address_table_lookup.dart';
 import '../nacl.dart' as nacl show publicKeyLength;
-import '../../rpc_config/get_block_config.dart';
-import 'package:solana_common/models/serializable.dart';
-import '../models/transaction.dart';
 import '../public_key.dart';
 import '../transaction/constants.dart' show packetDataSize;
 import '../utils/shortvec.dart' as shortvec;
+import '../../rpc_config/get_block_config.dart';
 
 
 /// Message Header
@@ -185,7 +184,7 @@ class Message extends Serializable {
     );
 
     final Buffer instructionCount = Buffer.fromList(shortvec.encodeLength(instructions.length));
-    Buffer instructionBuffer = Buffer(packetDataSize)..setAll(0, instructionCount);
+    Buffer instructionBuffer = Buffer.fromList(instructionCount, packetDataSize);
     int instructionBufferLength = instructionCount.length;
 
     for (final MessageInstruction instruction in instructions) {
@@ -248,36 +247,32 @@ class Message extends Serializable {
   }
 
   /// Decodes a message into a [Message] instance.
-  factory Message.fromBuffer(Buffer buffer) {
+  factory Message.fromBuffer(final Buffer buffer) {
 
-    final int numRequiredSignatures = buffer[0];
-    final int numReadonlySignedAccounts = buffer[1];
-    final int numReadonlyUnsignedAccounts = buffer[2];
-    buffer = buffer.slice(3);
+    final BufferReader reader = buffer.reader;
+    
+    final int numRequiredSignatures = reader.getUint8();
+    final int numReadonlySignedAccounts = reader.getUint8();
+    final int numReadonlyUnsignedAccounts = reader.getUint8();
 
-    final int accountCount = shortvec.decodeLength(buffer);
+    final int accountCount = shortvec.decodeLength(reader);
     final List<PublicKey> accountKeys = [];
     for (int i = 0; i < accountCount; ++i) {
-      final Buffer account = buffer.slice(0, nacl.publicKeyLength);
-      buffer = buffer.slice(nacl.publicKeyLength);
+      final Buffer account = reader.getBuffer(nacl.publicKeyLength);
       accountKeys.add(PublicKey.fromUint8List(account.asUint8List()));
     }
 
-    final Buffer recentBlockhash = buffer.slice(0, nacl.publicKeyLength);
-    buffer = buffer.slice(nacl.publicKeyLength);
+    final Buffer recentBlockhash = reader.getBuffer(nacl.publicKeyLength);
 
-    final int instructionCount = shortvec.decodeLength(buffer);
+    final int instructionCount = shortvec.decodeLength(reader);
     final List<Instruction> instructions = [];
     for (int _i = 0; _i < instructionCount; ++_i) {
-      final int programIdIndex = buffer[0];
-      buffer = buffer.slice(1);
-      final int accountCount = shortvec.decodeLength(buffer);
-      final accounts = buffer.slice(0, accountCount);
-      buffer = buffer.slice(accountCount);
-      final int dataLength = shortvec.decodeLength(buffer);
-      final Buffer dataSlice = buffer.slice(0, dataLength);
+      final int programIdIndex = reader.getUint8();
+      final int accountCount = shortvec.decodeLength(reader);
+      final accounts = reader.getBuffer(accountCount);
+      final int dataLength = shortvec.decodeLength(reader);
+      final Buffer dataSlice = reader.getBuffer(dataLength);
       final String data = convert.base58.encode(dataSlice.asUint8List());
-      buffer = buffer.slice(dataLength);
       instructions.add(
         Instruction(
           programIdIndex: programIdIndex, 

@@ -13,6 +13,11 @@ buffer_layout.Blob<u8> publicKey([final String property = 'publicKey']) {
   return buffer_layout.blob<u8>(32, property);
 }
 
+/// Returns the layout a signature
+buffer_layout.Blob<u8> signature([final String property = 'signature']) { 
+  return buffer_layout.blob(64, property);
+}
+
 /// Returns the layout for a 64-bit unsigned integer.
 buffer_layout.Blob<u8> uint64([final String property = 'uint64']) { 
   return buffer_layout.blob<u8>(8, property);

@@ -8,19 +8,17 @@ import 'package:solana_common/utils/buffer.dart';
 /// ------------------------------------------------------------------------------------------------
 
 /// Returns the short-vec encoded length.
-int decodeLength(final Buffer buffer) {
+int decodeLength(final BufferReader reader) {
   int len = 0;
   int size = 0;
-  for (final int byte in buffer) {
+  for (final int byte in reader) {
     len |= (byte & 0x7f) << (size * 7);
     size += 1;
     if ((byte & 0x80) == 0) {
       break;
     }
   }
-  if (size > 0) {
-    buffer.set(buffer.getRange(size).toList(growable: false));
-  }
+  reader.advance(size);
   return len;
 }
 

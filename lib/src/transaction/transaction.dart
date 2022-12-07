@@ -764,20 +764,19 @@ class Transaction extends Serializable {
   /// Parses a wire transaction into a [Transaction] object.
   factory Transaction.fromList(final List<int> bytes) {
     final List<String> signatures = [];
-    Buffer buffer = Buffer.fromList(bytes);
-    final int signatureCount = shortvec.decodeLength(buffer);
+    final BufferReader reader = BufferReader.fromList(bytes);
+    final int signatureCount = shortvec.decodeLength(reader);
     for (int i = 0; i < signatureCount; ++i) {
-      final Buffer signature = buffer.slice(0, nacl.signatureLength);
-      buffer = buffer.slice(nacl.signatureLength);
+      final Buffer signature = reader.getBuffer(nacl.signatureLength);
       signatures.add(convert.base58.encode(signature.asUint8List()));
     }
-    final prefix = buffer[0];
+    final prefix = reader[0];
     final maskedPrefix = prefix & versionPrefixMask;
     if (maskedPrefix != prefix) {
       // TODO: Add versioned transactions.
       throw UnimplementedError('Versioned Transactions have not been implemented.');
     }
-    return Transaction.populate(Message.fromBuffer(buffer), signatures);
+    return Transaction.populate(Message.fromBuffer(reader.toBuffer(slice: true)), signatures);
   }
 
   /// Populates a [Transaction] object with the contents of [message] and the provided [signatures].
@@ -833,9 +832,9 @@ class Transaction extends Serializable {
     final List<TransactionSignature> signatures = [];
     final Uint8List base64Decoded = base64.decode(base64Encoded);
     final BufferReader reader = BufferReader.fromUint8List(base64Decoded);
-    final int numberOfSignatures = reader.get(1).getUint8(0);
+    final int numberOfSignatures = reader.getUint8();
     for (int i = 0; i < numberOfSignatures; ++i) {
-      signatures.add(base58.encode(reader.get(signatureLength).asUint8List()));
+      signatures.add(base58.encode(reader.getBuffer(signatureLength).asUint8List()));
     }
     return signatures;
   }

@@ -1,5 +1,6 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
+
 import 'package:solana_common/models/serializable.dart';
 
 

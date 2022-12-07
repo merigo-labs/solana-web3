@@ -1,10 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/utils/convert.dart' show list;
 import 'commitment_subscribe_config.dart';
 import '../types/account_encoding.dart';
-import '../src/models/program_filter.dart';
+import '../src/models/program_filters.dart';
 
 
 /// Program Subscribe Config
@@ -17,21 +16,20 @@ class ProgramSubscribeConfig extends CommitmentSubscribeConfig {
     super.timeout,
     super.commitment,
     this.encoding = AccountEncoding.base64,
-    final List<ProgramFilter>? filters,
-  }): filters = filters == null || filters.isEmpty ? null : filters,
-      assert(encoding.isAccount);
+    this.filters,
+  }): assert(encoding.isAccount);
 
   /// The Program data's encoding (default: [AccountEncoding.base64]).
   final AccountEncoding encoding;
 
   /// The filters applied to the results. An account must meet all filter criteria to be included in 
   /// results.
-  final List<ProgramFilter>? filters;
+  final ProgramFilters? filters;
 
   @override
   Map<String, dynamic> object() => {
     'commitment': commitment?.name,
     'encoding': encoding.name,
-    'filters': list.tryEncode(filters),
+    'filters': filters?.toJsonListCleaned(),
   };
 }
