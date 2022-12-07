@@ -1,3 +1,7 @@
+## 0.0.2+6
+
+* Update connectivity_plus
+
 ## 0.0.2+5
 
 * Fix ProgramFilters

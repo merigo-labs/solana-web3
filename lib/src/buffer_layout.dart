@@ -979,7 +979,7 @@ class Structure extends StructureLayout<dynamic, Layout> {
   /// left unmodified.
   @override
   int encode(final dynamic src, final Buffer b, [int offset = 0]) {
-    src is Map<String, dynamic>;
+    src as Map<String, dynamic>;
     final int firstOffset = offset;
     int lastOffset = 0;
     int lastWrote = 0;
@@ -1961,7 +1961,7 @@ class BitField extends LayoutProperties with LayoutMixin {
   /// **NOTE** This is not a specialization of {@link
   /// Layout#encode|Layout.encode} and there is no return value. */
   void encode(dynamic value) {
-    value is int;
+    value as int;
     check(value == fixBitwiseResult(value & valueMask), 
           '${debugProperty(property)} encode() value must not exceed $valueMask.');
     final word = container._packedGetValue();
