@@ -48,12 +48,7 @@ class MessageHeader extends Serializable {
   /// The last numReadonlyUnsignedAccounts of the unsigned keys are read-only accounts.
   final int numReadonlyUnsignedAccounts;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// MessageHeader.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory MessageHeader.fromJson(final Map<String, dynamic> json) => MessageHeader(
     numRequiredSignatures: json['numRequiredSignatures'],
     numReadonlySignedAccounts: json['numReadonlySignedAccounts'],
@@ -121,12 +116,7 @@ class Message extends Serializable {
   /// Map each program id index to its corresponding account key.
   final Map<int, PublicKey> _indexToProgramIds = {};
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Message.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Message.fromJson(final Map<String, dynamic> json) => Message(
     accountKeys: convert.list.decode(json['accountKeys'], PublicKey.fromBase58),
     header: MessageHeader.fromJson(json['header']),

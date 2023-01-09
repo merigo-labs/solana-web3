@@ -18,27 +18,14 @@ class DataSize extends Serializable {
   /// Compares the program account data length with the provided data size.
   final u64 dataSize;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// DataSize.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory DataSize.fromJson(final Map<String, dynamic> json) => DataSize(
     dataSize: json['dataSize'],
   );
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// DataSize.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static DataSize? tryFromJson(final Map<String, dynamic>? json) {
-    return json == null ? null : DataSize.fromJson(json);
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static DataSize? tryFromJson(final Map<String, dynamic>? json)
+    => json == null ? null : DataSize.fromJson(json);
 
   @override
   Map<String, dynamic> toJson() => {

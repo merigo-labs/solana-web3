@@ -51,16 +51,10 @@ class TransactionInfo<T extends Object> extends TransactionData<T> {
   /// ```
   /// TransactionInfo.tryParse({ '<parameter>': <value> });
   /// ```
-  static TransactionInfo? tryParse(final Map<String, dynamic>? json) {
-    return json != null ? parse(json) : null;
-  }
+  static TransactionInfo? tryParse(final Map<String, dynamic>? json)
+    => json != null ? parse(json) : null;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TransactionInfo.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   static TransactionInfo fromJson(final Map<String, dynamic> json) { 
     final TransactionData data = TransactionData.fromJson(json);
     return TransactionInfo(

@@ -35,12 +35,7 @@ class Supply extends Serializable {
   /// empty.
   final List<PublicKey> nonCirculatingAccounts;
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Supply.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Supply.fromJson(final Map<String, dynamic> json) => Supply(
     total: json['total'],
     circulating: json['circulating'],
@@ -48,17 +43,9 @@ class Supply extends Serializable {
     nonCirculatingAccounts: list.decode(json['nonCirculatingAccounts'], PublicKey.fromBase58),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// Supply.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static Supply? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? Supply.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static Supply? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? Supply.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

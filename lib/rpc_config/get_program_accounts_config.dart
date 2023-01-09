@@ -13,7 +13,7 @@ import '../types/account_encoding.dart';
 
 class GetProgramAccountsConfig extends CommitmentConfig {
 
-  /// JSON-RPC configurations for `getAccountInfo` methods.
+  /// JSON-RPC configurations for `getProgramAccounts` methods.
   GetProgramAccountsConfig({
     super.id,
     super.headers,

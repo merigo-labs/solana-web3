@@ -30,13 +30,7 @@ class InflationRate extends Serializable {
   /// The epoch for which these values are valid.
   final u64 epoch;
   
-
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// InflationRate.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory InflationRate.fromJson(final Map<String, dynamic> json) => InflationRate(
     total: json['total'],
     validator: json['validator'],
@@ -44,17 +38,9 @@ class InflationRate extends Serializable {
     epoch: json['epoch'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// InflationRate.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static InflationRate? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? InflationRate.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static InflationRate? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? InflationRate.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

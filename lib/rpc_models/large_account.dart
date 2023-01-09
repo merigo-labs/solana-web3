@@ -23,28 +23,15 @@ class LargeAccount extends Serializable {
   /// The number of lamports in the account.
   final u64? lamports;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// LargeAccount.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory LargeAccount.fromJson(final Map<String, dynamic> json) => LargeAccount(
     address: PublicKey.fromBase58(json['address']), 
     lamports: json['lamports'],
   );
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// LargeAccount.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static LargeAccount? tryFromJson(final Map<String, dynamic>? json) {
-    return json == null ? null : LargeAccount.fromJson(json);
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static LargeAccount? tryFromJson(final Map<String, dynamic>? json)
+    => json == null ? null : LargeAccount.fromJson(json);
 
   @override
   Map<String, dynamic> toJson() => {

@@ -63,12 +63,7 @@ class EpochSchedule extends Serializable {
   /// MINIMUM_SLOTS_PER_EPOCH * (2.pow(firstNormalEpoch) - 1).
   final u64 firstNormalSlot;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// EpochSchedule.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory EpochSchedule.fromJson(final Map<String, dynamic> json) => EpochSchedule(
     slotsPerEpoch: json['slotsPerEpoch'],
     leaderScheduleSlotOffset: json['leaderScheduleSlotOffset'],
@@ -77,14 +72,7 @@ class EpochSchedule extends Serializable {
     firstNormalSlot: json['firstNormalSlot'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// EpochSchedule.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static EpochSchedule? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? EpochSchedule.fromJson(json) : null;
   }

@@ -145,7 +145,6 @@ enum TransactionError {
   /// ```
   /// TransactionError.tryFromName('AccountInUse');
   /// ```
-  static TransactionError? tryFromName(final String? name) {
-    return name != null ? utils.tryCall(() => TransactionError.fromName(name)) : null;
-  }
+  static TransactionError? tryFromName(final String? name)
+    => name != null ? utils.tryCall(() => TransactionError.fromName(name)) : null;
 }

@@ -75,7 +75,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   /// Cluster connections.
-  final cluster = web3.Cluster.testnet;//localhost('192.168.0.63:8899', wsDomain: '192.168.0.63:8900');
+  final cluster = web3.Cluster.testnet;
   final connection = web3.Connection(cluster);
 
 
@@ -772,14 +772,20 @@ void main() {
     final tokenAccounts = await connection.getTokenAccountsByOwner(tokenOwner, filter: getTokenAccountFilter);
     await _testRequest(
       'get token account balance raw',
-      connection.getTokenAccountBalanceRaw(tokenAccounts.first.pubkey, config: getTokenAccountBalanceConfig),
+      connection.getTokenAccountBalanceRaw(
+        PublicKey.fromBase58(tokenAccounts.first.pubkey), 
+        config: getTokenAccountBalanceConfig,
+      ),
     );
   });
   test('get token account balance', () async {
     final tokenAccounts = await connection.getTokenAccountsByOwner(tokenOwner, filter: getTokenAccountFilter);
     await _testRequest(
       'get token account balance',
-      connection.getTokenAccountBalance(tokenAccounts.first.pubkey, config: getTokenAccountBalanceConfig),
+      connection.getTokenAccountBalance(
+        PublicKey.fromBase58(tokenAccounts.first.pubkey), 
+        config: getTokenAccountBalanceConfig,
+      ),
     );
   });
 

@@ -3,17 +3,22 @@
 
 library solana_web3;
 
+import 'package:solana_common/extensions/num.dart';
+
 
 /// Exports
 /// ------------------------------------------------------------------------------------------------
 
 // solana_common
-export 'package:solana_common/borsh/index.dart';
+export 'package:solana_common/borsh/borsh.dart';
 export 'package:solana_common/config/cluster.dart';
+export 'package:solana_common/exceptions/index.dart';
+export 'package:solana_common/extensions/num.dart';
 export 'package:solana_common/models/serializable.dart';
 export 'package:solana_common/protocol/json_rpc_response.dart';
 export 'package:solana_common/utils/buffer.dart';
 export 'package:solana_common/utils/convert.dart';
+export 'package:solana_common/utils/rust_enum.dart';
 
 // src/message/
 export 'src/message/message_instruction.dart';
@@ -23,7 +28,7 @@ export 'src/message/message.dart';
 export 'src/models/address_table_lookup.dart';
 export 'src/models/data_size.dart';
 export 'src/models/data_slice.dart';
-export 'src/models/data.dart';
+export 'src/models/data_serializable.dart';
 export 'src/models/inner_instruction.dart';
 export 'src/models/loaded_address.dart';
 export 'src/models/logs_filter.dart';
@@ -40,7 +45,6 @@ export 'src/models/ui_token_amount.dart';
 // src/transaction/
 export 'src/transaction/constants.dart';
 export 'src/transaction/transaction.dart';
-
 
 // src/
 export 'src/blockhash.dart';
@@ -63,4 +67,26 @@ export 'src/validator_info.dart';
 const int lamportsPerSol = 1000000000;
 
 /// Converts [sol] to lamports.
-BigInt solToLamports(final int sol) => BigInt.from(sol) * BigInt.from(lamportsPerSol);
+BigInt _intToLamports(final int sol) {
+  return sol.toBigInt() * lamportsPerSol.toBigInt();
+}
+
+/// Converts [sol] to lamports.
+BigInt _numToLamports(final num sol) {
+  const decimalPlaces = 9;
+  final String value = sol.toStringAsFixed(decimalPlaces);
+  final int decimalPosition = value.length - decimalPlaces;
+  return BigInt.parse(value.substring(0, decimalPosition-1) + value.substring(decimalPosition));
+}
+
+/// Converts [sol] to lamports.
+BigInt solToLamports(final num sol) {
+  assert(sol is int || sol is double);
+  return sol is int ? _intToLamports(sol) : _numToLamports(sol);
+}
+
+/// Converts [lamports] to sol.
+double lamportsToSol(final BigInt lamports) {
+  assert(lamports <= (BigInt.from(double.maxFinite) * lamportsPerSol.toBigInt()));
+  return lamports / lamportsPerSol.toBigInt();
+}

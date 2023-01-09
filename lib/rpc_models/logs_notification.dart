@@ -29,26 +29,14 @@ class LogsNotification extends Serializable {
   /// blockhash or signature verification failure).
   final List? logs;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// LogsNotification.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory LogsNotification.fromJson(final Map<String, dynamic> json) => LogsNotification(
     signature: json['signature'],
     err: json['err'],
     logs: json['logs'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// LogsNotification.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static LogsNotification? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? LogsNotification.fromJson(json) : null;
   }

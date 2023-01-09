@@ -25,12 +25,7 @@ class UITokenAmount extends Serializable {
   /// The token amount as a string (including decimals).
   final String uiAmountString;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// UITokenAmount.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory UITokenAmount.fromJson(final Map<String, dynamic> json) => UITokenAmount(
     amount: json['amount'], 
     decimals: json['decimals'],

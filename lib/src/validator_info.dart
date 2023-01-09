@@ -57,12 +57,7 @@ class Info {
   /// Uused to identify validators on keybase.io.
   final String? keybaseUsername;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Info.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Info.fromJson(final Map<String, dynamic> json) => Info(
     name: json['name'],
     website: json['website'],

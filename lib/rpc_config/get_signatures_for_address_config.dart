@@ -31,12 +31,7 @@ class GetSignaturesForAddressConfig extends CommitmentAndMinContextSlotConfig {
   /// Search until this transaction signature, if found before limit reached.
   final String? until;
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// GetSignaturesForAddressConfig.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory GetSignaturesForAddressConfig.fromJson(final Map<String, dynamic> json) 
     => GetSignaturesForAddressConfig(
       limit: json['limit'],
@@ -46,14 +41,7 @@ class GetSignaturesForAddressConfig extends CommitmentAndMinContextSlotConfig {
       minContextSlot: json['minContextSlot'],
     );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// GetSignaturesForAddressConfig.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static GetSignaturesForAddressConfig? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? GetSignaturesForAddressConfig.fromJson(json) : null;
   }

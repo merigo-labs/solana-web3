@@ -36,12 +36,7 @@ class Reward extends Serializable {
   /// and [RewardType.staking]).
   final u8? commission;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Reward.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Reward.fromJson(final Map<String, dynamic> json) => Reward(
     pubkey: json['pubkey'],
     lamports: json['lamports'],

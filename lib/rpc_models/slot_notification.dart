@@ -26,29 +26,16 @@ class SlotNotification extends Serializable {
   /// The newly set slot.
   final u64 slot;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// SlotNotification.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   static SlotNotification fromJson(final Map<String, dynamic> json) => SlotNotification(
     parent: json['parent'],
     root: json['root'],
     slot: json['slot'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// SlotNotification.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static SlotNotification? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? SlotNotification.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static SlotNotification? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? SlotNotification.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

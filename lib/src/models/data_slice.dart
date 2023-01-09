@@ -21,28 +21,21 @@ class DataSlice extends Serializable {
   /// The data length.
   final int length;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// DataSlice.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// Creates an instance of `this` class with an [offset] and [length] value of `0`.
+  factory DataSlice.zero() => const DataSlice(
+    offset: 0, 
+    length: 0,
+  );
+
+  /// {@macro solana_common.Serializable.fromJson}
   factory DataSlice.fromJson(final Map<String, dynamic> json) => DataSlice(
     offset: json['offset'], 
     length: json['length'],
   );
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// DataSlice.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static DataSlice? tryFromJson(final Map<String, dynamic>? json) {
-    return json == null ? null : DataSlice.fromJson(json);
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static DataSlice? tryFromJson(final Map<String, dynamic>? json)
+    => json == null ? null : DataSlice.fromJson(json);
 
   @override
   Map<String, dynamic> toJson() => {

@@ -9,11 +9,11 @@ import '../public_key.dart';
 
 class ProgramAddress {
 
-  /// Defines a program address ([pubKey] + [bump]).
-  const ProgramAddress(this.pubKey, this.bump);
+  /// Defines a program address ([publicKey] + [bump]).
+  const ProgramAddress(this.publicKey, this.bump);
 
   /// The public key.
-  final PublicKey pubKey;
+  final PublicKey publicKey;
 
   /// The bump seed.
   final int bump;

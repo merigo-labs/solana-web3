@@ -30,25 +30,13 @@ class BlockProduction extends Serializable {
   /// The block production slot range.
   final SlotRange range;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// BlockProduction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory BlockProduction.fromJson(final Map<String, dynamic> json) => BlockProduction(
     byIdentity: Map.castFrom(json['byIdentity']),
     range: SlotRange.fromJson(json['range']),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// BlockProduction.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static BlockProduction? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? BlockProduction.fromJson(json) : null;
   }

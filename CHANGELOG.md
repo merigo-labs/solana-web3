@@ -1,11 +1,18 @@
+## 0.0.3
+
+* Add Token Program.
+* Add Associated Token Program.
+* Add Stake Pool Program.
+* Change Account/Transaction Data objects.
+
 ## 0.0.2+6
 
-* Update connectivity_plus
+* Update connectivity_plus.
 
 ## 0.0.2+5
 
-* Fix ProgramFilters
-* Update solana_common
+* Fix ProgramFilters.
+* Update solana_common.
 
 ## 0.0.2+4
 

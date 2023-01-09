@@ -55,12 +55,7 @@ class Block extends Serializable {
   /// Indicates if the parent block ([previousBlockhash]) is available.
   bool get isParentBlockAvailable => previousBlockhash == '11111111111111111111111111111111';
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Block.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Block.fromJson(final Map<String, dynamic> json) => Block(
     blockhash: json['blockhash'],
     previousBlockhash: json['previousBlockhash'],
@@ -72,14 +67,7 @@ class Block extends Serializable {
     blockHeight: json['blockHeight'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// Block.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static Block? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? Block.fromJson(json) : null;
   }

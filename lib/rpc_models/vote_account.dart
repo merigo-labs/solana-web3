@@ -51,12 +51,7 @@ class VoteAccount extends Serializable {
   /// ```
   final List<List<int>> epochCredits;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// VoteAccount.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory VoteAccount.fromJson(final Map<String, dynamic> json) => VoteAccount(
     votePubkey: PublicKey.fromBase58(json['votePubkey']),
     nodePubkey: PublicKey.fromBase58(json['nodePubkey']),
@@ -67,17 +62,9 @@ class VoteAccount extends Serializable {
     epochCredits: List<List>.from(json['epochCredits']).map(List<int>.from).toList(growable: false),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// VoteAccount.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static VoteAccount? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? VoteAccount.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static VoteAccount? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? VoteAccount.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

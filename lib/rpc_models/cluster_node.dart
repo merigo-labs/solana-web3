@@ -42,12 +42,7 @@ class ClusterNode extends Serializable {
   /// The shred version the node has been configured to use.
   final u16? shredVersion;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// ClusterNode.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory ClusterNode.fromJson(final Map<String, dynamic> json) => ClusterNode(
     pubkey: json['pubkey'],
     gossip: json['gossip'],
@@ -58,14 +53,7 @@ class ClusterNode extends Serializable {
     shredVersion: json['shredVersion'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// ClusterNode.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static ClusterNode? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? ClusterNode.fromJson(json) : null;
   }

@@ -34,12 +34,7 @@ class SignatureStatus extends Serializable {
   /// The confirmationStatus associated with the transaction, null if no confirmationStatus is present.
   final Commitment? confirmationStatus;
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// SignatureStatus.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory SignatureStatus.fromJson(final Map<String, dynamic> json) => SignatureStatus(
     slot: json['slot'],
     confirmations: json['confirmations'],
@@ -47,17 +42,9 @@ class SignatureStatus extends Serializable {
     confirmationStatus: Commitment.tryFromName(json['confirmationStatus']),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// SignatureStatus.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static SignatureStatus? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? SignatureStatus.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static SignatureStatus? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? SignatureStatus.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

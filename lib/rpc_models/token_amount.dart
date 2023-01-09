@@ -27,26 +27,14 @@ class TokenAmount extends Serializable {
   final String uiAmountString;
   
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TokenAmount.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory TokenAmount.fromJson(final Map<String, dynamic> json) => TokenAmount(
     amount: BigInt.parse(json['amount']),
     decimals: json['decimals'],
     uiAmountString: json['uiAmountString'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// TokenAmount.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static TokenAmount? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? TokenAmount.fromJson(json) : null;
   }

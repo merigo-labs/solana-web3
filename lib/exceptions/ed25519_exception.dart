@@ -15,12 +15,7 @@ class ED25519Exception extends SolanaException {
     super.code,
   });
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// ED25519Exception.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.SolanaException.fromJson}
   factory ED25519Exception.fromJson(final Map<String, dynamic> json) => ED25519Exception(
     json['message'],
     code: json['code'],

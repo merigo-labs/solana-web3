@@ -31,12 +31,7 @@ class PerformanceSample extends Serializable {
   final u16 samplePeriodSecs;
   
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// PerformanceSample.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory PerformanceSample.fromJson(final Map<String, dynamic> json) => PerformanceSample(
     slot: json['slot'],
     numTransactions: json['numTransactions'],
@@ -44,17 +39,9 @@ class PerformanceSample extends Serializable {
     samplePeriodSecs: json['samplePeriodSecs'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// PerformanceSample.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static PerformanceSample? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? PerformanceSample.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static PerformanceSample? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? PerformanceSample.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

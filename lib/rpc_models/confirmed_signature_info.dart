@@ -37,12 +37,7 @@ class ConfirmedSignatureInfo extends Serializable {
   /// transaction was processed - null if not available.
   final i64 blockTime;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// ConfirmedSignatureInfo.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory ConfirmedSignatureInfo.fromJson(final Map<String, dynamic> json) => ConfirmedSignatureInfo(
     signature: json['signature'],
     slot: json['slot'],
@@ -51,17 +46,9 @@ class ConfirmedSignatureInfo extends Serializable {
     blockTime: json['blockTime'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// ConfirmedSignatureInfo.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static ConfirmedSignatureInfo? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? ConfirmedSignatureInfo.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static ConfirmedSignatureInfo? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? ConfirmedSignatureInfo.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

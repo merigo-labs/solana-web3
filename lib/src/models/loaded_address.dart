@@ -21,25 +21,13 @@ class LoadedAddress extends Serializable {
   /// An ordered list of base-58 encoded addresses for readonly loaded accounts.
   final List<String> readonly;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// LoadedAddress.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory LoadedAddress.fromJson(final Map<String, dynamic> json) => LoadedAddress(
     writable: List.castFrom(json['writable']),
     readonly: List.castFrom(json['readonly']),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// LoadedAddress.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static LoadedAddress? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? LoadedAddress.fromJson(json) : null;
   }

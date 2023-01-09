@@ -22,25 +22,13 @@ class HighestSnapshotSlot extends Serializable {
   /// The highest incremental snapshot slot based on [full].
   final u64? incremental;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// HighestSnapshotSlot.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory HighestSnapshotSlot.fromJson(final Map<String, dynamic> json) => HighestSnapshotSlot(
     full: json['full'],
     incremental: json['incremental'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// HighestSnapshotSlot.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static HighestSnapshotSlot? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? HighestSnapshotSlot.fromJson(json) : null;
   }

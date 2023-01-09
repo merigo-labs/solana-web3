@@ -29,6 +29,7 @@ import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/web_socket/web_socket_exchange_manager.dart';
 import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
 
+import '../rpc_config/get_parsed_account_info_config.dart';
 import 'nacl.dart' as nacl show signatureLength;
 import 'keypair.dart';
 import 'message/message.dart';
@@ -172,11 +173,11 @@ class Connection extends SolanaWebSocketConnection {
     if (notification != null) {
       switch (notification) {
         case NotificationMethod.accountNotification:
-          return _onWebSocketNotification(json, _unwrapValueParser(AccountInfo.parse));
+          return _onWebSocketNotification(json, _unwrapValueParser(AccountInfo.fromJson));
         case NotificationMethod.logsNotification:
           return _onWebSocketNotification(json, _unwrapValueParser(LogsNotification.fromJson));
         case NotificationMethod.programNotification:
-          return _onWebSocketNotification(json, _unwrapValueParser(ProgramAccount.parse));
+          return _onWebSocketNotification(json, _unwrapValueParser(ProgramAccount.fromJson));
         case NotificationMethod.rootNotification:
           return _onWebSocketNotification(json, utils.cast<u64>);
         case NotificationMethod.signatureNotification:
@@ -262,7 +263,7 @@ class Connection extends SolanaWebSocketConnection {
   ) {
     assert(parseList.isNotEmpty);
     return (final http.Response response) {
-      print('BULK REPONSE ${response.body}');
+      //print('BULK REPONSE ${response.body}');
       final List<Map<String, dynamic>> body = List.from(json.decode(response.body));
       return List.generate(body.length, (final int i) {
         return JsonRpcResponse.parse(body[i], i < parseList.length ? parseList[i] : parseList.last);
@@ -402,7 +403,7 @@ class Connection extends SolanaWebSocketConnection {
     final PublicKey publicKey, {
     final GetAccountInfoConfig? config,
   }) {
-    final parse = _contextParser(AccountInfo.tryParse);
+    final parse = _contextParser(AccountInfo.tryFromJson);
     final defaultConfig = config ?? GetAccountInfoConfig();
     return _request(Method.getAccountInfo, [publicKey.toBase58()], parse, config: defaultConfig);
   }
@@ -413,6 +414,15 @@ class Connection extends SolanaWebSocketConnection {
     final GetAccountInfoConfig? config,
   }) {
     return getAccountInfoRaw(publicKey, config: config).optional();
+  }
+
+  /// Returns all information associated with the account of the provided [publicKey].
+  Future<AccountInfo?> getParsedAccountInfo(
+    final PublicKey publicKey, {
+    final GetParsedAccountInfoConfig? config,
+  }) {
+    final defaultConfig = config ?? GetParsedAccountInfoConfig();
+    return getAccountInfoRaw(publicKey, config: defaultConfig).optional();
   }
 
   /// Returns the `lamports` balance of the account for the provided [publicKey].
@@ -865,7 +875,7 @@ class Connection extends SolanaWebSocketConnection {
     final GetMultipleAccountsConfig? config,
   }) {
     utils.check(accounts.length <= 100, 'getMultipleAccounts() can fetch up to a maximum of 100.');
-    parse(result) => JsonRpcContextResult.parse(result, _listParser(AccountInfo.tryParse));
+    parse(result) => JsonRpcContextResult.parse(result, _listParser(AccountInfo.tryFromJson));
     final pubKeys = accounts.map((final PublicKey account) => account.toBase58()).toList(growable: false);
     final defaultConfig = config ?? GetMultipleAccountsConfig();
     return _request(Method.getMultipleAccounts, [pubKeys], parse, config: defaultConfig);
@@ -884,7 +894,7 @@ class Connection extends SolanaWebSocketConnection {
     final PublicKey program, {
     final GetProgramAccountsConfig? config,
   }) {
-    final parse = _listParser(ProgramAccount.parse);
+    final parse = _listParser(ProgramAccount.fromJson);
     final defaultConfig = config ?? GetProgramAccountsConfig();
     return _request(Method.getProgramAccounts, [program.toBase58()], parse, config: defaultConfig);
   }

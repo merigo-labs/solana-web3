@@ -22,6 +22,7 @@ export 'signature_status.dart';
 export 'slot_notification.dart';
 export 'stake_activation.dart';
 export 'supply.dart';
+export 'token_account_info.dart';
 export 'token_account.dart';
 export 'token_amount.dart';
 export 'transaction_info.dart';

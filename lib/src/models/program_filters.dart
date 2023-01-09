@@ -24,25 +24,13 @@ class ProgramFilters extends Serializable {
   /// Compares the program account data length with the provided data size.
   final u64? dataSize;
 
-  // /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  // /// object.
-  // /// 
-  // /// ```
-  // /// ProgramFilters.fromJson({ '<parameter>': <value> });
-  // /// ```
+  // /// {@macro solana_common.Serializable.fromJson}
   // factory ProgramFilters.fromJson(final Map<String, dynamic> json) => ProgramFilters(
   //   memcmp: MemCmp.fromJson(json['memcmp']), 
   //   dataSize: json['dataSize'],
   // );
   
-  // /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  // /// object.
-  // /// 
-  // /// Returns `null` if [json] is omitted.
-  // /// 
-  // /// ```
-  // /// ProgramFilters.tryFromJson({ '<parameter>': <value> });
-  // /// ```
+  // /// {@macro solana_common.Serializable.tryFromJson}
   // static ProgramFilters? tryFromJson(final Map<String, dynamic>? json) {
   //   return json == null ? null : ProgramFilters.fromJson(json);
   // }

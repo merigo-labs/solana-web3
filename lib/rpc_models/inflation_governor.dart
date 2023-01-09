@@ -35,12 +35,7 @@ class InflationGovernor extends Serializable {
   /// The duration of foundation pool inflation in years.
   final f64? foundationTerm;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// InflationGovernor.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory InflationGovernor.fromJson(final Map<String, dynamic> json) => InflationGovernor(
     initial: json['initial'],
     terminal: json['terminal'],
@@ -49,14 +44,7 @@ class InflationGovernor extends Serializable {
     foundationTerm: json['foundationTerm'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// InflationGovernor.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static InflationGovernor? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? InflationGovernor.fromJson(json) : null;
   }

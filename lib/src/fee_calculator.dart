@@ -23,12 +23,7 @@ class FeeCalculator {
   /// The cost in `lamports` to validate a `signature`.
   final int lamportsPerSignature;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// FeeCalculator.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory FeeCalculator.fromJson(final Map<String, dynamic> json) => FeeCalculator(
     json['lamportsPerSignature'],
   );

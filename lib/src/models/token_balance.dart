@@ -32,12 +32,7 @@ class TokenBalance extends Serializable {
   /// Token amount details.
   final UITokenAmount uiTokenAmount;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TokenBalance.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory TokenBalance.fromJson(final Map<String, dynamic> json) => TokenBalance(
     accountIndex: json['accountIndex'], 
     mint: json['mint'],

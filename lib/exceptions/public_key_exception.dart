@@ -22,22 +22,18 @@ class PublicKeyException extends SolanaException {
   /// public key.
   /// 
   /// ```
-  ///   /// [message] = 'Invalid public key length of 16, expected <= 32.'
+  ///   /// [message] = 'Invalid public key length of 16, expected 32.'
   ///   throw PublicKeyException.length(16, maxLength: 32);
   /// ```
   factory PublicKeyException.length(
     final int length, { 
     final int maxLength = nacl.publicKeyLength, 
   }) {
-    return PublicKeyException('Invalid public key length of $length, expected <= $maxLength.');
+    return PublicKeyException('Invalid public key length of $length, expected $maxLength.');
   }
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// PublicKeyException.fromJson({ '<parameter>': <value> });
-  /// ```
+  
+  /// {@macro solana_common.SolanaException.fromJson}
   factory PublicKeyException.fromJson(final Map<String, dynamic> json) => PublicKeyException(
     json['message'],
     code: json['code'], 

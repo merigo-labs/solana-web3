@@ -1,8 +1,13 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert';
+
+import 'package:solana_common/extensions/num.dart';
 import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/types.dart' show u64;
+import 'package:solana_web3/types/index.dart';
+import 'public_key.dart';
 import '../programs/system.dart';
 import '../rpc_config/get_account_info_config.dart';
 import '../rpc_config/send_and_confirm_transaction_config.dart';
@@ -10,7 +15,6 @@ import '../rpc_models/account_info.dart';
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/connection.dart';
 import '../src/keypair.dart';
-import '../src/public_key.dart';
 import '../src/sysvar.dart';
 import '../src/transaction/transaction.dart';
 import '../src/transaction/constants.dart';
@@ -70,7 +74,10 @@ class Loader {
       // Fetch program account info to check if it has already been created.
       final AccountInfo? programInfo = await connection.getAccountInfo(
         program.publicKey,
-        config: GetAccountInfoConfig(commitment: Commitment.confirmed),
+        config: GetAccountInfoConfig(
+          commitment: Commitment.confirmed,
+          encoding: AccountEncoding.base64,
+        ),
       );
 
       final Transaction transaction = Transaction();
@@ -81,11 +88,12 @@ class Loader {
           return false;
         }
 
-        if (programInfo.data.length != data.length) {
+        final int dataLength = base64.decode(programInfo.binaryData[0]).length;
+        if (dataLength != data.length) {
           transaction.add(
             SystemProgram.allocate(
               accountPublicKey: program.publicKey,
-              space: data.length,
+              space: data.length.toBigInt(),
             ),
           );
         }
@@ -104,7 +112,7 @@ class Loader {
             SystemProgram.transfer(
               fromPublicKey: payer.publicKey,
               toPublicKey: program.publicKey,
-              lamports: BigInt.from(balanceNeeded - programInfo.lamports),
+              lamports: (balanceNeeded - programInfo.lamports).toBigInt(),
             ),
           );
         }
@@ -113,8 +121,8 @@ class Loader {
           SystemProgram.createAccount(
             fromPublicKey: payer.publicKey,
             newAccountPublicKey: program.publicKey,
-            lamports: balanceNeeded > 0 ? balanceNeeded : 1,
-            space: data.length,
+            lamports: balanceNeeded > 0 ? balanceNeeded.toBigInt() : BigInt.one,
+            space: data.length.toBigInt(),
             programId: programId,
           ),
         );

@@ -3,14 +3,16 @@
 
 import 'dart:convert' show base64;
 import 'dart:typed_data' show ByteBuffer, Uint8List;
+import 'models/program_address.dart';
+import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
+import 'nacl_low_level.dart' as nacl_low_level;
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:solana_common/extensions/big_int.dart';
 import 'package:solana_common/models/serializable.dart';
 import 'package:solana_common/utils/convert.dart' show base58;
 import 'package:solana_common/utils/library.dart' show check;
-import 'models/program_address.dart';
-import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
-import 'nacl_low_level.dart' as nacl_low_level;
+import 'programs/associated_token/program.dart';
+import 'programs/token/program.dart';
 import '../exceptions/ed25519_exception.dart';
 import '../exceptions/public_key_exception.dart';
 
@@ -64,6 +66,13 @@ class PublicKey extends Serializable {
   factory PublicKey.fromUint8List(final Iterable<int> publicKey) {
     check(publicKey.length <= nacl.publicKeyLength, 'Invalid public key length.');
     return PublicKey(BigIntExtension.fromUint8List(publicKey));
+  }
+
+  /// Creates a [PublicKey] from a byte array [publicKey].
+  /// 
+  /// Returns `null` if [publicKey] is omitted.
+  static PublicKey? tryFromUint8List(final Iterable<int>? publicKey) {
+    return publicKey != null ? PublicKey.fromUint8List(publicKey) : null;
   }
 
   @override
@@ -189,6 +198,21 @@ class PublicKey extends Serializable {
     }
 
     throw const PublicKeyException('Unable to find a viable program address nonce.');
+  }
+
+  /// Finds the associated token address for an existing [wallet] and [tokenMint].
+  static ProgramAddress findAssociatedTokenAddress(
+    final PublicKey wallet,
+    final PublicKey tokenMint,
+  ) {
+    return PublicKey.findProgramAddress(
+      [
+        wallet.toBytes(),
+        TokenProgram.programId.toBytes(),
+        tokenMint.toBytes(),
+      ],
+      AssociatedTokenProgram.programId,
+    );
   }
 
   /// Returns true if [publicKey] falls on the `ed25519` curve.

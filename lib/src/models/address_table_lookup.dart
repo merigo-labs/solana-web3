@@ -25,12 +25,7 @@ class AddressTableLookup extends Serializable {
    /// A list of indices used to load addresses of readonly accounts from a lookup table.
   final List<num> readonlyIndexes;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// AddressTableLookup.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory AddressTableLookup.fromJson(final Map<String, dynamic> json) => AddressTableLookup(
     accountKey: json['accountKey'],
     writableIndexes: json['writableIndexes'],

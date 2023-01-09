@@ -23,25 +23,13 @@ class VoteAccountStatus extends Serializable {
   /// The delinquent vote accounts.
   final List<VoteAccount> delinquent;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// VoteAccountStatus.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory VoteAccountStatus.fromJson(final Map<String, dynamic> json) => VoteAccountStatus(
     current: list.decode(json['current'], VoteAccount.fromJson),
     delinquent: list.decode(json['delinquent'], VoteAccount.fromJson),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// VoteAccountStatus.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static VoteAccountStatus? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? VoteAccountStatus.fromJson(json) : null;
   }

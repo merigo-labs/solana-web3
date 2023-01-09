@@ -8,7 +8,7 @@ import '../../rpc_config/get_block_config.dart';
 import 'package:solana_common/models/serializable.dart';
 import '../models/token_balance.dart';
 import 'package:solana_common/utils/convert.dart' as convert show list;
-import 'package:solana_common/utils/types.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 
 
 /// Meta
@@ -60,17 +60,12 @@ class Meta extends Serializable {
   /// [GetBlockConfig.maxSupportedTransactionVersion] was not set in the request params.
   final LoadedAddress? loadedAddresses;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Meta.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Meta.fromJson(final Map<String, dynamic> json) => Meta(
     err: TransactionError.tryFromName(json['err']),
     fee: json['fee'],
-    preBalances: convert.list.cast<int>(json['preBalances']),
-    postBalances: convert.list.cast<int>(json['postBalances']),
+    preBalances: convert.list.cast<u64>(json['preBalances']),
+    postBalances: convert.list.cast<u64>(json['postBalances']),
     innerInstructions: convert.list.tryDecode(json['innerInstructions'], InnerInstruction.fromJson),
     preTokenBalances: convert.list.tryDecode(json['preTokenBalances'], TokenBalance.fromJson),
     postTokenBalances: convert.list.tryDecode(json['postTokenBalances'], TokenBalance.fromJson),
@@ -86,9 +81,8 @@ class Meta extends Serializable {
   /// ```
   /// Meta.tryFromJson({ '<parameter>': <value> }, (U) => T);
   /// ```
-  static Meta? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? Meta.fromJson(json) : null;
-  }
+  static Meta? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? Meta.fromJson(json) : null;
   
   @override
   Map<String, dynamic> toJson() => {

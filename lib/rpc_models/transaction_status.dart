@@ -35,12 +35,7 @@ class TransactionStatus extends Serializable {
   /// The number of compute budget units consumed during the processing of this transaction.
   final u64? unitsConsumed;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TransactionStatus.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory TransactionStatus.fromJson(final Map<String, dynamic> json) => TransactionStatus(
     err: json['err'],
     logs: json['logs'],
@@ -48,17 +43,9 @@ class TransactionStatus extends Serializable {
     unitsConsumed: json['unitsConsumed'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// TransactionStatus.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static TransactionStatus? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? TransactionStatus.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static TransactionStatus? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? TransactionStatus.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

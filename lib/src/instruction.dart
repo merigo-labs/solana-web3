@@ -57,12 +57,7 @@ class Instruction extends Serializable {
    /// The program's input data encoded as a `base-58` string.
   final String data;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Instruction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Instruction.fromJson(final Map<String, dynamic> json) => Instruction(
     programIdIndex: json['programIdIndex'],
     accounts: Iterable.castFrom(json['accounts']),

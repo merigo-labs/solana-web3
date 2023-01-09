@@ -9,18 +9,13 @@ import 'package:solana_common/exceptions/solana_exception.dart';
 
 class TransactionException extends SolanaException {
 
-  /// Creates an exception for an invalid keypair.
+  /// Creates an exception for an invalid transaction.
   const TransactionException(
     super.message, {
     super.code,
   });
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TransactionException.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.SolanaException.fromJson}
   factory TransactionException.fromJson(final Map<String, dynamic> json) => TransactionException(
     json['message'],
     code: json['code'],

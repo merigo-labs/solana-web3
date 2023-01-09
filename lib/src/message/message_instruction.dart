@@ -51,12 +51,7 @@ class MessageInstruction extends Serializable {
     );
   }
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// MessageInstruction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory MessageInstruction.fromJson(final Map<String, dynamic> json) => MessageInstruction(
     programIdIndex: json['programIdIndex'],
     keyIndicesCount: json['keyIndicesCount'],

@@ -18,27 +18,14 @@ class Identity extends Serializable {
   /// The identity public key of a node.
   final PublicKey identity;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Identity.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Identity.fromJson(final Map<String, dynamic> json) => Identity(
     identity: PublicKey.fromBase58(json['identity']),
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// Identity.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static Identity? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? Identity.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static Identity? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? Identity.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

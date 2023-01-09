@@ -27,29 +27,16 @@ class StakeActivation extends Serializable {
   /// The stake inactive during the epoch.
   final u64 inactive;
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// StakeActivation.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory StakeActivation.fromJson(final Map<String, dynamic> json) => StakeActivation(
     state: StakeActivationState.fromName(json['state']),
     active: json['active'],
     inactive: json['inactive'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// StakeActivation.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static StakeActivation? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? StakeActivation.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static StakeActivation? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? StakeActivation.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

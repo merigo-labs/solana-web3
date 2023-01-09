@@ -130,7 +130,7 @@ void main() {
       ['abcde'.codeUnits],
       PublicKey.zero(),
     );
-    print('PUBKEY CREATE FIND ADDR B58 ${programAddress.pubKey.toBase58()}');
+    print('PUBKEY CREATE FIND ADDR B58 ${programAddress.publicKey.toBase58()}');
     print('PUBKEY CREATE FIND ADDR BYT ${programAddress.bump}');
   });
   test('public key is on curve', () {

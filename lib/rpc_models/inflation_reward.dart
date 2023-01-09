@@ -34,12 +34,7 @@ class InflationReward extends Serializable {
   /// The vote account commission when the reward was credited.
   final u8? commission;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// InflationReward.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory InflationReward.fromJson(final Map<String, dynamic> json) => InflationReward(
     epoch: json['epoch'],
     effectiveSlot: json['effectiveSlot'],
@@ -48,17 +43,9 @@ class InflationReward extends Serializable {
     commission: json['commission'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// InflationReward.tryFromJson({ '<parameter>': <value> });
-  /// ```
-  static InflationReward? tryFromJson(final Map<String, dynamic>? json) {
-    return json != null ? InflationReward.fromJson(json) : null;
-  }
+  /// {@macro solana_common.Serializable.tryFromJson}
+  static InflationReward? tryFromJson(final Map<String, dynamic>? json)
+    => json != null ? InflationReward.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

@@ -91,7 +91,6 @@ enum Method {
   /// ```
   /// Method.tryFromName('getAccountInfo');
   /// ```
-  static Method? tryFromName(final String? name) {
-    return name != null ? utils.tryCall(() => Method.fromName(name)) : null;
-  }
+  static Method? tryFromName(final String? name)
+    => name != null ? utils.tryCall(() => Method.fromName(name)) : null;
 }

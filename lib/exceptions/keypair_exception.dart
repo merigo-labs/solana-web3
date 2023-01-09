@@ -15,12 +15,7 @@ class KeypairException extends SolanaException {
     super.code,
   });
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// KeypairException.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.SolanaException.fromJson}
   factory KeypairException.fromJson(final Map<String, dynamic> json) => KeypairException(
     json['message'],
     code: json['code'],

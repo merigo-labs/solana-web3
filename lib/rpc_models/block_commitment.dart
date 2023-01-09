@@ -24,25 +24,13 @@ class BlockCommitment extends Serializable {
   /// The total active stake in lamports of the current epoch.
   final u64 totalStake;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// BlockCommitment.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory BlockCommitment.fromJson(final Map<String, dynamic> json) => BlockCommitment(
     commitment: convert.list.tryCast(json['commitment']),
     totalStake: json['totalStake'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// BlockCommitment.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static BlockCommitment? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? BlockCommitment.fromJson(json) : null;
   }

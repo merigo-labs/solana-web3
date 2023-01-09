@@ -26,12 +26,7 @@ class InnerInstruction extends Serializable {
   /// instruction.
   final List<Instruction> instructions;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// InnerInstruction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory InnerInstruction.fromJson(final Map<String, dynamic> json) => InnerInstruction(
     index: json['index'], 
     instructions: convert.list.decode(json['instructions'], Instruction.fromJson),

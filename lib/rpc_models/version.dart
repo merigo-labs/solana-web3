@@ -21,25 +21,13 @@ class Version extends Serializable {
   /// The unique identifier of the current software's feature set.
   final int? featureSet;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Version.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Version.fromJson(final Map<String, dynamic> json) => Version(
     solanaCore: json['solana-core'],
     featureSet: json['feature-set'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// Version.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static Version? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? Version.fromJson(json) : null;
   }

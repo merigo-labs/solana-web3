@@ -38,12 +38,7 @@ class EpochInfo extends Serializable {
   /// The total number of transactions processed without error since genesis up to [epoch].
   final u64? transactionCount;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// EpochInfo.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory EpochInfo.fromJson(final Map<String, dynamic> json) => EpochInfo(
     absoluteSlot: json['absoluteSlot'],
     blockHeight: json['blockHeight'],
@@ -53,14 +48,7 @@ class EpochInfo extends Serializable {
     transactionCount: json['transactionCount'],
   );
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// Returns `null` if [json] is omitted.
-  /// 
-  /// ```
-  /// EpochInfo.tryFromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.tryFromJson}
   static EpochInfo? tryFromJson(final Map<String, dynamic>? json) {
     return json != null ? EpochInfo.fromJson(json) : null;
   }

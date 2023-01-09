@@ -72,13 +72,11 @@ class AccountMeta extends Serializable {
   
   factory AccountMeta.writable(final PublicKey publicKey, { final bool isSigner = false }) 
     => AccountMeta(publicKey, isSigner: isSigner, isWritable: true);
+
+  factory AccountMeta.signerAndWritable(final PublicKey publicKey) 
+    => AccountMeta(publicKey, isSigner: true, isWritable: true);
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// AccountMeta.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory AccountMeta.fromJson(final Map<String, dynamic> json) => AccountMeta(
     PublicKey.fromBase58(json['publicKey']),
     isSigner: json['isSigner'],
@@ -147,12 +145,7 @@ class TransactionInstruction extends Serializable {
   /// Program input
   final Buffer data;
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TransactionInstruction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory TransactionInstruction.fromJson(final Map<String, dynamic> json) => TransactionInstruction(
     keys: convert.list.decode(json['keys'], AccountMeta.fromJson),
     programId: PublicKey.fromBase58(json['programId']),
@@ -199,12 +192,7 @@ class SignaturePublicKeyPair extends Serializable {
   /// The public key.
   final PublicKey publicKey;
   
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// SignaturePublicKeyPair.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory SignaturePublicKeyPair.fromJson(final Map<String, dynamic> json) => SignaturePublicKeyPair(
     signature: json['signature'],
     publicKey: PublicKey.fromBase58(json['publicKey']),
@@ -258,12 +246,7 @@ class NonceInformation extends Serializable {
     return json != null ? NonceInformation.fromJson(json) : null;
   }
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// NonceInformation.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory NonceInformation.fromJson(final Map<String, dynamic> json) => NonceInformation(
     nonce: json['nonce'],
     nonceInstruction: TransactionInstruction.fromJson(json['nonceInstruction']),
@@ -322,12 +305,7 @@ class Transaction extends Serializable {
     return signatures.isNotEmpty ? signatures.first.signature : null;
   }
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// Transaction.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory Transaction.fromJson(final Map<String, dynamic> json) => Transaction(
     feePayer: PublicKey.tryFromBase58(json['feePayer']),
     signatures: convert.list.decode(json['signatures'], SignaturePublicKeyPair.fromJson),

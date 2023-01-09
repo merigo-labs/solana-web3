@@ -1,17 +1,17 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../../rpc_config/get_block_config.dart';
-import '../../types/data_encoding.dart';
-import '../models/data.dart';
-import '../models/meta.dart';
+import 'package:solana_web3/exceptions/index.dart';
 import 'package:solana_common/models/serializable.dart';
+import 'data_serializable.dart';
+import '../models/meta.dart';
+import '../../rpc_config/get_block_config.dart';
 
 
 /// Transaction Data
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionData<T extends Object> extends Serializable {
+class TransactionData<T extends Object> extends DataSerializable {
   
   /// Confirmed Transaction Block.
   const TransactionData({
@@ -21,7 +21,7 @@ class TransactionData<T extends Object> extends Serializable {
   });
 
   /// Transaction data returned as JSON or binary encoded data.
-  final Data<T> transaction;
+  final T transaction;
 
   /// Transaction status metadata.
   final Meta? meta;
@@ -30,6 +30,12 @@ class TransactionData<T extends Object> extends Serializable {
   /// [GetBlockConfig.maxSupportedTransactionVersion] was not set in the request params.
   final Object? version;
 
+  /// The transaction data key.
+  static const String transactionKey = 'transaction';
+  
+  @override
+  T get rawData => transaction;
+
   /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
   /// object.
   /// 
@@ -37,30 +43,20 @@ class TransactionData<T extends Object> extends Serializable {
   /// TransactionData.parse({ '<parameter>': <value> });
   /// ```
   static TransactionData parse(final Map<String, dynamic> json) {
-    const String transactionKey = 'transaction';
-    final Data transaction = Data.parse(json[transactionKey]);
-    switch (transaction.encoding) {
-      case DataEncoding.base58:
-      case DataEncoding.base64:
-      case DataEncoding.base64Zstd:
-        json[transactionKey] = Data.castFrom<String>(transaction);
-        return TransactionData<String>.fromJson(json);
-      case DataEncoding.json:
-      case DataEncoding.jsonParsed:
-        json[transactionKey] = Data.castFrom<Map<String, dynamic>>(transaction);
-        return TransactionData<Map<String, dynamic>>.fromJson(json);
+    final Object transaction = DataSerializable.normalize(json[transactionKey]);
+    if (transaction is List) {
+      return TransactionData<List<String>>.fromJson(json);
+    } else if (transaction is Map) {
+      return TransactionData<Map<String, dynamic>>.fromJson(json);
+    } else {
+      throw TransactionException('Unknown data type ${transaction.runtimeType}');
     }
   }
 
-  /// Creates an instance of `this` class from the constructor parameters defined in the [json] 
-  /// object.
-  /// 
-  /// ```
-  /// TransactionData.fromJson({ '<parameter>': <value> });
-  /// ```
+  /// {@macro solana_common.Serializable.fromJson}
   factory TransactionData.fromJson(final Map<String, dynamic> json) { 
     return TransactionData(
-      transaction: json['transaction'],
+      transaction: json[transactionKey],
       meta: Meta.tryFromJson(json['meta']),
       version: json['version'],
     );
@@ -68,7 +64,7 @@ class TransactionData<T extends Object> extends Serializable {
 
   @override
   Map<String, dynamic> toJson() => {
-    'transaction': transaction.toJson(),
+    transactionKey: transaction,
     'meta': meta,
     'version': version,
   };

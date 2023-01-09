@@ -1,8 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'package:solana_common/extensions/num.dart';
 import 'package:solana_common/utils/library.dart' show check;
-import 'package:solana_common/utils/types.dart' show u64;
+import 'package:solana_common/utils/types.dart' show bu64;
 import '../src/instruction.dart';
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/layout.dart' as layout;
@@ -33,10 +34,10 @@ class CreateAccountParams {
   final PublicKey newAccountPublicKey;
 
   /// The amount of lamports to transfer to the created account.
-  final u64 lamports;
+  final bu64 lamports;
   
   /// The amount of space in bytes to allocate to the created account.
-  final u64 space;
+  final bu64 space;
 
   /// The public key of the program to assign as the owner of the created account.
   final PublicKey programId;
@@ -62,7 +63,7 @@ class TransferParams {
   final PublicKey toPublicKey;
 
   /// The amount of lamports to transfer.
-  final u64 lamports;
+  final bu64 lamports;
 }
 
 
@@ -116,10 +117,10 @@ class CreateAccountWithSeedParams {
   final String seed;
   
   /// The amount of lamports to transfer to the created account.
-  final u64 lamports;
+  final bu64 lamports;
   
   /// The amount of space in bytes to allocate to the created account.
-  final u64 space;
+  final bu64 space;
 
   /// The public key of the program to assign as the owner of the created account.
   final PublicKey programId;
@@ -149,7 +150,7 @@ class CreateNonceAccountParams {
   final PublicKey authorizedPublicKey;
 
   /// The amount of lamports to transfer to the created nonce account.
-  final u64 lamports;
+  final bu64 lamports;
 }
 
 
@@ -178,7 +179,7 @@ class CreateNonceAccountWithSeedParams {
   final PublicKey authorizedPublicKey;
   
   /// The amount of lamports to transfer to the created nonce account.
-  final u64 lamports;
+  final bu64 lamports;
 
   /// The base public key used to derive the address of the nonce account.
   final PublicKey basePublicKey;
@@ -249,7 +250,7 @@ class WithdrawNonceParams {
   final PublicKey toPublicKey;
 
   /// The mount of lamports to withdraw from the nonce account.
-  final u64 lamports;
+  final bu64 lamports;
 }
 
 
@@ -291,7 +292,7 @@ class AllocateParams {
   final PublicKey accountPublicKey;
 
   /// The amount of space in bytes to allocate.
-  final u64 space;
+  final bu64 space;
 }
 
 
@@ -319,7 +320,7 @@ class AllocateWithSeedParams {
   final String seed;
 
   /// The amount of space in bytes to allocate.
-  final u64 space;
+  final bu64 space;
 
   /// The public key of the program to assign as the owner of the allocated account.
   final PublicKey programId;
@@ -378,7 +379,7 @@ class TransferWithSeedParams {
   final PublicKey toPublicKey;
   
   /// The amount of lamports to transfer.
-  final u64 lamports;
+  final bu64 lamports;
   
   /// The seed used to derive the funding account address.
   final String seed;
@@ -407,7 +408,7 @@ class DecodedTransferInstruction {
   final PublicKey toPublicKey;
 
   /// The amount of lamports to transfer.
-  final u64 lamports;
+  final bu64 lamports;
 }
 
 
@@ -436,7 +437,7 @@ class DecodedTransferWithSeedInstruction {
   final PublicKey toPublicKey;
   
   /// The amount of lamports to transfer.
-  final u64 lamports;
+  final bu64 lamports;
 
   /// The seed used to derive the funding account address.
   final String seed;
@@ -935,8 +936,8 @@ class SystemProgram {
   static TransactionInstruction createAccount({
     required final PublicKey fromPublicKey,
     required final PublicKey newAccountPublicKey,
-    required final u64 lamports,
-    required final u64 space,
+    required final bu64 lamports,
+    required final bu64 space,
     required final PublicKey programId,
   }) {
     
@@ -1116,8 +1117,8 @@ class SystemProgram {
     required final PublicKey newAccountPublicKey,
     required final PublicKey basePublicKey,
     required final String seed,
-    required final u64 lamports,
-    required final u64 space,
+    required final bu64 lamports,
+    required final bu64 space,
     required final PublicKey programId,
   }) {
 
@@ -1159,7 +1160,7 @@ class SystemProgram {
     required final PublicKey fromPublicKey,
     required final PublicKey noncePublicKey,
     required final PublicKey authorizedPublicKey,
-    required final u64 lamports,
+    required final bu64 lamports,
   }) {
     return Transaction()
       ..add(
@@ -1167,7 +1168,7 @@ class SystemProgram {
           fromPublicKey: fromPublicKey,
           newAccountPublicKey: noncePublicKey,
           lamports: lamports,
-          space: nonceAccountLength,
+          space: nonceAccountLength.toBigInt(),
           programId: SystemProgram.programId,
         ),
       )
@@ -1196,7 +1197,7 @@ class SystemProgram {
     required final PublicKey fromPublicKey,
     required final PublicKey noncePublicKey,
     required final PublicKey authorizedPublicKey,
-    required final u64 lamports,
+    required final bu64 lamports,
     required final PublicKey basePublicKey,
     required final String seed,
   }) {
@@ -1208,7 +1209,7 @@ class SystemProgram {
           basePublicKey: basePublicKey,
           seed: seed,
           lamports: lamports,
-          space: nonceAccountLength,
+          space: nonceAccountLength.toBigInt(),
           programId: SystemProgram.programId,
         ),
       )
@@ -1286,7 +1287,7 @@ class SystemProgram {
     required final PublicKey noncePublicKey,
     required final PublicKey authorizedPublicKey,
     required final PublicKey toPublicKey,
-    required final u64 lamports,
+    required final bu64 lamports,
   }) {
     final type = SystemInstructionLayout.withdrawNonceAccount();
     final data = Instruction.encodeData(type, {
@@ -1346,7 +1347,7 @@ class SystemProgram {
   /// [space] The amount of space in bytes to allocate.
   static TransactionInstruction allocate({
     required final PublicKey accountPublicKey,
-    required final u64 space,
+    required final bu64 space,
   }) {
 
     final type = SystemInstructionLayout.allocate();
@@ -1380,7 +1381,7 @@ class SystemProgram {
     required final PublicKey accountPublicKey,
     required final PublicKey basePublicKey,
     required final String seed,
-    required final u64 space,
+    required final bu64 space,
     required final PublicKey  programId,
   }) {
 
