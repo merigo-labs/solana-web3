@@ -18,8 +18,7 @@ dependencies:
   crypto: ^3.0.2
   http: ^0.13.5
   pinenacl: ^0.5.1
-  solana_common: #^0.0.2 
-    path: ../solana_common
+  solana_common: ^0.0.2+1
 dev_dependencies:
   flutter_test:
     sdk: flutter
