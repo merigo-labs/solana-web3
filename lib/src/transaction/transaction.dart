@@ -305,6 +305,16 @@ class Transaction extends Serializable {
     return signatures.isNotEmpty ? signatures.first.signature : null;
   }
 
+  /// Blockhash.
+  BlockhashWithExpiryBlockHeight? get blockhash {
+    return recentBlockhash != null && lastValidBlockHeight != null
+      ? BlockhashWithExpiryBlockHeight(
+          blockhash: recentBlockhash!, 
+          lastValidBlockHeight: lastValidBlockHeight!,
+        )
+      : null;
+  }
+
   /// {@macro solana_common.Serializable.fromJson}
   factory Transaction.fromJson(final Map<String, dynamic> json) => Transaction(
     feePayer: PublicKey.tryFromBase58(json['feePayer']),

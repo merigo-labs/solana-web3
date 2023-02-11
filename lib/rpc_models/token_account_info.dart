@@ -4,6 +4,7 @@
 import 'dart:convert' show base64;
 import 'package:solana_web3/solana_web3.dart';
 import 'package:solana_web3/types/account_state.dart';
+import 'account_info.dart';
 
 
 /// Token Account Info
@@ -53,7 +54,7 @@ class TokenAccountInfo extends BorshSerializable {
   @override
   BorshSchema get schema => codec.schema;
 
-  /// Borsh serialization codec.
+  /// {@macro solana_common.BorshSerializable.codec}
   static final BorshStructCodec codec = borsh.struct({
     'mint': borsh.publicKey,
     'owner': borsh.publicKey,
@@ -65,34 +66,43 @@ class TokenAccountInfo extends BorshSerializable {
     'closeAuthority': borsh.publicKey.cOption(),
   });
 
-  /// Creates an instance of `this` class from a buffer.
-  static TokenAccountInfo deserialize<T>(final Iterable<int> buffer) {
+  /// {@macro solana_common.BorshSerializable.deserialize}
+  static TokenAccountInfo deserialize(final Iterable<int> buffer) {
     return borsh.deserialize(codec.schema, buffer, TokenAccountInfo.fromJson);
   }
 
-  /// Creates an instance of `this` class from a buffer.
-  /// 
-  /// Returns `null` if [buffer] is omitted.
-  static TokenAccountInfo? tryDeserialize<T>(final Iterable<int>? buffer)
+  /// {@macro solana_common.BorshSerializable.tryDeserialize}
+  static TokenAccountInfo? tryDeserialize(final Iterable<int>? buffer)
     => buffer != null ? TokenAccountInfo.deserialize(buffer) : null;
 
-  /// Creates an instance of `this` class from a base-64 encoded string.
-  /// 
-  /// ```
-  /// TokenAccountInfo.fromBase64('AA==');
-  /// ```
+  /// {@macro solana_common.BorshSerializable.fromBase64}
   factory TokenAccountInfo.fromBase64(final String encoded) 
     => TokenAccountInfo.deserialize(base64.decode(encoded));
 
-  /// Creates an instance of `this` class from a base-64 encoded string.
-  /// 
-  /// Returns `null` if [encoded] is omitted.
-  /// 
-  /// ```
-  /// TokenAccountInfo.tryFromJson('AA==');
-  /// ```
+  /// {@macro solana_common.BorshSerializable.tryFromBase64}
   static TokenAccountInfo? tryFromBase64(final String? encoded)
-    => encoded != null ? TokenAccountInfo.fromBase64(encoded) : null;
+    => encoded != null && encoded.isNotEmpty ? TokenAccountInfo.fromBase64(encoded) : null;
+
+  /// Creates an instance of `this` class from an account [info].
+  /// 
+  /// ```
+  /// TokenAccountInfo.fromAccountInfo('AA==');
+  /// ```
+  factory TokenAccountInfo.fromAccountInfo(final AccountInfo info) {
+    return info.isBinary 
+      ? TokenAccountInfo.fromBase64(info.binaryData[0]) 
+      : TokenAccountInfo.fromJson(info.jsonData);
+  }
+
+  /// Creates an instance of `this` class from an account [info].
+  /// 
+  /// Returns `null` if [info] is omitted.
+  /// 
+  /// ```
+  /// TokenAccountInfo.tryFromAccountInfo('AA==');
+  /// ```
+  static TokenAccountInfo? tryFromAccountInfo(final AccountInfo? info)
+    => info != null ? TokenAccountInfo.fromAccountInfo(info) : null;
 
   /// {@macro solana_common.Serializable.fromJson}
   factory TokenAccountInfo.fromJson(final Map<String, dynamic> json) => TokenAccountInfo(

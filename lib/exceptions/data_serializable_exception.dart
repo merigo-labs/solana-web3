@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_common/exceptions/solana_exception.dart';
-import '../src/models/data_serializable.dart';
+import '../src/mixins/data_serializable_mixin.dart';
 
 
 /// Data Serializable Exception
@@ -10,7 +10,7 @@ import '../src/models/data_serializable.dart';
 
 class DataSerializableException extends SolanaException {
 
-  /// Creates an exception for invalid [DataSerializable] objects.
+  /// Creates an exception for invalid [DataSerializableMixin] objects.
   const DataSerializableException(
     super.message, {
     super.code,

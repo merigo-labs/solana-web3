@@ -45,7 +45,7 @@ class TokenProgram extends Program {
   /// - [decimals] - Number of base 10 digits to the right of the decimal place.
   /// - [mintAuthority] - The authority/multisignature to mint tokens.
   /// - [freezeAuthority] - The freeze authority/multisignature of the mint.
-  TransactionInstruction initializeMint({
+  static TransactionInstruction initializeMint({
     // Keys
     required final PublicKey mint,
     // Data
@@ -86,7 +86,7 @@ class TokenProgram extends Program {
   /// - `[w]` [account] - The account to initialize.
   /// - `[]` [mint] - The mint this account will be associated with.
   /// - `[]` [owner] - The new account's owner/multisignature.
-  TransactionInstruction initializeAccount({
+  static TransactionInstruction initializeAccount({
     required final PublicKey account,
     required final PublicKey mint,
     required final PublicKey owner,
@@ -124,7 +124,7 @@ class TokenProgram extends Program {
   /// 
   /// Data
   /// - [numberOfSigners] - The number of signers required to validate this multisignature account.
-  TransactionInstruction initializeMultisig({
+  static TransactionInstruction initializeMultisig({
     // Keys
     required final PublicKey account,
     required final List<PublicKey> signers,
@@ -174,7 +174,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [amount] - The amount of tokens to transfer.
-  TransactionInstruction transfer({
+  static TransactionInstruction transfer({
     // Keys
     required final PublicKey source,
     required final PublicKey destination,
@@ -229,7 +229,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [amount] - The amount of tokens the delegate is approved for.
-  TransactionInstruction approve({
+  static TransactionInstruction approve({
     // Keys
     required final PublicKey source,
     required final PublicKey delegate,
@@ -278,7 +278,7 @@ class TokenProgram extends Program {
   /// - `[w]` [source] - The source account.
   /// - `[]`  [owner] - The source account's multisignature owner.
   /// - `[s]` [signers] - The signer accounts.
-  TransactionInstruction revoke({
+  static TransactionInstruction revoke({
     // Keys
     required final PublicKey source,
     required final PublicKey owner,
@@ -320,7 +320,7 @@ class TokenProgram extends Program {
   /// ### Data:
   /// - [authorityType] - The type of authority to update.
   /// - [newAuthority] - The new authority.
-  TransactionInstruction setAuthority({
+  static TransactionInstruction setAuthority({
     // Keys
     required final PublicKey account,
     required final PublicKey authority,
@@ -372,7 +372,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [amount] - The amount of new tokens to mint.
-  TransactionInstruction mintTo({
+  static TransactionInstruction mintTo({
     // Keys
     required final PublicKey mint,
     required final PublicKey account,
@@ -427,7 +427,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [amount] - The amount of tokens to burn.
-  TransactionInstruction burn({
+  static TransactionInstruction burn({
     // Keys
     required final PublicKey account,
     required final PublicKey mint,
@@ -479,7 +479,7 @@ class TokenProgram extends Program {
   /// - `[w]` [destination] - The destination account.
   /// - `[]` [owner] - The account's multisignature owner.
   /// - `[s]` [signers] - The signer accounts.
-  TransactionInstruction closeAccount({
+  static TransactionInstruction closeAccount({
     required final PublicKey account,
     required final PublicKey destination,
     required final PublicKey owner,
@@ -523,7 +523,7 @@ class TokenProgram extends Program {
   /// - `[]` [mint] - The token mint.
   /// - `[]` [authority] - The mint's multisignature freeze authority.
   /// - `[s]` [signers] - The signer accounts.
-  TransactionInstruction freezeAccount({
+  static TransactionInstruction freezeAccount({
     required final PublicKey account,
     required final PublicKey mint,
     required final PublicKey authority,
@@ -566,7 +566,7 @@ class TokenProgram extends Program {
   ///   1. `[]` The token mint.
   ///   2. `[]` The mint's multisignature freeze authority.
   ///   3. ..3+M `[signer]` M signer accounts.
-  TransactionInstruction thawAccount({
+  static TransactionInstruction thawAccount({
     required final PublicKey account,
     required final PublicKey mint,
     required final PublicKey authority,
@@ -621,7 +621,7 @@ class TokenProgram extends Program {
   /// ### Data:
   /// - [amount] - The amount of tokens to transfer.
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
-  TransactionInstruction transferChecked({
+  static TransactionInstruction transferChecked({
     // Keys
     required final PublicKey source,
     required final PublicKey mint,
@@ -689,7 +689,7 @@ class TokenProgram extends Program {
   /// ### Data:
   /// - [amount] - The amount of tokens the delegate is approved for.
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
-  TransactionInstruction approveChecked({
+  static TransactionInstruction approveChecked({
     // Keys
     required final PublicKey source,
     required final PublicKey mint,
@@ -753,7 +753,7 @@ class TokenProgram extends Program {
   /// ### Data:
   /// - [amount] - The amount of new tokens to mint.
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
-  TransactionInstruction mintToChecked({
+  static TransactionInstruction mintToChecked({
     // Keys
     required final PublicKey mint,
     required final PublicKey account,
@@ -814,7 +814,7 @@ class TokenProgram extends Program {
   /// ### Data:
   /// - [amount] - The amount of tokens to burn.
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
-  TransactionInstruction burnChecked({
+  static TransactionInstruction burnChecked({
     // Keys
     required final PublicKey account,
     required final PublicKey mint,
@@ -864,7 +864,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [owner] - The new account's owner/multisignature.
-  TransactionInstruction initializeAccount2({
+  static TransactionInstruction initializeAccount2({
     // Keys
     required final PublicKey account,
     required final PublicKey mint,
@@ -898,7 +898,7 @@ class TokenProgram extends Program {
   ///
   /// ### Keys:
   /// - `[w]` [account] - The native token account to sync with its underlying lamports.
-  TransactionInstruction syncNative({
+  static TransactionInstruction syncNative({
     required final PublicKey account,
   }) {
     // 0. `[w]` The native token account to sync with its underlying lamports.
@@ -920,7 +920,7 @@ class TokenProgram extends Program {
   /// 
   /// ### Data:
   /// - [owner] - The new account's owner/multisignature.
-  TransactionInstruction initializeAccount3({
+  static TransactionInstruction initializeAccount3({
     // Keys
     required final PublicKey account,
     required final PublicKey mint,
@@ -953,7 +953,7 @@ class TokenProgram extends Program {
   /// 
   /// Data
   /// - [numberOfSigners] - The number of signers required to validate this multisignature account.
-  TransactionInstruction initializeMultisig2({
+  static TransactionInstruction initializeMultisig2({
     // Keys
     required final PublicKey account,
     required final List<PublicKey> signers,
@@ -992,7 +992,7 @@ class TokenProgram extends Program {
   /// - [decimals] - Number of base 10 digits to the right of the decimal place.
   /// - [mintAuthority] - The authority/multisignature to mint tokens.
   /// - [freezeAuthority] - The freeze authority/multisignature of the mint.
-  TransactionInstruction initializeMint2({
+  static TransactionInstruction initializeMint2({
     // Keys
     required final PublicKey mint,
     // Data
@@ -1038,7 +1038,7 @@ class TokenProgram extends Program {
   ///
   /// ### Keys:
   /// - `[w]` [account] The account to initialize.
-  TransactionInstruction initializeImmutableOwner({
+  static TransactionInstruction initializeImmutableOwner({
     required final PublicKey account,
   }) {
     //  0. `[w]` The account to initialize.

@@ -10,19 +10,27 @@ import '../../types/data_encoding.dart';
 /// Data Serializable
 /// ------------------------------------------------------------------------------------------------
 
-abstract class DataSerializable extends Serializable {
+mixin DataSerializableMixin on SerializableMixin {
 
   /// A [Serializable] class for Account and Transaction data.
-  const DataSerializable();
+  // const DataSerializable();
 
   /// Account or Transaction data.
   Object? get rawData;
 
   /// Casts [rawData] to a JSON object.
+  /// 
+  /// ```
+  /// e.g. { 'key0', 'value0', ... };
+  /// ```  
   Map<String, dynamic> get jsonData => rawData as Map<String, dynamic>;
 
   /// Casts [rawData] to binary encoded [List].
-  List<String> get binaryData => rawData as List<String>;
+  /// 
+  /// ```
+  /// e.g. ['SGkgS2F0ZQ==', 'base64'];
+  /// ```
+  List<String> get binaryData => List<String>.from(rawData as Iterable);
 
   /// `True` if [rawData] is a JSON object.
   /// 

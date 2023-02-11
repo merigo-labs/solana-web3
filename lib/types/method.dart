@@ -45,6 +45,7 @@ enum Method {
   getSlotLeader,
   getSlotLeaders,
   getStakeActivation,
+  getStakeMinimumDelegation,
   getSupply,
   getTokenAccountBalance,
   getTokenAccountsByDelegate,

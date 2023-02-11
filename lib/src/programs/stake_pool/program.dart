@@ -7,6 +7,7 @@ import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/types.dart';
 import 'package:solana_web3/programs/program.dart';
 import 'package:solana_web3/rpc_models/index.dart';
+import 'package:solana_web3/solana_web3.dart';
 import 'package:solana_web3/src/programs/token_metadata/program.dart';
 import '../../../src/models/program_address.dart';
 import '../../../src/public_key.dart';
@@ -34,14 +35,24 @@ class StakePoolProgram extends Program {
   /// The program id.
   static PublicKey get programId => _instance.publicKey;
 
+  /// Maximum number of validators to update during UpdateValidatorListBalance.
+  static const int maxValidatorsToUpdate = 5;
+
+  /// Minimum amount of staked SOL required in a validator stake account to allow for merges without 
+  /// a mismatch on credits observed.
+  static const int minimumActiveStake = lamportsPerSol;
+
   /// The deposit authority seed.
   static const String depositAuthoritySeed = "deposit";
 
   /// The withdrawal authority seed.
   static const String withdrawAuthoritySeed = 'withdraw';
 
-  /// The transient account seed.
+  /// The transient stake account seed.
   static const String transientStakeSeedPrefix = 'transient';
+
+  /// The ephemeral stake account seed.
+  static const String ephemeralStakeSeedPrefix = 'ephemeral';
 
   /// Find the deposit authority account address of the given [stakePoolAddress].
   static ProgramAddress findDepositAuthorityProgramAddress(
@@ -94,6 +105,24 @@ class StakePoolProgram extends Program {
     return PublicKey.findProgramAddress(
       [
         utf8.encode(transientStakeSeedPrefix),
+        voteAccountAddress.toBytes(),
+        stakePoolAddress.toBytes(),
+        Buffer.fromUint64(seed).toList(growable: false),
+      ],
+      StakePoolProgram.programId,
+    );
+  }
+
+  /// Find the ephemeral stake account address of the given validator [voteAccountAddress], 
+  /// [stakePoolAddress] and [seed] (u64).
+  static ProgramAddress findEphemeralStakeProgramAddress(
+    final PublicKey voteAccountAddress,
+    final PublicKey stakePoolAddress,
+    final bu64 seed,
+  ) {
+    return PublicKey.findProgramAddress(
+      [
+        utf8.encode(ephemeralStakeSeedPrefix),
         voteAccountAddress.toBytes(),
         stakePoolAddress.toBytes(),
         Buffer.fromUint64(seed).toList(growable: false),
@@ -389,7 +418,7 @@ class StakePoolProgram extends Program {
   /// - `[s]` [staker] - Stake pool staker.
   /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
   /// - `[w]` [validatorList] - Validator list.
-  /// - `[w]` [reserveAccount] - Stake pool reserve stake.
+  /// - `[w]` [reserveStake] - Stake pool reserve stake.
   /// - `[w]` [transientStakeAccount] - Transient stake account.
   /// - `[]` [validatorStakeAccount] - Validator stake account.
   /// - `[]` [validatorVoteAccount] - Validator vote account to delegate to.
@@ -405,7 +434,7 @@ class StakePoolProgram extends Program {
     required final PublicKey staker,
     required final PublicKey withdrawAuthority,
     required final PublicKey validatorList,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey transientStakeAccount,
     required final PublicKey validatorStakeAccount,
     required final PublicKey validatorVoteAccount,
@@ -432,7 +461,7 @@ class StakePoolProgram extends Program {
       AccountMeta.signer(staker),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(validatorList),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta.writable(transientStakeAccount),
       AccountMeta(validatorStakeAccount),
       AccountMeta(validatorVoteAccount),
@@ -515,7 +544,7 @@ class StakePoolProgram extends Program {
   /// - `[]` [stakePoolAddress] - Stake pool.
   /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
   /// - `[w]` [validatorList] - Validator stake list storage account.
-  /// - `[w]` [reserveAccount] - Reserve stake account.
+  /// - `[w]` [reserveStake] - Reserve stake account.
   /// - `[]` [validatorAndTransientStakeAccounts] - N pairs of validator and transient stake accounts.
   /// 
   /// Data:
@@ -528,7 +557,7 @@ class StakePoolProgram extends Program {
     required final PublicKey stakePoolAddress,
     required final PublicKey withdrawAuthority,
     required final PublicKey validatorList,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final List<PublicKey> validatorAndTransientStakeAccounts,
     // Data
     required final u32 startIndex,
@@ -542,17 +571,17 @@ class StakePoolProgram extends Program {
     //  4. `[]` Sysvar clock
     //  5. `[]` Sysvar stake history
     //  6. `[]` Stake program
-    //  7. `[]` N pairs of validator and transient stake accounts
+    //  7. `[w]` N pairs of validator and transient stake accounts
     final List<AccountMeta> keys = [
       AccountMeta(stakePoolAddress),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(validatorList),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta(sysvarClockPublicKey),
       AccountMeta(sysvarStakeHistoryPublicKey),
       AccountMeta(StakeProgram.programId),
       for (final PublicKey account in validatorAndTransientStakeAccounts)
-        AccountMeta(account),
+        AccountMeta.writable(account),
     ];
 
     final List<Iterable<int>> data = [
@@ -573,14 +602,14 @@ class StakePoolProgram extends Program {
   /// - `[w]` [stakePoolAddress] - Stake pool.
   /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
   /// - `[w]` [validatorList] - Validator stake list storage account.
-  /// - `[]` [reserveAccount] - Reserve stake account.
+  /// - `[]` [reserveStake] - Reserve stake account.
   /// - `[w]` [managerFeeAccount] - Account to receive pool fee tokens.
   /// - `[w]` [poolMint] - Pool mint account.
   static TransactionInstruction updateStakePoolBalance({
     required final PublicKey stakePoolAddress,
     required final PublicKey withdrawAuthority,
     required final PublicKey validatorList,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey managerFeeAccount,
     required final PublicKey poolMint,
   }) {
@@ -595,7 +624,7 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(stakePoolAddress),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(validatorList),
-      AccountMeta(reserveAccount),
+      AccountMeta(reserveStake),
       AccountMeta.writable(managerFeeAccount),
       AccountMeta.writable(poolMint),
       AccountMeta(TokenProgram.programId),
@@ -640,7 +669,7 @@ class StakePoolProgram extends Program {
   /// `[w]` [stakeAccount] - Stake account to join the pool (withdraw authority for the stake account should be 
   ///   first set to the stake pool deposit authority).
   /// `[w]` [validatorStakeAccount] - Validator stake account for the stake account to be merged with.
-  /// `[w]` [reserveAccount] - Reserve stake account, to withdraw rent exempt reserve.
+  /// `[w]` [reserveStake] - Reserve stake account, to withdraw rent exempt reserve.
   /// `[w]` [userTokenAccount] - User account to receive pool tokens.
   /// `[w]` [tokenAccount] - Account to receive pool fee tokens.
   /// `[w]` [referralFeeAccount] - Account to receive a portion of pool fee tokens as referral fees.
@@ -653,7 +682,7 @@ class StakePoolProgram extends Program {
     required final PublicKey withdrawAuthority,
     required final PublicKey stakeAccount,
     required final PublicKey validatorStakeAccount,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey userTokenAccount,
     required final PublicKey tokenAccount,
     required final PublicKey referralFeeAccount,
@@ -681,7 +710,7 @@ class StakePoolProgram extends Program {
       AccountMeta(depositAuthority, isSigner: isDepositAuthoritySigner),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(stakeAccount),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta.writable(userTokenAccount),
       AccountMeta.writable(tokenAccount),
       AccountMeta.writable(referralFeeAccount),
@@ -724,7 +753,7 @@ class StakePoolProgram extends Program {
   /// - `[]` [userWithdrawAuthority] - User account to set as a new withdraw authority.
   /// - `[s]` [userTransferAuthority] - User transfer authority, for pool token account.
   /// - `[w]` [userTokenAccount] - User account with pool tokens to burn from.
-  /// - `[w]` [feeAccount] - Account to receive pool fee tokens.
+  /// - `[w]` [managerFeeAccount] - Account to receive pool fee tokens.
   /// - `[w]` [poolMint] - Pool token mint account.
   /// 
   /// Data:
@@ -739,7 +768,7 @@ class StakePoolProgram extends Program {
     required final PublicKey userWithdrawAuthority,
     required final PublicKey userTransferAuthority,
     required final PublicKey userTokenAccount,
-    required final PublicKey feeAccount,
+    required final PublicKey managerFeeAccount,
     required final PublicKey poolMint,
     // Data
     required final bu64 lamports,
@@ -766,16 +795,21 @@ class StakePoolProgram extends Program {
       AccountMeta(userWithdrawAuthority),
       AccountMeta.signer(userTransferAuthority),
       AccountMeta.writable(userTokenAccount),
-      AccountMeta.writable(feeAccount),
+      AccountMeta.writable(managerFeeAccount),
       AccountMeta.writable(poolMint),
       AccountMeta(sysvarClockPublicKey),
       AccountMeta(TokenProgram.programId),
       AccountMeta(StakeProgram.programId),
     ];
 
+    final List<Iterable<int>> data = [
+      borsh.u64.encode(lamports),
+    ];
+
     return _instance.createTransactionIntruction(
       StakePoolInstruction.withdrawStake, 
       keys: keys, 
+      data: data,
     );
   }
 
@@ -879,7 +913,7 @@ class StakePoolProgram extends Program {
   /// Keys:
   /// - `[w]` [stakePoolAddress] - Stake pool
   /// - `[]` [withdrawAuthority] - Stake pool withdraw authority
-  /// - `[w]` [reserveAccount] - Reserve stake account, to deposit SOL
+  /// - `[w]` [reserveStake] - Reserve stake account, to deposit SOL
   /// - `[s]` [payer] - Account providing the lamports to be deposited into the pool
   /// - `[w]` [payerTokenAccount] - User account to receive pool tokens
   /// - `[w]` [feeAccount] - Account to receive fee tokens
@@ -893,7 +927,7 @@ class StakePoolProgram extends Program {
     // Keys
     required final PublicKey stakePoolAddress,
     required final PublicKey withdrawAuthority,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey payer,
     required final PublicKey payerTokenAccount,
     required final PublicKey feeAccount,
@@ -917,7 +951,7 @@ class StakePoolProgram extends Program {
     final List<AccountMeta> keys = [
       AccountMeta.writable(stakePoolAddress),
       AccountMeta(withdrawAuthority),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta.signer(payer),
       AccountMeta.writable(payerTokenAccount),
       AccountMeta.writable(feeAccount),
@@ -981,22 +1015,22 @@ class StakePoolProgram extends Program {
   /// Withdraw SOL directly from the pool's reserve account. Fails if the reserve does not have 
   /// enough SOL.
   ///
-  /// `[w]` [stakePoolAddress] - Stake pool.
-  /// `[]` [withdrawAuthority] - Stake pool withdraw authority.
-  /// `[s]` [userTransferAuthority] - User transfer authority, for pool token account.
-  /// `[w]` [userTokenAccount] - User account to burn pool tokens.
-  /// `[w]` [reserveAccount] - Reserve stake account, to withdraw SOL.
-  /// `[w]` [receiverAccount] - Account receiving the lamports from the reserve, must be a system account.
-  /// `[w]` [receiverTokenAccount] - Account to receive pool fee tokens.
-  /// `[w]` [poolMint] - Pool token mint account.
-  /// `[s]` [solWithdrawAuthority] - (Optional) Stake pool sol withdraw authority.
+  /// - `[w]` [stakePoolAddress] - Stake pool.
+  /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
+  /// - `[s]` [userTransferAuthority] - User transfer authority, for pool token account.
+  /// - `[w]` [userTokenAccount] - User account to burn pool tokens.
+  /// - `[w]` [reserveStake] - Reserve stake account, to withdraw SOL.
+  /// - `[w]` [receiverAccount] - Account receiving the lamports from the reserve, must be a system account.
+  /// - `[w]` [receiverTokenAccount] - Account to receive pool fee tokens.
+  /// - `[w]` [poolMint] - Pool token mint account.
+  /// - `[s]` [solWithdrawAuthority] - (Optional) Stake pool sol withdraw authority.
   static TransactionInstruction withdrawSol({
     // Keys
     required final PublicKey stakePoolAddress,
     required final PublicKey withdrawAuthority,
     required final PublicKey userTransferAuthority,
     required final PublicKey userTokenAccount,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey receiverAccount,
     required final PublicKey receiverTokenAccount,
     required final PublicKey poolMint,
@@ -1022,7 +1056,7 @@ class StakePoolProgram extends Program {
       AccountMeta(withdrawAuthority),
       AccountMeta.signer(userTransferAuthority),
       AccountMeta.writable(userTokenAccount),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta.writable(receiverAccount),
       AccountMeta.writable(receiverTokenAccount),
       AccountMeta.writable(poolMint),
@@ -1168,7 +1202,7 @@ class StakePoolProgram extends Program {
   /// - `[s]` [staker] -  Stake pool staker.
   /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
   /// - `[w]` [validatorList] - Validator list.
-  /// - `[w]` [reserveAccount] - Stake pool reserve stake.
+  /// - `[w]` [reserveStake] - Stake pool reserve stake.
   /// - `[w]` [uninitializedStakeAccount] - Uninitialized ephemeral stake account to receive stake.
   /// - `[w]` [transientStakeAccount] - Transient stake account.
   /// - `[]` [validatorStakeAccount] - Validator stake account.
@@ -1186,7 +1220,7 @@ class StakePoolProgram extends Program {
     required final PublicKey staker,
     required final PublicKey withdrawAuthority,
     required final PublicKey validatorList,
-    required final PublicKey reserveAccount,
+    required final PublicKey reserveStake,
     required final PublicKey uninitializedStakeAccount,
     required final PublicKey transientStakeAccount,
     required final PublicKey validatorStakeAccount,
@@ -1215,7 +1249,7 @@ class StakePoolProgram extends Program {
       AccountMeta.signer(staker),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(validatorList),
-      AccountMeta.writable(reserveAccount),
+      AccountMeta.writable(reserveStake),
       AccountMeta.writable(uninitializedStakeAccount),
       AccountMeta.writable(transientStakeAccount),
       AccountMeta(validatorStakeAccount),

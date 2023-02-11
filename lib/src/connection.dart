@@ -28,6 +28,7 @@ import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcM
 import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/web_socket/web_socket_exchange_manager.dart';
 import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
+import 'package:solana_web3/rpc_config/get_stake_minimum_delegation.dart';
 
 import '../rpc_config/get_parsed_account_info_config.dart';
 import 'nacl.dart' as nacl show signatureLength;
@@ -256,18 +257,23 @@ class Connection extends SolanaWebSocketConnection {
   /// Creates a callback function that converts a bulk [http.Response] into a [List] of 
   /// [JsonRpcResponse].
   /// 
-  /// The [parseList] callback functions convert each [http.Response] `result` value from type `U` 
+  /// The [parsers] callback functions convert each [http.Response] `result` value from type `U` 
   /// into `T`.
-  List<JsonRpcResponse> Function(http.Response) _bulkResponseParser(
-    final List<JsonRpcParser> parseList,
+  List<JsonRpcResponse<T>> Function(http.Response) _bulkResponseParser<T, U>(
+    final List<JsonRpcParser<T, U>> parsers,
   ) {
-    assert(parseList.isNotEmpty);
+    assert(parsers.isNotEmpty);
     return (final http.Response response) {
       //print('BULK REPONSE ${response.body}');
-      final List<Map<String, dynamic>> body = List.from(json.decode(response.body));
-      return List.generate(body.length, (final int i) {
-        return JsonRpcResponse.parse(body[i], i < parseList.length ? parseList[i] : parseList.last);
-      });
+      final List<Map<String, dynamic>> bodies = List.from(json.decode(response.body));
+      print('BODIES = $bodies');
+      return List.generate(
+        bodies.length, 
+        (final int i) => JsonRpcResponse.parse(
+          bodies[i], 
+          i < parsers.length ? parsers[i] : parsers.last,
+        ),
+      );
     };
   }
 
@@ -319,31 +325,31 @@ class Connection extends SolanaWebSocketConnection {
     return timeout != null ? request.timeout(timeout) : request;
   }
 
-  /// Creates a list of ordered parameter values.
-  List<Object> _buildParams(
-    final List<Object> values,
-    final JsonRpcRequestConfig config, [
-    final Commitment? commitment,
-  ]) {
-    final Map<String, dynamic> object = config.object();
-    const String commitmentKey = 'commitment';
-    if (object.containsKey(commitmentKey)) {
-      object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
-      if (object[commitmentKey] == null) {
-        object.remove(commitmentKey);
-      }
-    }
-    return object.isEmpty ? values : [...values, object];
-  }
+  // /// Creates a list of ordered parameter values.
+  // List<Object> _buildParams(
+  //   final List<Object> values,
+  //   final JsonRpcRequestConfig config, [
+  //   final Commitment? commitment,
+  // ]) {
+  //   final Map<String, dynamic> object = config.object();
+  //   const String commitmentKey = 'commitment';
+  //   if (object.containsKey(commitmentKey)) {
+  //     object[commitmentKey] ??= commitment?.name ?? this.commitment?.name;
+  //     if (object[commitmentKey] == null) {
+  //       object.remove(commitmentKey);
+  //     }
+  //   }
+  //   return object.isEmpty ? values : [...values, object];
+  // }
 
-  JsonRpcRequest _buildRequest(
-    final Method method, 
-    final List<Object> values, {
-    required final JsonRpcRequestConfig config,
-  }) {
-    final List<Object> params = _buildParams(values, config);
-    return JsonRpcRequest(method.name, params: params, id: config.id);
-  }
+  // JsonRpcRequest _buildRequest(
+  //   final Method method, 
+  //   final List<Object> values, {
+  //   required final JsonRpcRequestConfig config,
+  // }) {
+  //   final List<Object> params = _buildParams(values, config);
+  //   return JsonRpcRequest(method.name, params: params, id: config.id);
+  // }
 
   /// Makes a JSON-RPC POST request to the [cluster], invoking a single [method].
   /// 
@@ -360,36 +366,59 @@ class Connection extends SolanaWebSocketConnection {
     final JsonRpcParser<T, U> parse, {
     required final JsonRpcRequestConfig config,
   }) {
-    final List<Object> params = _buildParams(values, config);
-    final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: config.id);
+    final JsonRpcRequest request = JsonRpcRequest.build(method.name, values, config: config);
+    request.applyCommitment(commitment?.name);
     return _post(request.toJson(), config: config).then(_responseParser(parse));
   }
-  
+
+  /// Makes a JSON-RPC POST request to the [cluster], invoking multiple methods in a single request.
+  /// 
+  /// Each of the [requests] defines a method to be invoked and returns their results.
+  /// 
+  /// Additional request configurations can be set using the [config] object's 
+  /// [JsonRpcRequestConfig.headers] and [JsonRpcRequestConfig.timeout] properties.
+  /// 
+  /// ```
+  /// bulkRequestRaw(
+  ///   [JsonRpcRequest(...), JsonRpcRequest(...)], // The requests. 
+  /// )
+  /// ```
+  Future<http.Response> _bulkRequest<T, U>(
+    final Iterable<JsonRpcRequest> requests, {
+    final JsonRpcRequestConfig? config,
+  }) {
+    assert(requests.isNotEmpty);
+    final List<Map<String, dynamic>> body = [];
+    for (final JsonRpcRequest request in requests) {
+      request.applyCommitment(commitment?.name);
+      body.add(request.toJson());
+    }
+    return _post(body, config: config);
+  }
+
   /// Makes a JSON-RPC POST request to the [cluster], invoking multiple methods in a single request.
   /// 
   /// Each of the [requests] defines a method to be invoked and their responses are handled by the 
-  /// parser found at the same index position in [parseList]. If the number of [requests] exceeds 
+  /// parser found at the same index position in [parsers]. If the number of [requests] exceeds 
   /// the number of parsers, the final parser in the list is applied.
   /// 
   /// Additional request configurations can be set using the [config] object's 
   /// [JsonRpcRequestConfig.headers] and [JsonRpcRequestConfig.timeout] properties.
   /// 
   /// ```
-  /// _bulkRequest(
+  /// bulkRequest(
   ///   [JsonRpcRequest(...), JsonRpcRequest(...)], // The requests. 
   ///   [(Map) => int, (String) => List]            // The corresponding parsers.
   /// )
   /// ```
-  Future<List<JsonRpcResponse>> _bulkRequest(
-    final Iterable<JsonRpcRequest> requests, 
-    final List<JsonRpcParser> parseList, {
+  Future<List<JsonRpcResponse<T>>> bulkRequest<T, U>(
+    final Iterable<JsonRpcRequest> requests, {
+    final List<JsonRpcParser<T, U>>? parsers, 
     final JsonRpcRequestConfig? config,
   }) {
-    assert(requests.isNotEmpty && parseList.isNotEmpty);
-    Map<String, dynamic> _mapRequest(final JsonRpcRequest request) => request.toJson();
-    final List<Map<String, dynamic>> jsonList = requests.map(_mapRequest).toList(growable: false);
-    print('BULK REQUEST $jsonList');
-    return _post(jsonList, config: config).then(_bulkResponseParser(parseList));
+    assert(parsers == null || parsers.isNotEmpty);
+    final List<JsonRpcParser<T, U>> parserList = parsers ?? [(input) => input as T];
+    return _bulkRequest(requests, config: config).then(_bulkResponseParser(parserList));
   }
 
   /// Get the [cluster]'s health status.
@@ -605,17 +634,35 @@ class Connection extends SolanaWebSocketConnection {
     return getEpochScheduleRaw(config: config).unwrap();
   }
 
-  /// Returns the network fee that will be charged to send [message].
+  /// Returns the network fee that will be charged to send the `base-64 [encoded]` message.
   /// 
   /// TODO: Find out if a `null` return value means zero.
+  Future<JsonRpcContextResponse<u64?>> getFeeForEncodedMessageRaw(
+    final String encoded, {
+    final GetFeeForMessageConfig? config,
+  }) {
+    assert(base64.decode(encoded) is Uint8List);
+    final parse = _contextParser(utils.cast<u64?>);
+    final defaultConfig = config ?? const GetFeeForMessageConfig();
+    return _request(Method.getFeeForMessage, [encoded], parse, config: defaultConfig);
+  }
+
+  /// Returns the network fee that will be charged to send the `base-64 [encoded]` message.
+  Future<u64> getFeeForEncodedMessage(
+    final String encoded, {
+    final GetFeeForMessageConfig? config,
+  }) async {
+    final u64? fee = await getFeeForEncodedMessageRaw(encoded, config: config).unwrap();
+    return fee != null ? Future.value(fee) : Future.error(const JsonRpcException('Invalid fee.'));
+  }
+
+  /// Returns the network fee that will be charged to send [message].
   Future<JsonRpcContextResponse<u64?>> getFeeForMessageRaw(
     final Message message, {
     final GetFeeForMessageConfig? config,
   }) {
-    final parse = _contextParser(utils.cast<u64?>);
     final String encoded = message.serialize().getString(BufferEncoding.base64);
-    final defaultConfig = config ?? const GetFeeForMessageConfig();
-    return _request(Method.getFeeForMessage, [encoded], parse, config: defaultConfig);
+    return getFeeForEncodedMessageRaw(encoded, config: config);
   }
 
   /// Returns the network fee that will be charged to send [message].
@@ -1037,6 +1084,22 @@ class Connection extends SolanaWebSocketConnection {
     return getStakeActivationRaw(account, config: config).unwrap();
   }
 
+  /// Returns the stake minimum delegation, in lamports.
+  Future<JsonRpcContextResponse<u64>> getStakeMinimumDelegationRaw({
+    final GetStakeMinimumDelegationConfig? config, 
+  }) {
+    parse(result) => JsonRpcContextResult.parse(result, utils.cast<u64>);
+    final defaultConfig = config ?? const GetStakeMinimumDelegationConfig();
+    return _request(Method.getStakeMinimumDelegation, [], parse, config: defaultConfig);
+  }
+
+  /// Returns the stake minimum delegation, in lamports.
+  Future<u64> getStakeMinimumDelegation({
+    final GetStakeMinimumDelegationConfig? config, 
+  }) {
+    return getStakeMinimumDelegationRaw(config: config).unwrap();
+  }
+
   /// Returns information about the current supply.
   Future<JsonRpcContextResponse<Supply>> getSupplyRaw({
     final GetSupplyConfig? config, 
@@ -1282,12 +1345,71 @@ class Connection extends SolanaWebSocketConnection {
     return notification.err != null ? Future.error(notification.err) : Future.value(signature);
   }
 
+  // Future<void> _signTransaction(
+  //   Transaction transaction, {
+  //   final List<Signer>? signers,
+  //   required final bool Function(String signature) handler,
+  // }) async {
+  //   if (transaction.nonceInfo != null && signers != null) {
+  //     transaction.sign(signers);
+  //   } else {
+  //     bool disableCache = false;
+  //     for (;;) {
+  //       final latestBlockhash = await _blockhashCache.get(this, disabled: disableCache);
+  //       transaction = transaction.copyWith(
+  //         recentBlockhash: latestBlockhash.blockhash,
+  //         lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
+  //       );
+        
+  //       if (signers == null) {
+  //         break;
+  //       }
+        
+  //       transaction.sign(signers);
+  //       final Uint8List? payerSignature = transaction.signature;
+  //       if (payerSignature == null) {
+  //         throw const TransactionException('No signature.'); // should never happen
+  //       }
+
+  //       final String signature = base64.encode(payerSignature);
+  //       if (handler(signature)) {
+  //         // The signature of this transaction has not been seen before with the current 
+  //         // [latestBlockhash.blockhash], all done. Let's break
+  //         break;
+  //       } else {
+  //         // This transaction would be treated as duplicate (its derived signature matched to one of 
+  //         // the already recorded signatures). So, we must fetch a new blockhash for a different 
+  //         // signature by disabling our cache not to wait for the cache expiration 
+  //         // [BlockhashCache.timeout].
+  //         disableCache = true;
+  //       }
+  //     }
+  //   }
+  // }
+  
+  // Future<void> signTransaction(
+  //   Transaction transaction, {
+  //   final List<Signer> signers = const [],
+  // }) => _signTransaction(
+  //     transaction, 
+  //     signers: signers,
+  //     handler: (final String signature) {
+  //       final bool complete = !_blockhashCache.transactionSignatures.contains(signature);
+  //       if (complete) {
+  //         // The signature of this transaction has not been seen before with the current 
+  //         // [latestBlockhash.blockhash], all done. Let's break
+  //         _blockhashCache.transactionSignatures.add(signature);
+  //       }
+  //       return complete;
+  //   });
+
   /// Sign and send a [transaction] to the cluster for processing.
   Future<JsonRpcResponse<TransactionSignature>> sendTransactionRaw(
     Transaction transaction, {
     final List<Signer> signers = const [],
     SendTransactionConfig? config,
   }) async {
+
     if (transaction.nonceInfo != null) {
       transaction.sign(signers);
     } else {
@@ -1360,9 +1482,9 @@ class Connection extends SolanaWebSocketConnection {
   }) async {
     final defaultConfig = config ?? SendTransactionConfig(preflightCommitment: commitment);
     final List<JsonRpcRequest> requests = signedTransactions.map((final String signedTransaction) {
-      return _buildRequest(Method.sendTransaction, [signedTransaction], config: defaultConfig);
+      return JsonRpcRequest.build(Method.sendTransaction.name, [signedTransaction], config: defaultConfig);
     }).toList(growable: false);
-    return _bulkRequest(requests, [(r) => r]);
+    return bulkRequest(requests);
   }
 
   // Future<List<String>> walletAdapterSerialization(final List<Transaction> transactions) async {
@@ -1423,6 +1545,23 @@ class Connection extends SolanaWebSocketConnection {
   //   return adapter.signMessages(payloads: payloads, addresses: encoded);
   // }
 
+  // Future<void> signSimulatedTransaction(
+  //   Transaction transaction, {
+  //   final List<Signer>? signers,
+  // }) => _signTransaction(
+  //     transaction, 
+  //     signers: signers,
+  //     handler: (final String signature) {
+  //       final bool complete = !_blockhashCache.simulatedSignatures.contains(signature)
+  //         && !_blockhashCache.transactionSignatures.contains(signature);
+  //       if (complete) {
+  //         // The signature of this transaction has not been seen before with the current 
+  //         // [latestBlockhash.blockhash], all done. Let's break
+  //         _blockhashCache.simulatedSignatures.add(signature);
+  //       }
+  //       return complete;
+  //   });
+
   /// Simulates sending a transaction.
   Future<JsonRpcContextResponse<TransactionStatus>> simulateTransactionRaw(
     Transaction transaction, {
@@ -1430,6 +1569,7 @@ class Connection extends SolanaWebSocketConnection {
     final bool includeAccounts = false,
     final Commitment? commitment,
   }) async {
+    
     if (transaction.nonceInfo != null && signers != null) {
       transaction.sign(signers);
     } else {
@@ -1667,11 +1807,13 @@ class Connection extends SolanaWebSocketConnection {
   }
 
   /// Check that the subscription [params] contains a configuration object will no null values.
-  void _assertSubscribeParams(final List<Object> params) {
+  void _assertSubscribeParams(final List<Object>? params) {
     assert(
-      params.isEmpty || 
-      params.last is! Map || 
-      (params.last as Map).values.every((value) => value != null),
+      params != null && (
+        params.isEmpty || 
+        params.last is! Map || 
+        (params.last as Map).values.every((value) => value != null)
+      )
     );
   }
 
@@ -1711,9 +1853,9 @@ class Connection extends SolanaWebSocketConnection {
     final List<Object> values, {
     required final JsonRpcSubscribeConfig config,
   }) async {
-    final List<Object> params = _buildParams(values, config, commitment ?? Commitment.finalized);
-    _assertSubscribeParams(params);
-    final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: config.id);
+    final JsonRpcRequest request = JsonRpcRequest.build(method.name, values, config: config);
+    request.applyCommitment(commitment?.name ?? Commitment.finalized.name);
+    _assertSubscribeParams(request.params);
     final JsonRpcSubscribeResponse response = await _webSocketExchange<int>(request, config: config);
     return webSocketSubscriptionManager.subscribe<T>(response);
   }
@@ -1776,8 +1918,8 @@ class Connection extends SolanaWebSocketConnection {
     if (!webSocketSubscriptionManager.hasListener(subscription.id)) {
       try {
         final defaultConfig = config ?? const JsonRpcUnsubscribeConfig();
-        final List<Object> params = _buildParams([subscription.id], defaultConfig);
-        final JsonRpcRequest request = JsonRpcRequest(method.name, params: params, id: defaultConfig.id);
+        final JsonRpcRequest request = JsonRpcRequest.build(method.name, [subscription.id], config: defaultConfig);
+        request.applyCommitment(commitment?.name);
         response = await _webSocketExchange<bool>(request, config: config);
         webSocketExchangeManager.remove(subscription.exchangeId);
         webSocketExchangeManager.remove(response.id);

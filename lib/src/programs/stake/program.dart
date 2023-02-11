@@ -2,11 +2,13 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_common/borsh/borsh.dart';
+import 'package:solana_common/extensions/num.dart';
 import 'package:solana_common/utils/types.dart';
 import '../../../programs/program.dart';
 import '../../../src/sysvar.dart';
 import '../../../src/transaction/transaction.dart';
 import '../../../src/public_key.dart';
+import '../system/program.dart';
 import 'instruction.dart';
 import 'state.dart';
 
@@ -35,6 +37,41 @@ class StakeProgram extends Program {
   /// https://docs.rs/solana-stake-program/latest/solana_stake_program/stake_state/enum.StakeState.html
   static const int space = 200;
 
+  /// Creates a [SystemProgram] instruction that generates a stake account.
+  static TransactionInstruction createAccount({
+    required final PublicKey fromPublicKey,
+    required final PublicKey newAccountPublicKey,
+    required final bu64 lamports,
+  }) {
+    return SystemProgram.createAccount(
+        fromPublicKey: fromPublicKey,
+        newAccountPublicKey: newAccountPublicKey,
+        lamports: lamports,
+        space: space.toBigInt(),
+        programId: programId,
+    );
+  }
+
+  /// Creates a [SystemProgram] instruction that generates a stake account. The address is derived 
+  /// from [fromPublicKey] and [seed].
+  static TransactionInstruction createAccountWithSeed({
+    required final PublicKey fromPublicKey,
+    required final PublicKey newAccountPublicKey,
+    required final PublicKey basePublicKey,
+    required final String seed,
+    required final bu64 lamports,
+  }) {
+    return SystemProgram.createAccountWithSeed(
+      fromPublicKey: fromPublicKey,
+      newAccountPublicKey: newAccountPublicKey,
+      basePublicKey: basePublicKey,
+      seed: seed,
+      lamports: lamports,
+      space: space.toBigInt(),
+      programId: programId,
+    );
+  }
+
   /// Initialize a stake with lockup and authorization information.
   ///
   /// ### Keys:
@@ -43,7 +80,7 @@ class StakeProgram extends Program {
   /// ### Data:
   /// - [authorized] - Public keys that must sign staker transactions and withdrawer transactions.
   /// - [lockup] - Information about withdrawal restrictions.
-  TransactionInstruction initialize({
+  static TransactionInstruction initialize({
     required final PublicKey stakeAccount, 
     required final Authorized authorized, 
     required final Lockup lockup,
@@ -77,7 +114,7 @@ class StakeProgram extends Program {
   /// ### Data:
   /// - [newAuthority]
   /// - [authorityType]
-  TransactionInstruction authorize({
+  static TransactionInstruction authorize({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authority,
@@ -119,7 +156,7 @@ class StakeProgram extends Program {
   ///
   /// The entire balance of the staking account is staked. DelegateStake can be called multiple 
   /// times, but re-delegation is delayed by one epoch.
-  TransactionInstruction delegateStake({
+  static TransactionInstruction delegateStake({
     required final PublicKey stakeAccount,
     required final PublicKey voteAccount,
     required final PublicKey authority,
@@ -152,7 +189,7 @@ class StakeProgram extends Program {
   /// - `[w]` [uninitializedStakeAccount] - Uninitialized stake account that will take the split-off 
   ///   amount.
   /// - `[s]` [authority] - Stake authority.
-  TransactionInstruction split({
+  static TransactionInstruction split({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey uninitializedStakeAccount,
@@ -190,7 +227,7 @@ class StakeProgram extends Program {
   /// 
   /// ### Data:
   /// - [lamports] - The portion of the stake account balance to be withdrawn.
-  TransactionInstruction withdraw({
+  static TransactionInstruction withdraw({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey recipientAccount,
@@ -229,7 +266,7 @@ class StakeProgram extends Program {
   /// ### Keys:
   /// - `[w]` [stakeAccount] - Delegated stake account.
   /// - `[s]` [authority] - Stake authority.
-  TransactionInstruction deactivate({
+  static TransactionInstruction deactivate({
     required final PublicKey stakeAccount,
     required final PublicKey authority,
   }) {
@@ -259,7 +296,7 @@ class StakeProgram extends Program {
   /// 
   /// ### Data:
   /// - [lockup]
-  TransactionInstruction setLockup({
+  static TransactionInstruction setLockup({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authority,
@@ -304,7 +341,7 @@ class StakeProgram extends Program {
   /// - `[w]` [destinationStakeAccount] - Destination stake account.
   /// - `[w]` [sourceStakeAccount] - Source stake account, this account will be drained.
   /// - `[s]` [authority] - Stake authority.
-  TransactionInstruction merge({
+  static TransactionInstruction merge({
     required final PublicKey destinationStakeAccount,
     required final PublicKey sourceStakeAccount,
     required final PublicKey authority,
@@ -334,7 +371,7 @@ class StakeProgram extends Program {
   /// - `[w]` [stakeAccount] - Stake account to be updated.
   /// - `[s]` [authorityBase] - Base key of stake or withdraw authority.
   /// - `[s]` [custodian] - Lockup authority, if updating StakeAuthorize.withdrawer before lockup. 
-  TransactionInstruction authorizeWithSeed({
+  static TransactionInstruction authorizeWithSeed({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authorityBase,
@@ -381,7 +418,7 @@ class StakeProgram extends Program {
   /// - `[]` [authority] - The stake authority.
   /// - `[s]` [withdrawAuthority] - The withdraw authority.
   ///
-  TransactionInstruction initializeChecked({
+  static TransactionInstruction initializeChecked({
     required final PublicKey stakeAccount, 
     required final PublicKey authority, 
     required final PublicKey withdrawAuthority,
@@ -413,7 +450,7 @@ class StakeProgram extends Program {
   /// - `[s]` [authority] - The stake or withdraw authority.
   /// - `[s]` [newAuthority] - The new stake or withdraw authority.
   /// - `[s]` [custodian] - Lockup authority if updating [StakeAuthorize.withdrawer] before lockup expiration.
-  TransactionInstruction authorizeChecked({
+  static TransactionInstruction authorizeChecked({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authority,
@@ -458,7 +495,7 @@ class StakeProgram extends Program {
   /// - `[]` Clock sysvar
   /// - `[s]` The new stake or withdraw authority
   /// - `[s]` Lockup authority if updating [StakeAuthorize.withdrawer] before lockup expiration.
-  TransactionInstruction authorizeCheckedWithSeed({
+  static TransactionInstruction authorizeCheckedWithSeed({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authorityBase,
@@ -508,7 +545,7 @@ class StakeProgram extends Program {
   /// - `[w]` [stakeAccount] - Initialized stake account.
   /// - `[s]` [authority] - Lockup authority or withdraw authority.
   /// - `[s]` [custodian] - New lockup authority (optional).
-  TransactionInstruction setLockupChecked({
+  static TransactionInstruction setLockupChecked({
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authority,
@@ -547,7 +584,7 @@ class StakeProgram extends Program {
   /// instruction.
   ///
   /// [`getMinimumDelegation()`]: super::tools::get_minimum_delegation
-  TransactionInstruction getMinimumDelegation() {
+  static TransactionInstruction getMinimumDelegation() {
     return _instance.createTransactionIntruction(
       StakeInstruction.getMinimumDelegation, 
       keys: const [],
@@ -565,7 +602,7 @@ class StakeProgram extends Program {
   /// - `[]` [delinquentVoteAccount] - Delinquent vote account for the delegated stake account.
   /// - `[]` [referenceVoteAccount] - Reference vote account that has voted at least once in the 
   ///   last `MINIMUM_DELINQUENT_EPOCHS_FOR_DEACTIVATION` epochs
-  TransactionInstruction deactivateDelinquent({
+  static TransactionInstruction deactivateDelinquent({
     required final PublicKey delegatedStakeAccount,
     required final PublicKey delinquentVoteAccount,
     required final PublicKey referenceVoteAccount,
@@ -605,7 +642,7 @@ class StakeProgram extends Program {
   ///     redelegated stake.
   /// - `[]` [voteAccount] - Vote account to which this stake will be re-delegated.
   /// - `[s]` [authority] - Stake authority.
-  TransactionInstruction redelegate({
+  static TransactionInstruction redelegate({
     required final PublicKey delegatedStakeAccount,
     required final PublicKey uninitializedtStakeAccount,
     required final PublicKey voteAccount,

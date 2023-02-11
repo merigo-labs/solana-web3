@@ -38,10 +38,12 @@ class Fee extends BorshSerializable {
   });
   
   /// Denominator of the fee ratio.
-  final bu64 denominator; // u64
+  final bu64 denominator;
 
   /// Numerator of the fee ratio.
   final bu64 numerator;
+
+  double get ratio => denominator == BigInt.zero ? 0.0 : numerator / denominator;
 
   factory Fee.fromJson(final Map<String, dynamic> json) => Fee(
     denominator: json['denominator'],

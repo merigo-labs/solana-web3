@@ -29,7 +29,7 @@ abstract class Program {
   /// Throws an [AssertionError] if [seeds] contains an invalid seed.
   /// 
   /// Throws a [PublicKeyException] if a valid program address could not be found.
-  ProgramAddress findProgramAddress(final List<List<int>> seeds)
+  ProgramAddress findAddress(final List<List<int>> seeds)
     => PublicKey.findProgramAddress(seeds, publicKey);
 
   /// Check that the program has been deployed to the cluster and is an executable program.
@@ -43,6 +43,10 @@ abstract class Program {
       throw ProgramException('The program $runtimeType ($publicKey) is not executable.');
     }
   }
+
+  /// Encodes the program [instruction].
+  Iterable<int> encodeInstruction<T extends Enum>(final T instruction)
+    => Buffer.fromUint8(instruction.index);
   
   /// Creates a [TransactionInstruction] for the program [instruction].
   TransactionInstruction createTransactionIntruction(
@@ -53,7 +57,10 @@ abstract class Program {
     return TransactionInstruction(
       keys: keys, 
       programId: publicKey,
-      data: Buffer.flatten([Buffer.fromUint8(instruction.index), ...data]).asUint8List(),
+      data: Buffer.flatten([
+        encodeInstruction(instruction), 
+        ...data,
+      ]).asUint8List(),
     );
   }
 }

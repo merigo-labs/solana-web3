@@ -3,7 +3,7 @@
 
 import 'package:solana_web3/exceptions/index.dart';
 import 'package:solana_common/models/serializable.dart';
-import 'data_serializable.dart';
+import '../mixins/data_serializable_mixin.dart';
 import '../models/meta.dart';
 import '../../rpc_config/get_block_config.dart';
 
@@ -11,7 +11,7 @@ import '../../rpc_config/get_block_config.dart';
 /// Transaction Data
 /// ------------------------------------------------------------------------------------------------
 
-class TransactionData<T extends Object> extends DataSerializable {
+class TransactionData<T extends Object> extends Serializable with DataSerializableMixin {
   
   /// Confirmed Transaction Block.
   const TransactionData({
@@ -43,7 +43,7 @@ class TransactionData<T extends Object> extends DataSerializable {
   /// TransactionData.parse({ '<parameter>': <value> });
   /// ```
   static TransactionData parse(final Map<String, dynamic> json) {
-    final Object transaction = DataSerializable.normalize(json[transactionKey]);
+    final Object transaction = DataSerializableMixin.normalize(json[transactionKey]);
     if (transaction is List) {
       return TransactionData<List<String>>.fromJson(json);
     } else if (transaction is Map) {

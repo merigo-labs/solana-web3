@@ -18,7 +18,7 @@ class BlockhashCache {
   
   /// Stores the latest `blockhash` fetched from [Connection.getLatestBlockhash].
   BlockhashCache({
-    this.timeout = const Duration(milliseconds: 30 * 1000),
+    this.timeout = const Duration(seconds: 30),
   });
 
   /// The cached [value]'s expiration time.
@@ -65,8 +65,7 @@ class BlockhashCache {
   /// 
   /// If a request to fetch the latest blockhash is in progress, the method waits for it to 
   /// complete before returning a value, even if [disabled] is `false` and there's a valid cache 
-  /// value. To override this behaviour and return a valid cache value immediately, set 
-  /// [waitForLatest] to `true`.
+  /// value.
   FutureOr<BlockhashWithExpiryBlockHeight> get(
     final Connection connection, { 
     required final bool disabled, 

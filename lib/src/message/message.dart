@@ -1,6 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert';
+
 import 'package:solana_common/models/serializable.dart';
 import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/convert.dart' as convert;
@@ -237,6 +239,10 @@ class Message extends Serializable {
   }
 
   /// Decodes a message into a [Message] instance.
+  factory Message.fromBase64(final String encoded)
+    => Message.fromList(base64.decode(encoded));
+
+  /// Decodes a message buffer into a [Message] instance.
   factory Message.fromBuffer(final Buffer buffer) {
 
     final BufferReader reader = buffer.reader;
@@ -283,4 +289,7 @@ class Message extends Serializable {
       instructions: instructions,
     );
   }
+
+  @override
+  String toString() => serialize().getString(BufferEncoding.base64);
 }

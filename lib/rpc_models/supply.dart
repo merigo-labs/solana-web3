@@ -2,9 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_common/models/serializable.dart';
-import 'package:solana_common/utils/convert.dart' show list;
 import 'package:solana_common/utils/types.dart' show u64;
-import '../src/public_key.dart';
 import '../rpc_config/get_supply_config.dart';
 
 
@@ -33,14 +31,14 @@ class Supply extends Serializable {
   /// An array of account addresses of non-circulating accounts, as strings. If 
   /// [GetSupplyConfig.excludeNonCirculatingAccountsList] is enabled, the returned array will be 
   /// empty.
-  final List<PublicKey> nonCirculatingAccounts;
+  final List<String> nonCirculatingAccounts;
   
   /// {@macro solana_common.Serializable.fromJson}
   factory Supply.fromJson(final Map<String, dynamic> json) => Supply(
     total: json['total'],
     circulating: json['circulating'],
     nonCirculating: json['nonCirculating'],
-    nonCirculatingAccounts: list.decode(json['nonCirculatingAccounts'], PublicKey.fromBase58),
+    nonCirculatingAccounts: List.from(json['nonCirculatingAccounts']),
   );
 
   /// {@macro solana_common.Serializable.tryFromJson}
@@ -52,6 +50,6 @@ class Supply extends Serializable {
     'total': total,
     'circulating': circulating,
     'nonCirculating': nonCirculating,
-    'nonCirculatingAccounts': list.encode(nonCirculatingAccounts),
+    'nonCirculatingAccounts': nonCirculatingAccounts,
   };
 }

@@ -20,6 +20,8 @@ export 'program_account.dart';
 export 'signature_notification.dart';
 export 'signature_status.dart';
 export 'slot_notification.dart';
+export 'stake_account_info.dart';
+export 'stake_account.dart';
 export 'stake_activation.dart';
 export 'supply.dart';
 export 'token_account_info.dart';
