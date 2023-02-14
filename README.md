@@ -11,117 +11,107 @@ and the Flutter guide for
 [developing packages and plugins](https://flutter.dev/developing-packages). 
 -->
 
-The Solana Dart API built on Solana's [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api).
+### Dart implementation of Solana's [JSON RPC API](https://docs.solana.com/developing/clients/jsonrpc-api).
 
-Android and iOS supported.
+<em>Android and iOS support.</em>
 
-## Features
+<br>
 
-The library is modelled on the [solana-web3.js](https://github.com/solana-labs/solana-web3.js) Javascript API and includes the following features:
+<img src="https://github.com/merigo-labs/example-apps/blob/master/docs/images/solana_wallet_provider_authorize.gif?raw=true" alt="Authorize App" height="400">
+<br>
 
-* Compute Budget Program
-* ED25519 Program
-* JSON RPC API
-* Memo Program
-* Stake Program
-* System Program
+*Screenshot of [solana_wallet_provider](https://pub.dev/packages/solana_wallet_provider)*
 
-## Example
+<br>
 
-1. Import the package and [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
+### Implements the following programs:
+
+- [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program)
+- [Token Program](https://spl.solana.com/token)
+- [Associated Token Program](https://spl.solana.com/associated-token-account)
+- [Stake Program](https://docs.solana.com/developing/runtime-facilities/programs#stake-program)
+- [Stake Pool Program](https://spl.solana.com/stake-pool)
+- [Memo Program](https://spl.solana.com/memo)
+- Compute Budget Program
+- [ED25519 Program](https://docs.solana.com/developing/runtime-facilities/programs#ed25519-program)
+
+<br>
+
+### Features include:
+
+- Signing Transactions.
+- Sending Transactions.
+- Signing Messages.
+- Websocket Notification Subscriptions (e.g. Account changes).
+- Keypair Generation.
+- Borsh Serialization.
+
+<br>
+
+## Example: Transfer SOL
 
 ```dart
+/// Imports
 import 'package:solana_web3/solana_web3.dart' as web3;
 import 'package:solana_web3/programs/system.dart';
-```
 
-2. Connect to a Solana cluster.
+/// Transfer tokens from one wallet to another.
+void main(final List<String> _arguments) async {
 
-```dart
-final cluster = web3.Cluster.devnet;
-final connection = web3.Connection(cluster);
-```
+  // Create a connection to the devnet cluster.
+  final cluster = web3.Cluster.devnet;
+  final connection = web3.Connection(cluster);
 
-3. Create a new wallet and airdrop [amount] tokens to the address.
+  // Create a wallet to transfer tokens from.
+  print('Creating accounts...\n');
+  final wallet1 = web3.Keypair.generate();
+  final address1 = wallet1.publicKey;
 
-```dart
-/// NOTE: Keep the value of [amount] low (e.g. 1 or 2).
-/// 
-/// WARNING: Airdrops cannot be performed on the mainnet.
-Future<web3.Keypair> createWalletWithBalance(
-  final web3.Connection connection, { 
-  required final int amount, 
-}) async {
+  // Credit the wallet that will be sending tokens.
+  await connection.requestAirdropAndConfirmTransaction(
+    address1, 
+    web3.solToLamports(2).toInt(),
+  );
 
-  // Create a new wallet and get its public address.
-  final wallet = web3.Keypair.generate();
-  final address = wallet.publicKey;
+  // Create a wallet to transfer tokens to.
+  final wallet2 = web3.Keypair.generate();
+  final address2 = wallet2.publicKey;
 
-  // Airdrop some test tokens to the wallet address.
-  // NOTE: Airdrops cannot be performed on the mainnet.
-  if (amount > 0) {
-    final lamports = web3.lamportsPerSol * amount;
-    final transactionSignature = await connection.requestAirdrop(address, lamports);
-    await connection.confirmTransaction(transactionSignature);
-  }
+  // Check the account balances before making the transfer.
+  final balance = await connection.getBalance(address1);
+  print('Account $address1 has an initial balance of $balance lamports.');
+  print('Account $address2 has an initial balance of 0 lamports.\n');
 
-  return wallet;
+  // Create a System Program instruction to transfer 1 SOL from [address1] to [address2].
+  final transaction = web3.Transaction();
+  transaction.add(
+    SystemProgram.transfer(
+      fromPublicKey: address1, 
+      toPublicKey: address2, 
+      lamports: web3.solToLamports(1),
+    ),
+  );
+
+  // Send the transaction to the cluster and wait for it to be confirmed.
+  print('Send and confirm transaction...\n');
+  await connection.sendAndConfirmTransaction(
+    transaction, 
+    signers: [wallet1], // Fee payer + transaction signer.
+  );
+
+  // Check the updated account balances.
+  final balance1 = await connection.getBalance(address1);
+  final balance2 = await connection.getBalance(address2);
+  print('Account $address1 has an updated balance of $balance1 lamports.');
+  print('Account $address2 has an updated balance of $balance2 lamports.');
 }
 ```
 
-4. Transfer lamports from one account to another using the [System Program](https://docs.solana.com/developing/runtime-facilities/programs#system-program).
+<br>
 
-```dart
-print('Creating accounts...\n');
-
-// Create a new wallet to transfer tokens from.
-final wallet1 = await createWalletWithBalance(connection, amount: 2);
-final address1 = wallet1.publicKey;
-
-// Create a new wallet to transfer tokens to.
-final wallet2 = await createWalletWithBalance(connection, amount: 0);
-final address2 = wallet2.publicKey;
-
-// Check the account balances before making the transfer.
-final balance = await connection.getBalance(wallet1.publicKey);
-print('Account $address1 has an initial balance of $balance lamports.');
-print('Account $address2 has an initial balance of 0 lamports.\n');
-
-// Create a System Program instruction to transfer 1 SOL from [address1] to [address2].
-final transaction = web3.Transaction();
-transaction.add(
-    SystemProgram.transfer(
-        fromPublicKey: address1, 
-        toPublicKey: address2, 
-        lamports: web3.solToLamports(1),
-    ),
-);
-
-// Send the transaction to the cluster and wait for it to be confirmed.
-print('Send and confirm transaction...\n');
-await connection.sendAndConfirmTransaction(
-    transaction, 
-    signers: [wallet1], // Fee payer + transaction signer.
-);
-
-// Check the updated account balances.
-final wallet1balance = await connection.getBalance(wallet1.publicKey);
-final wallet2balance = await connection.getBalance(wallet2.publicKey);
-print('Account $address1 has an updated balance of $wallet1balance lamports.');
-print('Account $address2 has an updated balance of $wallet2balance lamports.');
-```
-
-5. Close the connection.
-
-```dart
-connection.disconnect();
-```
-
-## Bugs and Feature Requests
-
-### Bugs
+## Bugs
 Report a bug by opening an [issue](https://github.com/merigo-labs/solana-web3/issues/new?template=bug_report.md).
 
-### Feature Requests
+## Feature Requests
 Request a feature by raising a [ticket](https://github.com/merigo-labs/solana-web3/issues/new?template=feature_request.md).
 

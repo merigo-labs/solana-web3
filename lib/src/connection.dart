@@ -266,7 +266,6 @@ class Connection extends SolanaWebSocketConnection {
     return (final http.Response response) {
       //print('BULK REPONSE ${response.body}');
       final List<Map<String, dynamic>> bodies = List.from(json.decode(response.body));
-      print('BODIES = $bodies');
       return List.generate(
         bodies.length, 
         (final int i) => JsonRpcResponse.parse(
