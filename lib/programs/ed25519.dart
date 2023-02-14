@@ -144,9 +144,9 @@ class Ed25519Program {
     );
 
     try {
-      final keypair = Keypair.fromSecretKey(privateKey);
+      final keypair = Keypair.fromSecretKeySync(privateKey);
       final publicKey = keypair.publicKey.toBytes();
-      final signature = nacl.sign.detached(message, keypair.secretKey);
+      final signature = nacl.sign.detached.sync(message, keypair.secretKey);
 
       return createInstructionWithPublicKey(
         publicKey: publicKey,

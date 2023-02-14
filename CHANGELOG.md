@@ -1,3 +1,7 @@
+## 0.0.4
+
+* Add async and sync nacl methods.
+
 ## 0.0.3+2
 
 * Update docs.

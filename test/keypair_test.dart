@@ -69,21 +69,21 @@ void main() {
   });
 
   test('generate keypair', () {
-    final Keypair keypair = Keypair.generate();
+    final Keypair keypair = Keypair.generateSync();
     print('NEW KEYPAIR PK ${keypair.publicKey}');
     print('NEW KEYPAIR SK ${keypair.secretKey}');
   });
 
   test('keypair from secret key', () {
-    final Keypair keypair = Keypair.fromSecretKey(secretKey);
+    final Keypair keypair = Keypair.fromSecretKeySync(secretKey);
     print('KEYPAIR FROM SECRET KEY ${keypair.publicKey}');
     assertPublicKey(keypair.publicKey);
     assertSecretKey(keypair.secretKey);
   });
 
   test('keypair from seed', () { 
-    final Uint8List seed = Keypair.fromSecretKey(secretKey).secretKey.sublist(0, 32);
-    final Keypair keypair = Keypair.fromSeed(seed);
+    final Uint8List seed = Keypair.fromSecretKeySync(secretKey).secretKey.sublist(0, 32);
+    final Keypair keypair = Keypair.fromSeedSync(seed);
     print('KEYPAIR FROM SEED ${keypair.publicKey}');
     assertPublicKey(keypair.publicKey);
     assertSecretKey(keypair.secretKey);
@@ -108,7 +108,7 @@ void main() {
   });
 
   test('public key create with seed', () {
-    final Keypair keypair = Keypair.fromSecretKey(secretKey);
+    final Keypair keypair = Keypair.fromSecretKeySync(secretKey);
     final PublicKey pubKey = PublicKey.createWithSeed(
       keypair.publicKey,
       'legoseedphrase12345',
@@ -134,7 +134,7 @@ void main() {
     print('PUBKEY CREATE FIND ADDR BYT ${programAddress.bump}');
   });
   test('public key is on curve', () {
-    final PublicKey pubKey = Keypair.fromSecretKey(secretKey).publicKey;
+    final PublicKey pubKey = Keypair.fromSecretKeySync(secretKey).publicKey;
     final bool isOnCurve = PublicKey.isOnCurve(pubKey);
     print('PUBKEY ADDRESS              ${pubKey.toBase58()}');
     print('PUBKEY IS ON CURVE          $isOnCurve');

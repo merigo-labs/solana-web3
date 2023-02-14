@@ -3,9 +3,8 @@
 
 library nacl;
 
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'keypair.dart';
-import 'package:flutter/material.dart';
 import 'package:pinenacl/tweetnacl.dart' show TweetNaCl;
 import 'package:solana_common/utils/library.dart' show check;
 
@@ -49,29 +48,47 @@ class NaClKeypair {
   /// NaCl `sign.keypair` methods.
   const NaClKeypair();
 
+  /// {@macro NaClKeypair.sync}
+  Future<Ed25519Keypair> call()
+    => compute((_) => sync(), null);
+
+  /// {@template NaClKeypair.sync}
   /// Generates a random keypair.
   /// 
   /// Throws an [AssertionError] if a keypair could not be generated.
-  Ed25519Keypair call() {
-    return fromSeed(TweetNaCl.randombytes(maxSeedLength));
+  /// {@endtemplate}
+  Ed25519Keypair sync() {
+    return fromSeedSync(TweetNaCl.randombytes(maxSeedLength));
   }
+  
+  /// {@macro NaClKeypair.fromSecretKeySync}
+  Future<Ed25519Keypair> fromSecretKey(final Uint8List secretKey)
+    => compute(fromSecretKeySync, secretKey);
 
+  /// {@template NaClKeypair.fromSecretKeySync}
   /// Creates a keypair from a [secretKey] byte array.
   /// 
   /// This method should only be used to recreate a keypair from a previously generated [secretKey]. 
-  /// Generating keypairs from a random seed should be done using the [fromSeed] method.
+  /// Generating keypairs from a random seed should be done using the [fromSeedSync] method.
   /// 
   /// Throws an [AssertionError] if the [secretKey] is invalid.
-  Ed25519Keypair fromSecretKey(final Uint8List secretKey) {
+  /// {@endtemplate}
+  Ed25519Keypair fromSecretKeySync(final Uint8List secretKey) {
     check(secretKey.length == secretKeyLength, 'Invalid secret key length ${secretKey.length}.');
     final Uint8List publicKey = secretKey.sublist(secretKey.length - publicKeyLength);
     return Ed25519Keypair(publicKey: publicKey, secretKey: secretKey);
   }
 
+  /// {@macro NaClKeypair.fromSeedSync}
+  Future<Ed25519Keypair> fromSeed(final Uint8List seed)
+    => compute(fromSeedSync, seed);
+
+  /// {@template NaClKeypair.fromSeedSync}
   /// Creates a keypair from a `32-byte` [seed].
   /// 
   /// Throws an [AssertionError] if the [seed] is invalid.
-  Ed25519Keypair fromSeed(final Uint8List seed) {
+  /// {@endtemplate}
+  Ed25519Keypair fromSeedSync(final Uint8List seed) {
     check(seed.length == maxSeedLength, 'Invalid seed length ${seed.length}.');
     final publicKey = Uint8List(publicKeyLength);
     final secretKey = Uint8List(secretKeyLength)..setAll(0, seed);
@@ -91,8 +108,14 @@ class NaClDetached {
   /// NaCl `sign.detached` methods.
   const NaClDetached();
 
+  /// {@macro NaClDetached.sync}
+  Future<Uint8List> call(final Uint8List message, final Uint8List secretKey)
+    => compute((_) => sync(message, secretKey), null);
+
+  /// {@template NaClDetached.sync}
   /// Signs [message] using the [secretKey] and returns the `signature`.
-  Uint8List call(final Uint8List message, final Uint8List secretKey) {
+  /// {@endtemplate}
+  Uint8List sync(final Uint8List message, final Uint8List secretKey) {
     final Uint8List signedMessage = Uint8List(message.length + signatureLength);
     final int result = TweetNaCl.crypto_sign(
       signedMessage, -1, message, 0, message.length, secretKey,
@@ -101,9 +124,15 @@ class NaClDetached {
     return signedMessage.sublist(0, signatureLength);
   }
 
+  /// {@macro NaClDetached.verifySync}
+  Future<bool> verify(final Uint8List message, final Uint8List signature, final Uint8List publicKey)
+    => compute((_) => verifySync(message, signature, publicKey), null);
+
+  /// {@template NaClDetached.verifySync}
   /// Returns true if the [signature] was derived by signing the [message] using [publicKey]'s 
   /// `secret key`.
-  bool verify(final Uint8List message, final Uint8List signature, final Uint8List publicKey) {
+  /// {@endtemplate}
+  bool verifySync(final Uint8List message, final Uint8List signature, final Uint8List publicKey) {
     check(signature.length == signatureLength, 'Invalid signature length.');
     final Uint8List signedMessage = Uint8List.fromList(signature + message);
     final Uint8List buffer = Uint8List(signedMessage.length);

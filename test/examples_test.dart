@@ -26,7 +26,7 @@ void main() {
     required final int amount, 
   }) async {
     // Create a new wallet and get its public address.
-    final wallet = web3.Keypair.generate();
+    final wallet = web3.Keypair.generateSync();
     final address = wallet.publicKey;
 
     // Airdrop some test tokens to the wallet address.
@@ -93,7 +93,7 @@ void main() {
     print('Create a new account...\n');
 
     // Create a new wallet (with zero balance).
-    final wallet = web3.Keypair.generate();
+    final wallet = web3.Keypair.generateSync();
     final address = wallet.publicKey;
 
     /// The amount sent to [address].

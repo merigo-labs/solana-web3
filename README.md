@@ -17,7 +17,7 @@ and the Flutter guide for
 
 <br>
 
-<img src="https://github.com/merigo-labs/example-apps/blob/master/docs/images/solana_wallet_provider_authorize.gif?raw=true" alt="Authorize App" height="400">
+<img src="https://github.com/merigo-labs/example-apps/blob/master/docs/images/solana_wallet_provider_authorize.gif?raw=true" alt="Authorize App" height="600">
 <br>
 
 *Screenshot of [solana_wallet_provider](https://pub.dev/packages/solana_wallet_provider)*

@@ -20,8 +20,8 @@ void main() {
 
   test('error', () async {
     try {
-      final sender = web3.Keypair.generate();
-      final receiver = web3.Keypair.generate();
+      final sender = web3.Keypair.generateSync();
+      final receiver = web3.Keypair.generateSync();
       final tx = web3.Transaction()
         ..add(
           SystemProgram.transfer(

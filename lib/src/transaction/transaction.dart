@@ -664,7 +664,7 @@ class Transaction extends Serializable {
   void _partialSign(final Message message, final Iterable<Signer> signers) {
     final signData = message.serialize().asUint8List();
     for (final Signer signer in signers) {
-      final Uint8List signature = nacl.sign.detached(signData, signer.secretKey);
+      final Uint8List signature = nacl.sign.detached.sync(signData, signer.secretKey);
       _addSignature(signer.publicKey, Buffer.fromUint8List(signature));
     }
   }
@@ -702,7 +702,10 @@ class Transaction extends Serializable {
           return false;
         }
       } else {
-        if (!nacl.sign.detached.verify(message.asUint8List(), signature, pair.publicKey.toBytes())) {
+        if (!nacl.sign.detached.verifySync(
+          message.asUint8List(), 
+          signature, pair.publicKey.toBytes()
+        )) {
           return false;
         }
       }

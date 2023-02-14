@@ -12,7 +12,7 @@ void main(final List<String> _arguments) async {
   print('Creating accounts...\n');
 
   // Create a wallet to transfer tokens from.
-  final wallet1 = web3.Keypair.generate();
+  final wallet1 = web3.Keypair.generateSync();
   final address1 = wallet1.publicKey;
 
   // Credit the wallet that will be sending the tokens.
@@ -22,7 +22,7 @@ void main(final List<String> _arguments) async {
   );
 
   // Create a wallet to transfer tokens to.
-  final wallet2 = web3.Keypair.generate();
+  final wallet2 = web3.Keypair.generateSync();
   final address2 = wallet2.publicKey;
 
   // Check the account balances before making the transfer.
