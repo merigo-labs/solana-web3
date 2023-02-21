@@ -1,3 +1,7 @@
+## 0.0.5
+
+* Prepare for web support.
+
 ## 0.0.4
 
 * Add async and sync nacl methods.

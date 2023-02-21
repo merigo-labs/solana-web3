@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'dart:convert' show base64;
+import 'dart:convert' show base64, utf8;
 import 'dart:typed_data' show ByteBuffer, Uint8List;
 import 'models/program_address.dart';
 import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
@@ -138,7 +138,7 @@ class PublicKey extends Serializable {
     final String seed,
     final PublicKey programId,
   ) {
-    final Uint8List seedBytes = Uint8List.fromList(seed.codeUnits);
+    final Uint8List seedBytes = Uint8List.fromList(utf8.encode(seed));
     final List<int> buffer = publicKey.toBytes() + seedBytes + programId.toBytes();
     return PublicKey.fromUint8List(sha256.convert(buffer).bytes);
   }
@@ -160,7 +160,7 @@ class PublicKey extends Serializable {
     }
 
     buffer..addAll(programId.toBytes())
-          ..addAll('ProgramDerivedAddress'.codeUnits);
+          ..addAll(utf8.encode('ProgramDerivedAddress'));
 
     final PublicKey publicKey = PublicKey.fromUint8List(sha256.convert(buffer).bytes);
 

@@ -2,7 +2,6 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-
 import 'package:solana_common/extensions/num.dart';
 import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/types.dart' show u64;
@@ -18,7 +17,6 @@ import '../src/keypair.dart';
 import '../src/sysvar.dart';
 import '../src/transaction/transaction.dart';
 import '../src/transaction/constants.dart';
-import '../types/commitment.dart';
 
 
 /// Loader
@@ -185,7 +183,7 @@ class Loader {
       );
 
       // Delay between sends in an attempt to reduce rate limit errors
-      if (connection.cluster.domain.contains('solana.com')) {
+      if (connection.cluster.host.contains('solana.com')) {
         const int requestsPerSecond = 4;
         await Future.delayed(const Duration(seconds: requestsPerSecond));
       }

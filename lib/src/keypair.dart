@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert' show utf8;
 import 'package:flutter/foundation.dart';
 import 'nacl.dart' as nacl;
 import 'public_key.dart';
@@ -100,7 +101,7 @@ class Keypair implements Signer {
     final Ed25519Keypair keypair = nacl.sign.keypair.fromSecretKeySync(secretKey);
     if (!skipValidation) {
       const String message = 'solana/web3.dart';
-      final Uint8List signData = Uint8List.fromList(message.codeUnits);
+      final Uint8List signData = Uint8List.fromList(utf8.encode(message));
       final Uint8List signature = nacl.sign.detached.sync(signData, keypair.secretKey);
       if (!nacl.sign.detached.verifySync(signData, signature, keypair.publicKey)) {
         throw const KeypairException('Invalid secret key.');

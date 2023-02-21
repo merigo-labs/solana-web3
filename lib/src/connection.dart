@@ -144,7 +144,7 @@ class Connection extends SolanaWebSocketConnection {
   @override
   void onWebSocketData(final dynamic data) {
     // print("\n--------------------------------------------------------------------------------");
-    // print("[ON SOCKET DATA]         $data");
+    // print("[ON SOCKET DATA] (${data.runtimeType}) $data");
     // print("--------------------------------------------------------------------------------\n");
     if (data is String && data.isNotEmpty) {
       return _onWebSocketData(json.decode(data));
@@ -317,7 +317,7 @@ class Connection extends SolanaWebSocketConnection {
     //_debugRequest(body);
     final Future<http.Response> request = client.post(
       cluster.http(),
-      body: json.encode(body).codeUnits,
+      body: utf8.encode(json.encode(body)),
       headers: (config?.headers ?? const JsonRpcHttpHeaders()).toJson(),
     );
     final Duration? timeout = config?.timeout;

@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert' show utf8;
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:solana_web3/src/keypair.dart';
@@ -119,7 +120,7 @@ void main() {
   });
   test('public key create program address', () {
     final PublicKey pubKey = PublicKey.createProgramAddress(
-      ['seedPhrase12345'.codeUnits],
+      [utf8.encode('seedPhrase12345')],
       PublicKey.zero()
     );
     print('PUBKEY CREATE PROG ADDR B58 ${pubKey.toBase58()}');
@@ -127,7 +128,7 @@ void main() {
   });
   test('public key find program address', () {
     final ProgramAddress programAddress = PublicKey.findProgramAddress(
-      ['abcde'.codeUnits],
+      [utf8.encode('abcde')],
       PublicKey.zero(),
     );
     print('PUBKEY CREATE FIND ADDR B58 ${programAddress.publicKey.toBase58()}');
