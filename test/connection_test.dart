@@ -115,7 +115,8 @@ void main() {
 
   /// Connection
   test('connection', () {
-    assert(cluster.http == connection.cluster.http);
+    expect(cluster.uri(), connection.cluster.uri());
+    expect(cluster.toWebSocket().uri(), connection.wsCluster.uri());
   });
 
   /// Health

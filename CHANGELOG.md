@@ -1,3 +1,12 @@
+## 0.0.6+1
+
+* Update dependencies.
+
+## 0.0.6
+
+* Fix confirm transaction.
+* Add nonce account methods.
+
 ## 0.0.5
 
 * Prepare for web support.

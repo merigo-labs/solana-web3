@@ -2,8 +2,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_common/utils/types.dart' show u64;
 import 'package:solana_common/borsh/borsh.dart';
+import 'package:solana_common/utils/types.dart' show u64;
 import '../src/mixins/data_serializable_mixin.dart';
 
 

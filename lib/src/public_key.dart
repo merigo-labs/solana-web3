@@ -3,14 +3,14 @@
 
 import 'dart:convert' show base64, utf8;
 import 'dart:typed_data' show ByteBuffer, Uint8List;
-import 'models/program_address.dart';
-import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
-import 'nacl_low_level.dart' as nacl_low_level;
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:solana_common/extensions/big_int.dart';
 import 'package:solana_common/models/serializable.dart';
 import 'package:solana_common/utils/convert.dart' show base58;
-import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/utils.dart' show check;
+import 'nacl.dart' as nacl show publicKeyLength, maxSeedLength;
+import 'nacl_low_level.dart' as nacl_low_level;
+import 'models/program_address.dart';
 import 'programs/associated_token/program.dart';
 import 'programs/token/program.dart';
 import '../exceptions/ed25519_exception.dart';

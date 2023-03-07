@@ -5,7 +5,6 @@ import 'dart:convert' show base64;
 import 'package:solana_common/borsh/borsh.dart';
 import 'package:solana_web3/programs/stake.dart';
 import 'package:solana_web3/rpc_models/index.dart';
-import 'account_info.dart';
 
 
 /// Stake Account

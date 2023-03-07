@@ -95,7 +95,7 @@ class Message extends Serializable {
   /// 
   ///   and [MessageHeader.numRequiredSignatures] = `2`,
   /// 
-  ///   then [Transaction.signatures] must = `['message signed by pk1', 'message signed by pk0']`
+  ///   then [Transaction.signatures] must be = `['message signed by pk1', 'message signed by pk0']`
   ///
   final List<PublicKey> accountKeys;
 
@@ -238,7 +238,7 @@ class Message extends Serializable {
     return Message.fromBuffer(Buffer.fromList(byteArray));
   }
 
-  /// Decodes a message into a [Message] instance.
+  /// Decodes a `base-64` encoded string into a [Message] instance.
   factory Message.fromBase64(final String encoded)
     => Message.fromList(base64.decode(encoded));
 
@@ -291,5 +291,6 @@ class Message extends Serializable {
   }
 
   @override
-  String toString() => serialize().getString(BufferEncoding.base64);
+  String toString([final BufferEncoding encoding = BufferEncoding.base64]) 
+    => serialize().getString(encoding);
 }

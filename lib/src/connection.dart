@@ -4,10 +4,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:solana_common/config/cluster.dart';
 import 'package:solana_common/extensions/future.dart';
 import 'package:solana_common/exceptions/json_rpc_exception.dart';
@@ -22,22 +20,27 @@ import 'package:solana_common/protocol/json_rpc_subscribe_response.dart';
 import 'package:solana_common/protocol/json_rpc_unsubscribe_response.dart';
 import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/convert.dart' as convert show base58, list;
-import 'package:solana_common/utils/library.dart' as utils show cast, check;
+import 'package:solana_common/utils/utils.dart' as utils show cast, check;
 import 'package:solana_common/utils/types.dart' show JsonRpcListParser, JsonRpcMapParser, 
   JsonRpcParser, i64, u64, usize;
 import 'package:solana_common/web_socket/solana_web_socket_connection.dart';
 import 'package:solana_common/web_socket/web_socket_exchange_manager.dart';
 import 'package:solana_common/web_socket/web_socket_subscription_manager.dart';
+import 'package:solana_web3/exceptions/transaction_block_height_exceeded_exception.dart';
+import 'package:solana_web3/exceptions/transaction_nonce_invalid_exception.dart';
+import 'package:solana_web3/rpc_config/get_nonce_account_config.dart';
 import 'package:solana_web3/rpc_config/get_stake_minimum_delegation.dart';
-
-import '../rpc_config/get_parsed_account_info_config.dart';
-import 'nacl.dart' as nacl show signatureLength;
+import 'package:solana_web3/rpc_models/nonce_with_min_context_slot.dart';
 import 'keypair.dart';
 import 'message/message.dart';
 import 'models/logs_filter.dart';
+import 'nacl.dart' as nacl show signatureLength;
+import 'nonce_account.dart';
 import 'public_key.dart';
+import 'timing.dart';
 import 'transaction/transaction.dart';
 import '../exceptions/transaction_exception.dart';
+import '../rpc_config/get_parsed_account_info_config.dart';
 import '../rpc_config/index.dart';
 import '../rpc_models/index.dart';
 import '../types/accounts_filter.dart';
@@ -55,14 +58,13 @@ import '../types/transaction_encoding.dart';
 class Connection extends SolanaWebSocketConnection {
 
   /// {@template solana_web3.Connection}
-  /// Creates a connection to the [cluster].
   /// 
-  /// Web socket method calls are made to the [Cluster.wsDomain], which defaults to 
-  /// [Cluster.domain]. 
+  /// Creates a connection to [cluster].
+  /// 
+  /// Web socket method calls are made to [wsCluster], which defaults to [cluster]. 
   /// 
   /// The [commitment] configuration will be set as the default value for all methods that accept a 
-  /// commitment parameter. Use the `config` parameter of a method call to override the default 
-  /// value.
+  /// commitment parameter. Use a method call's `config` parameter to override the default value.
   /// 
   /// ```
   /// final connection = Connection(Cluster.mainnet);
@@ -81,18 +83,23 @@ class Connection extends SolanaWebSocketConnection {
   /// TODO: Auto connect / resubscribe when the devices connection status changes.
   Connection(
     this.cluster, { 
+    final Cluster? wsCluster,
     this.commitment = Commitment.confirmed,
-  }): super() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-      _onConnectivityChanged
-    );
-  }
+  }): wsCluster = wsCluster ?? cluster.toWebSocket(),
+    super() {
+        _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
+        _onConnectivityChanged
+      );
+    }
 
   /// A persistent connection.
   final http.Client client = http.Client();
 
-  /// The cluster to connect to.
+  /// The HTTP cluster.
   final Cluster cluster;
+
+  /// The WS cluster.
+  final Cluster wsCluster;
 
   /// The default commitment level (applied to a subset of method invocations).
   final Commitment? commitment;
@@ -112,13 +119,16 @@ class Connection extends SolanaWebSocketConnection {
   /// Returns true if there's at least one subscriber.
   bool get hasSubscribers => webSocketSubscriptionManager.isNotEmpty;
 
+  @override
+  Duration get exchangeTimeout => const Duration(seconds: 60);
+
   /// Disposes of all the acquired resources.
   void disconnect() {
     client.close();
     socket.disconnect().ignore();
     webSocketExchangeManager.dispose();
-    webSocketSubscriptionManager.dispose();
-    _connectivitySubscription.cancel();
+    webSocketSubscriptionManager.dispose().ignore();
+    _connectivitySubscription.cancel().ignore();
   }
 
   /// Reconnect the web socket.
@@ -127,7 +137,7 @@ class Connection extends SolanaWebSocketConnection {
       || result == ConnectivityResult.mobile
       || result == ConnectivityResult.wifi) {
       if (!socket.isConnected && hasSubscribers) {
-        socket.connect(cluster.ws()).ignore(); // This will call onConnect.
+        socket.connect(wsCluster.uri()).ignore(); // This will call onConnect.
       }
     }
   }
@@ -247,7 +257,7 @@ class Connection extends SolanaWebSocketConnection {
     final JsonRpcParser<T, U> parse,
   ) {
     return (final http.Response response) {
-      //_debugResponse(response);
+      // _debugResponse(response);
       final Map<String, dynamic> body = json.decode(response.body);
       final JsonRpcResponse<T> rpc = JsonRpcResponse.parse<T, U>(body, parse);
       return rpc.isSuccess ? Future.value(rpc) : Future.error(rpc.error!);
@@ -314,9 +324,9 @@ class Connection extends SolanaWebSocketConnection {
   /// The [config] object can be used to set the request's [JsonRpcRequestConfig.headers] and 
   /// [JsonRpcRequestConfig.timeout] duration.
   Future<http.Response> _post<T, U>(final Object body, { final JsonRpcRequestConfig? config }) {
-    //_debugRequest(body);
+    // _debugRequest(body);
     final Future<http.Response> request = client.post(
-      cluster.http(),
+      cluster.uri(),
       body: utf8.encode(json.encode(body)),
       headers: (config?.headers ?? const JsonRpcHttpHeaders()).toJson(),
     );
@@ -422,7 +432,7 @@ class Connection extends SolanaWebSocketConnection {
 
   /// Get the [cluster]'s health status.
   Future<HealthStatus> health() async {
-    final http.Response response = await client.get(cluster.http('health'));
+    final http.Response response = await client.get(cluster.uri('health'));
     return HealthStatus.fromName(response.body);
   }
 
@@ -935,6 +945,34 @@ class Connection extends SolanaWebSocketConnection {
     return getMultipleAccountsRaw(accounts, config: config).unwrap();
   }
 
+  /// Returns the account information for a nonce account.
+  Future<JsonRpcContextResponse<NonceAccount?>> getNonceAccountRaw(
+    final PublicKey nonceAccount, {
+    final GetNonceAccountConfig? config,
+  }) async {
+    final response = await getAccountInfoRaw(nonceAccount, config: config);
+    final JsonRpcContextResult<AccountInfo?>? result = response.result;
+    return JsonRpcContextResponse(
+      jsonrpc: response.jsonrpc,
+      error: response.error,
+      id: response.id,
+      result: result != null 
+        ? JsonRpcContextResult(
+            context: result.context, 
+            value: NonceAccount.tryFromAccountInfo(result.value),
+          )
+        : null,
+    );
+  }
+
+  /// Returns the account information for a nonce account.
+  Future<NonceAccount?> getNonceAccount(
+    final PublicKey nonceAccount, {
+    final GetNonceAccountConfig? config,
+  }) async {
+    return getNonceAccountRaw(nonceAccount, config: config).optional();
+  }
+
   /// Returns all accounts owned by the provided program Pubkey.
   Future<JsonRpcResponse<List<ProgramAccount>>> getProgramAccountsRaw(
     final PublicKey program, {
@@ -998,7 +1036,7 @@ class Connection extends SolanaWebSocketConnection {
     return getSignaturesForAddressRaw(address, config: config).unwrap();
   }
 
-  /// Returns the statuses of a list of signatures. 
+  /// Returns the statuses of a [signatures]. 
   /// 
   /// Unless the [GetSignatureStatusesConfig.searchTransactionHistory] configuration parameter is 
   /// set to `true`, this method only searches the recent status cache of signatures, which retains 
@@ -1012,7 +1050,7 @@ class Connection extends SolanaWebSocketConnection {
     return _request(Method.getSignatureStatuses, [signatures], parse, config: defaultConfig);
   }
 
-  /// Returns the statuses of a list of signatures. 
+  /// Returns the statuses of [signatures]. 
   /// 
   /// Unless the [GetSignatureStatusesConfig.searchTransactionHistory] configuration parameter is 
   /// set to `true`, this method only searches the recent status cache of signatures, which retains 
@@ -1022,6 +1060,19 @@ class Connection extends SolanaWebSocketConnection {
     final GetSignatureStatusesConfig? config,
   }) {
     return getSignatureStatusesRaw(signatures, config: config).unwrap();
+  }
+
+  /// Returns the status of [signature]. 
+  /// 
+  /// Unless the [GetSignatureStatusesConfig.searchTransactionHistory] configuration parameter is 
+  /// set to `true`, this method only searches the recent status cache of signatures, which retains 
+  /// statuses for all active slots plus MAX_RECENT_BLOCKHASHES rooted slots.
+  Future<SignatureStatus?> getSignatureStatus(
+    final String signature, {
+    final GetSignatureStatusesConfig? config,
+  }) async {
+    final List<SignatureStatus?> statuses = await getSignatureStatuses([signature], config: config);
+    return statuses.isNotEmpty ? statuses.first : null;
   }
 
   /// Returns the slot that has reached the given or default [GetSlotConfig.commitment] level.
@@ -1655,70 +1706,174 @@ class Connection extends SolanaWebSocketConnection {
     return signature;
   }
 
+  /// Returns the current block height of the node or -1 if the request fails.
+  Future<int> _checkBlockHeight({
+    required final CommitmentAndMinContextSlotConfig? config,
+  }) async {
+    try {
+      return await getBlockHeight(config: config);
+    } catch (_) {
+      return -1;
+    }
+  }
+
   /// Returns an error when [blockhash.lastValidBlockHeight] has been exceeded.
-  Future<WebSocketSubscription<SignatureNotification>> _confirmTransactionBlockHeightExceeded(
+  Future<SignatureNotification> _confirmTransactionBlockHeightExceeded(
     final BlockhashWithExpiryBlockHeight blockhash, 
     final Commitment? commitment,
   ) async {
     final config = GetBlockHeightConfig(commitment: commitment);
-    u64 blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
+    u64 blockHeight = await _checkBlockHeight(config: config);
     while (blockHeight <= blockhash.lastValidBlockHeight) {
-      blockHeight = await getBlockHeight(config: config).catchError((_) => -1);
       await Future.delayed(const Duration(seconds: 1));
+      blockHeight = await _checkBlockHeight(config: config);
     }
-    return Future.error('Transaction block height exceeded.');
+    return Future.error(
+      const TransactionBlockHeightExceededException(
+        'Transaction signature block height exceeded.',
+      ),
+    );
   }
 
   /// Returns an error when the timeout duration elapsed.
-  Future<WebSocketSubscription<SignatureNotification>> _confirmTransactionTimeout<T>(
+  Future<SignatureNotification> _confirmTransactionTimeout<T>(
     final Commitment? commitment,
   ) {
-    final Duration timeLimit = Duration(
-      seconds: commitment == null || commitment == Commitment.finalized ? 60 : 30,
-    );
     return Future.delayed(
-      timeLimit,
-      () => Future.error(TimeoutException('Transaction signature confirmation timed out.')),
+      Duration(
+        seconds: commitment == null || commitment == Commitment.finalized ? 60 : 30,
+      ),
+      () => Future.error(
+        TimeoutException('Transaction signature confirmation timed out.'),
+      ),
     );
   }
 
-  /// Confirms a transaction.
+  /// Returns an error when the `nonce` information has changed.
+  Future<SignatureNotification> _confirmTransactionNonceInvalid(
+    final NonceWithMinContextSlot nonce, 
+    final Commitment? commitment, { 
+    final int maxAttempts = 10
+  }) async {
+    for(int i = 0; i < maxAttempts; ++i) {
+      try {
+        final nonceResponse = await getNonceAccountRaw(
+          nonce.nonceAccount, 
+          config: GetNonceAccountConfig(
+            commitment: commitment,
+            minContextSlot: nonce.minContextSlot,
+          ),
+        );
+        if (nonce.nonce != nonceResponse.result?.value?.nonce) {
+          return Future.error(
+            TransactionNonceInvalidException(
+              'Transaction signature nonce invalid.',
+              slot: nonceResponse.result?.context.slot,
+            ),
+          );
+        }
+      } catch (_) {
+        // Try again...
+      }
+      await Future.delayed(const Duration(seconds: 2));
+    }
+
+    return Future.error(TimeoutException('Transaction signature nonce timed out.'));
+  }
+
+  /// Confirms a transaction by subscribing to receive a [signature] notification when the 
+  /// transaction has been confirmed.
   Future<SignatureNotification> confirmTransaction(
     final TransactionSignature signature, { 
-    final BlockhashWithExpiryBlockHeight? blockhash, 
     final ConfirmTransactionConfig? config, 
+    final BlockhashWithExpiryBlockHeight? blockhash, 
+    final NonceWithMinContextSlot? nonce,
   }) async {
-
-    late Uint8List decodedSignature;
-
+    assert(
+      blockhash == null || nonce == null, 
+      'Confirm transaction by [blockhash] or [nonce]',
+    );
+    
     try {
-      decodedSignature = convert.base58.decode(signature);
+      final Uint8List decodedSignature = convert.base58.decode(signature);
+      utils.check(decodedSignature.length == nacl.signatureLength, 'Invalid signature length.');
+    } on AssertionError {
+      rethrow;
     } catch (error) {
       throw TransactionException('Failed to decode base58 signature $signature.');
     }
 
-    utils.check(decodedSignature.length == nacl.signatureLength, 'Invalid signature length.');
-
     final Commitment? commitment = config?.commitment ?? this.commitment;
 
-    final Future<WebSocketSubscription<SignatureNotification>> futureSubscription = signatureSubscribe(
-      signature, 
-      config: SignatureSubscribeConfig(commitment: commitment),
+    final WebSocketSubscription<SignatureNotification> subscription = await signatureSubscribe(
+      signature,
+      config: SignatureSubscribeConfig(
+        commitment: commitment,
+        timeout: const Duration(seconds: 60),
+      ),
     );
 
-    final WebSocketSubscription<SignatureNotification> subscription = await Future.any([
-      futureSubscription,
-      blockhash != null 
-        ? _confirmTransactionBlockHeightExceeded(blockhash, commitment)
-        : _confirmTransactionTimeout(commitment),
+    final SignatureNotification notification = await Future.any([
+      subscription.asFuture(),
+      if (nonce != null)
+        _confirmTransactionNonceInvalid(nonce, commitment)
+      else if (blockhash != null)
+        _confirmTransactionBlockHeightExceeded(blockhash, commitment)
+      else
+        _confirmTransactionTimeout(commitment),
     ]);
 
-    return subscription.asFuture().then(
-      (final SignatureNotification notification) {
-        return notification.err != null 
-          ? Future.error(notification.err) 
-          : Future.value(notification);
-      }
+    if (notification.err is TransactionNonceInvalidException) {
+      return confirmSignatureStatus(
+        signature, 
+        commitment: commitment, 
+        minContext: notification.err.slot,
+      );
+    }
+    
+    return notification.err != null 
+      ? Future.error(notification.err) 
+      : Future.value(notification);
+  }
+
+  /// Confirms a transaction by fetching the status of [signature] and comparing its 
+  /// `confirmationStatus` to [commitment]. 
+  /// 
+  /// The [signature] is considered confirmed if it has a `confirmationStatus` level >= to 
+  /// [commitment] and the slot in which it was processed is >= [minContext].
+  Future<SignatureNotification> confirmSignatureStatus(
+    final TransactionSignature signature, { 
+    final GetSignatureStatusesConfig? config, 
+    final Commitment? commitment,
+    final int? minContext,
+  }) async {
+    SignatureStatus? status = await getSignatureStatus(signature, config: config);
+    while (status != null && minContext != null && status.slot < minContext) {
+      final int slots = minContext - status.slot;
+      final int delay = slots * millisecondsPerSlot.floor();
+      await Future.delayed(Duration(milliseconds: delay));
+      status = await getSignatureStatus(signature, config: config);
+    }
+
+    if (status == null) {
+      return const SignatureNotification(
+        err: TransactionException(
+          'Transaction signature status not found.',
+        ),
+      );
+    }
+
+    if (status.err != null) {
+      return SignatureNotification(
+        err: status.err,
+      );
+    }
+
+    final Commitment configCommitment = commitment ?? this.commitment ?? Commitment.finalized;
+    return SignatureNotification(
+      err: configCommitment.compareTo(status.confirmationStatus) > 0
+        ? const TransactionException('Transaction signature status has not been confirmed.')
+        : null,
     );
   }
 
@@ -1735,7 +1890,7 @@ class Connection extends SolanaWebSocketConnection {
   Future<JsonRpcResponse<T>> _webSocketExchange<T>(
     final JsonRpcRequest request, {
     final JsonRpcRequestConfig? config,
-  }) => webSocketRequest(cluster.ws(), request, config: config);
+  }) => webSocketRequest(wsCluster.uri(), request, config: config);
   // async {
 
   //   // The subscription's request/response cycle.
@@ -1743,7 +1898,7 @@ class Connection extends SolanaWebSocketConnection {
 
   //   try {
   //     // Get the web socket connection.
-  //     final WebSocket connection = await socket.connect(cluster.ws());
+  //     final WebSocket connection = await socket.connect(wsCluster.uri());
       
   //     // Get the existing request/response cycle (if it exists).
   //     exchange = _webSocketExchangeManager.get(request.hash());
@@ -1872,7 +2027,7 @@ class Connection extends SolanaWebSocketConnection {
   //     requests.add(JsonRpcRequest(method.name, params: params, id: config.id));
   //   }
   //   final List<JsonRpcSubscribeResponse> responses = await webSocketBulkRequest<int>(
-  //     cluster.ws(), requests, config: config, eagerError: true
+  //     wsCluster.uri(), requests, config: config, eagerError: true
   //   );
   //   return responses.map((e) => _webSocketSubscriptionManager.subscribe<T>(e)).toList(growable: false);
   // }

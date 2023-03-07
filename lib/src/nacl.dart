@@ -6,7 +6,7 @@ library nacl;
 import 'package:flutter/foundation.dart';
 import 'keypair.dart';
 import 'package:pinenacl/tweetnacl.dart' show TweetNaCl;
-import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/utils.dart' show check;
 
 
 /// NaCl

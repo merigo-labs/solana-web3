@@ -6,7 +6,7 @@
 
 import 'dart:typed_data';
 import 'package:solana_common/utils/buffer.dart';
-import 'package:solana_common/utils/library.dart' as utils show check;
+import 'package:solana_common/utils/utils.dart' as utils show check;
 
 
 /// Layout Mixin

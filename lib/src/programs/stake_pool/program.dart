@@ -2,22 +2,15 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/buffer.dart';
 import 'package:solana_common/utils/types.dart';
-import 'package:solana_web3/programs/program.dart';
-import 'package:solana_web3/rpc_models/index.dart';
-import 'package:solana_web3/solana_web3.dart';
-import 'package:solana_web3/src/programs/token_metadata/program.dart';
-import '../../../src/models/program_address.dart';
-import '../../../src/public_key.dart';
-import '../../../src/sysvar.dart';
-import '../../../src/transaction/transaction.dart';
-import '../stake/program.dart';
-import '../../../programs/system.dart';
-import '../token/program.dart';
 import 'instruction.dart';
 import 'state.dart';
+import '../stake/program.dart';
+import '../token/program.dart';
+import '../token_metadata/program.dart';
+import '../../../programs/program.dart';
+import '../../../programs/system.dart';
+import '../../../solana_web3.dart';
 
 
 /// Stake Pool Program

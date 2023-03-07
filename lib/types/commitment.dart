@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/utils/library.dart' as utils show tryCall;
+import 'package:solana_common/utils/utils.dart' as utils show tryCall;
 
 
 /// Commitments
@@ -36,18 +36,38 @@ import 'package:solana_common/utils/library.dart' as utils show tryCall;
 /// ```
 enum Commitment {
 
-  /// The node will query the most recent block confirmed by supermajority of the cluster as having 
-  /// reached maximum lockout, meaning the cluster has recognised this block as finalised.
-  finalized,
+  /*************************************************************************************************
+   * KEEP VARIANTS ORDERED BY BLOCK FINALITY (LEAST TO MOST)
+  *************************************************************************************************/
+
+  /// The node will query its most recent block. Note that the block may still be skipped by the 
+  /// cluster.
+  processed,
 
   /// The node will query the most recent block that has been voted on by supermajority of the 
   /// cluster. It incorporates votes from gossip and replay.
   confirmed,
 
-  /// the node will query its most recent block. Note that the block may still be skipped by the 
-  /// cluster.
-  processed,
+  /// The node will query the most recent block confirmed by supermajority of the cluster as having 
+  /// reached maximum lockout, meaning the cluster has recognised this block as finalised.
+  finalized,
   ;
+
+  /// Compares `this` to `other`.
+  /// 
+  /// Returns a negative number if this is less than other, zero if they are equal, and a positive 
+  /// number if this is greater than other.
+  /// 
+  /// Examples:
+  /// ```
+  /// print(Commitment.finalized.compareTo(Commitment.processed));  // => 2
+  /// print(Commitment.finalized.compareTo(Commitment.confirmed));  // => 1
+  /// print(Commitment.finalized.compareTo(Commitment.finalized));  // => 0
+  /// print(Commitment.processed.compareTo(Commitment.processed));  // => 0
+  /// print(Commitment.processed.compareTo(Commitment.confirmed));  // => -1
+  /// print(Commitment.processed.compareTo(Commitment.finalized));  // => -2
+  /// ```
+  int compareTo(final Commitment? other) => index - (other?.index ?? -1);
 
   /// Returns the enum variant where [EnumName.name] is equal to [name].
   /// 

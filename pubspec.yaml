@@ -1,8 +1,8 @@
 name: solana_web3
 description: Dart implementation of Solana's JSON RPC API with support for common Programs.
-version: 0.0.5
 repository: https://github.com/merigo-labs/solana-web3
 issue_tracker: https://github.com/merigo-labs/solana-web3/issues/new/choose
+version: 0.0.6+1
 
 environment:
   sdk: ">=2.17.3 <3.0.0"
@@ -12,10 +12,11 @@ dependencies:
   flutter:
     sdk: flutter
   connectivity_plus: ^3.0.3
+  crypto: ^3.0.2
   http: ^0.13.5
   pinenacl: ^0.5.1
-  solana_common: #^0.0.2+1
-    path: ../solana_common
+  solana_common: ^0.0.4+1
+    # path: ../solana_common
     
 dev_dependencies:
   flutter_test:

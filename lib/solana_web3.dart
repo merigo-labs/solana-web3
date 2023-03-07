@@ -12,9 +12,10 @@ import 'package:solana_common/extensions/num.dart';
 // solana_common
 export 'package:solana_common/borsh/borsh.dart';
 export 'package:solana_common/config/cluster.dart';
-export 'package:solana_common/exceptions/index.dart';
+export 'package:solana_common/exceptions/json_rpc_exception.dart';
+export 'package:solana_common/exceptions/solana_exception.dart';
+export 'package:solana_common/exceptions/subscription_exception.dart';
 export 'package:solana_common/extensions/num.dart';
-export 'package:solana_common/mixins/serializable_mixin.dart';
 export 'package:solana_common/models/serializable.dart';
 export 'package:solana_common/protocol/json_rpc_context_response.dart';
 export 'package:solana_common/protocol/json_rpc_context_result.dart';

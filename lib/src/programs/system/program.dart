@@ -243,9 +243,9 @@ class SystemProgram extends Program {
   /// Generates a transaction that creates a new Nonce account.
   /// 
   /// ### Keys:
-  /// - [fromPublicKey] The account that will transfer lamports to the created nonce account.
-  /// - [noncePublicKey] The public key of the created nonce account.
-  /// - [authorizedPublicKey] The public key to set as the authority of the created nonce account.
+  /// - `[s, w]` [fromPublicKey] The account that will transfer lamports to the created nonce account.
+  /// - `[s, w]` [noncePublicKey] The public key of the created nonce account.
+  /// - `[]` [authorizedPublicKey] The public key to set as the authority of the created nonce account.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer to the created nonce account.
@@ -261,7 +261,7 @@ class SystemProgram extends Program {
           fromPublicKey: fromPublicKey,
           newAccountPublicKey: noncePublicKey,
           lamports: lamports,
-          space: nonceAccountLength.toBigInt(),
+          space: NonceAccount.length.toBigInt(),
           programId: SystemProgram.programId,
         ),
       )
@@ -276,9 +276,9 @@ class SystemProgram extends Program {
   /// Generates a transaction that creates a new Nonce account.
   /// 
   /// ### Keys: 
-  /// - [fromPublicKey] The account that will transfer lamports to the created nonce account.
-  /// - [noncePublicKey] The public key of the created nonce account.
-  /// - [authorizedPublicKey] The public key to set as the authority of the created nonce account.
+  /// - `[s, w]` [fromPublicKey] The account that will transfer lamports to the created nonce account.
+  /// - `[s, w]` [noncePublicKey] The public key of the created nonce account.
+  /// - `[]` [authorizedPublicKey] The public key to set as the authority of the created nonce account.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer to the created nonce account.
@@ -300,7 +300,7 @@ class SystemProgram extends Program {
           basePublicKey: basePublicKey,
           seed: seed,
           lamports: lamports,
-          space: nonceAccountLength.toBigInt(),
+          space: NonceAccount.length.toBigInt(),
           programId: SystemProgram.programId,
         ),
       )
@@ -315,7 +315,7 @@ class SystemProgram extends Program {
   /// Generates an instruction to initialize a Nonce account.
   /// 
   /// ### Keys:
-  /// - [noncePublicKey] The nonce account.
+  /// - `[w]` [noncePublicKey] The nonce account.
   /// 
   /// ### Data:
   /// - [authorizedPublicKey] The public key of the nonce authority.
@@ -343,8 +343,8 @@ class SystemProgram extends Program {
   /// Generates an instruction to advance the nonce in a Nonce account.
   /// 
   /// ### Keys:
-  /// - [noncePublicKey] The nonce account.
-  /// - [authorizedPublicKey] The public key of the nonce authority.
+  /// - `[w]` [noncePublicKey] The nonce account.
+  /// - `[s]` [authorizedPublicKey] The public key of the nonce authority.
   static TransactionInstruction nonceAdvance({
     required final PublicKey noncePublicKey,
     required final PublicKey authorizedPublicKey,
@@ -364,10 +364,10 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that withdraws lamports from a Nonce account.
   /// 
   /// ### Keys:
-  /// - [noncePublicKey] The nonce account.
-  /// - [authorizedPublicKey] The public key of the nonce authority.
-  /// - [toPublicKey] The public key of the account which will receive the withdrawn nonce account 
-  ///   balance.
+  /// - `[w]` [noncePublicKey] The nonce account.
+  /// - `[s]` [authorizedPublicKey] The public key of the nonce authority.
+  /// - `[w]` [toPublicKey] The public key of the account which will receive the withdrawn nonce 
+  ///   account balance.
   /// 
   /// ### Data:
   /// - [lamports] The mount of lamports to withdraw from the nonce account.
@@ -400,8 +400,8 @@ class SystemProgram extends Program {
   /// Nonce account.
   /// 
   /// ### Keys:
-  /// - [noncePublicKey] The nonce account.
-  /// - [authorizedPublicKey] The public key of the current nonce authority.
+  /// - `[w]` [noncePublicKey] The nonce account.
+  /// - `[s]` [authorizedPublicKey] The public key of the current nonce authority.
   /// 
   /// ### Data:
   /// - [newAuthorizedPublicKey] The public key to set as the new nonce authority.
@@ -429,7 +429,7 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that allocates space in an account without funding.
   /// 
   /// ### Keys:
-  /// - [accountPublicKey] The public key of the account which will be assigned a new owner.
+  /// - `[s, w]` [accountPublicKey] The public key of the account which will be assigned a new owner.
   /// 
   /// ### Data:
   /// - [space] The amount of space in bytes to allocate.
@@ -455,8 +455,9 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that allocates space in an account without funding.
   /// 
   /// ### Keys:
-  /// - [accountPublicKey] The public key of the account which will be assigned a new owner.
-  /// 
+  /// - `[w]` [accountPublicKey] The public key of the account which will be assigned a new owner.
+  /// - `[s]` [basePublicKey] The base public key used to derive the address of the assigned account.
+  ///  
   /// ### Data:
   /// - [basePublicKey] The base public key used to derive the address of the assigned account.
   /// - [seed] The seed used to derive the address of the assigned account.

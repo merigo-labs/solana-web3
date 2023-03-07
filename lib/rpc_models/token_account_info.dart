@@ -2,9 +2,9 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert' show base64;
-import 'package:solana_web3/solana_web3.dart';
-import 'package:solana_web3/types/account_state.dart';
+import 'package:solana_common/borsh/borsh.dart';
 import 'account_info.dart';
+import '../types/account_state.dart';
 
 
 /// Token Account Info

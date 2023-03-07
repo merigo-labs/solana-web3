@@ -1,7 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/utils/library.dart' as utils show tryCall;
+import 'package:solana_common/utils/utils.dart' as utils show tryCall;
 
 
 /// Stake Activation States

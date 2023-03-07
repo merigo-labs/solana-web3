@@ -3,7 +3,7 @@
 
 import 'dart:typed_data';
 import 'package:solana_common/utils/buffer.dart';
-import 'package:solana_common/utils/library.dart' show check;
+import 'package:solana_common/utils/utils.dart' show check;
 import '../src/buffer_layout.dart' as buffer_layout;
 import '../src/keypair.dart';
 import '../src/nacl.dart' as nacl;

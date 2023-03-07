@@ -2,14 +2,12 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/library.dart';
 import 'package:solana_common/utils/types.dart';
-import 'package:solana_web3/programs/index.dart';
-import '../../../programs/program.dart';
-import '../../../src/public_key.dart';
-import '../../../src/sysvar.dart';
-import '../../../src/transaction/transaction.dart';
-import 'instruction.dart';
+import 'package:solana_common/utils/utils.dart';
+import '../../public_key.dart';
+import '../../sysvar.dart';
+import '../../transaction/transaction.dart';
+import '../../../programs/index.dart';
 
 
 /// Token Program

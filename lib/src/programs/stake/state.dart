@@ -2,7 +2,6 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-
 import 'package:solana_common/borsh/borsh.dart';
 import 'package:solana_common/utils/types.dart';
 import '../../../src/public_key.dart';

@@ -3,9 +3,11 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:solana_common/borsh/borsh.dart';
+import 'package:solana_common/utils/convert.dart' show list;
+import 'package:solana_common/utils/rust_enum.dart';
 import 'package:solana_common/utils/types.dart';
-import 'package:solana_web3/programs/stake.dart';
-import 'package:solana_web3/solana_web3.dart';
+import '../../../programs/stake.dart';
 import '../../../rpc_models/account_info.dart';
 
 
