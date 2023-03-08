@@ -1,3 +1,7 @@
+## 0.0.6+2
+
+* Update readme.
+
 ## 0.0.6+1
 
 * Update dependencies.
