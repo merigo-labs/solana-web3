@@ -397,7 +397,7 @@ class StakeProgram extends Program {
     final List<Iterable<u8>> data = [
       borsh.publicKey.encode(newAuthority.toBase58()),
       borsh.enumeration(StakeAuthorize.values).encode(authorityType),
-      borsh.string.encode(authoritySeed),
+      borsh.rustString().encode(authoritySeed),
       borsh.publicKey.encode(authorityOwner.toBase58()),
     ];
 
@@ -522,7 +522,7 @@ class StakeProgram extends Program {
 
     final List<Iterable<u8>> data = [
       borsh.enumeration(StakeAuthorize.values).encode(authorityType),
-      borsh.string.encode(authoritySeed),
+      borsh.rustString().encode(authoritySeed),
       borsh.publicKey.encode(authorityOwner.toBase58()),
     ];
 

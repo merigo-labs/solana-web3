@@ -1694,15 +1694,12 @@ class Connection extends SolanaWebSocketConnection {
     final List<Signer> signers = const [],
     final SendAndConfirmTransactionConfig? config,
   }) async {
-
     final String signature = await sendTransaction(
       transaction, 
       signers: signers, 
       config: config?.toSendTransactionConfig(),
     );
-
     await confirmTransaction(signature, config: config?.toConfirmTransactionConfig());
-
     return signature;
   }
 
@@ -1789,11 +1786,6 @@ class Connection extends SolanaWebSocketConnection {
     final BlockhashWithExpiryBlockHeight? blockhash, 
     final NonceWithMinContextSlot? nonce,
   }) async {
-    assert(
-      blockhash == null || nonce == null, 
-      'Confirm transaction by [blockhash] or [nonce]',
-    );
-    
     try {
       final Uint8List decodedSignature = convert.base58.decode(signature);
       utils.check(decodedSignature.length == nacl.signatureLength, 'Invalid signature length.');
@@ -1802,17 +1794,29 @@ class Connection extends SolanaWebSocketConnection {
     } catch (error) {
       throw TransactionException('Failed to decode base58 signature $signature.');
     }
-
-    final Commitment? commitment = config?.commitment ?? this.commitment;
-
-    final WebSocketSubscription<SignatureNotification> subscription = await signatureSubscribe(
-      signature,
-      config: SignatureSubscribeConfig(
-        commitment: commitment,
-        timeout: const Duration(seconds: 60),
+    return confirmSignatureSubscription(
+      signature, 
+      await signatureSubscribe(
+        signature,
+        config: SignatureSubscribeConfig(
+          commitment: config?.commitment ?? commitment,
+          timeout: config?.timeout ?? const Duration(seconds: 60),
+        ),
       ),
     );
+  }
 
+  /// Waits for the [subscription]'s transaction [signature] notification.
+  Future<SignatureNotification> confirmSignatureSubscription(
+    final TransactionSignature signature,
+    final WebSocketSubscription<SignatureNotification> subscription, { 
+    final BlockhashWithExpiryBlockHeight? blockhash, 
+    final NonceWithMinContextSlot? nonce,
+  }) async {
+    assert(
+      blockhash == null || nonce == null, 
+      'Confirm transaction by [blockhash] or [nonce]',
+    );
     final SignatureNotification notification = await Future.any([
       subscription.asFuture(),
       if (nonce != null)
@@ -1822,17 +1826,16 @@ class Connection extends SolanaWebSocketConnection {
       else
         _confirmTransactionTimeout(commitment),
     ]);
-
-    if (notification.err is TransactionNonceInvalidException) {
+    final notificationErr = notification.err;
+    if (notificationErr is TransactionNonceInvalidException) {
       return confirmSignatureStatus(
         signature, 
         commitment: commitment, 
-        minContext: notification.err.slot,
+        minContext: notificationErr.slot,
       );
     }
-    
-    return notification.err != null 
-      ? Future.error(notification.err) 
+    return notificationErr != null 
+      ? Future.error(notificationErr) 
       : Future.value(notification);
   }
 
@@ -1854,7 +1857,6 @@ class Connection extends SolanaWebSocketConnection {
       await Future.delayed(Duration(milliseconds: delay));
       status = await getSignatureStatus(signature, config: config);
     }
-
     if (status == null) {
       return const SignatureNotification(
         err: TransactionException(
@@ -1862,13 +1864,11 @@ class Connection extends SolanaWebSocketConnection {
         ),
       );
     }
-
     if (status.err != null) {
       return SignatureNotification(
         err: status.err,
       );
     }
-
     final Commitment configCommitment = commitment ?? this.commitment ?? Commitment.finalized;
     return SignatureNotification(
       err: configCommitment.compareTo(status.confirmationStatus) > 0
@@ -1876,10 +1876,6 @@ class Connection extends SolanaWebSocketConnection {
         : null,
     );
   }
-
-  // /// Creates an `onTimeout` callback function for a [_webSocketExchange].
-  // Future<JsonRpcResponse<T>> Function() _onWebSocketExchangeTimeout<T>() 
-  //   => () => Future.error(TimeoutException('Web socket request timed out.'));
 
   /// Makes a JSON-RPC data request to the web [socket] server.
   /// 
@@ -1891,64 +1887,6 @@ class Connection extends SolanaWebSocketConnection {
     final JsonRpcRequest request, {
     final JsonRpcRequestConfig? config,
   }) => webSocketRequest(wsCluster.uri(), request, config: config);
-  // async {
-
-  //   // The subscription's request/response cycle.
-  //   WebSocketExchange<T>? exchange;
-
-  //   try {
-  //     // Get the web socket connection.
-  //     final WebSocket connection = await socket.connect(wsCluster.uri());
-      
-  //     // Get the existing request/response cycle (if it exists).
-  //     exchange = _webSocketExchangeManager.get(request.hash());
-
-  //     // If an exchange created using the current connection exists, return the response (which may 
-  //     // still be pending).
-  //     if (exchange != null) {
-  //       final DateTime? connectedAt = socket.connectedAt;
-  //       if (connectedAt == null) {
-  //         throw const WebSocketException('[WebSocketConnection.connectedAt] is null.');
-  //       }
-  //       if (exchange.createdAt.isBefore(connectedAt)) {
-  //         if (exchange.isCompleted) {
-  //           await _webSocketSubscriptionManager.close(exchangeId: exchange.id);
-  //         } else {
-  //           throw const WebSocketException('The exchange request has expired.');
-  //         }
-  //       } else {
-  //         return exchange.response;
-  //       }
-  //     }
-
-  //     // Check that existing requests have an id and new requests do not.
-  //     assert(
-  //       exchange == null ? request.id == null : request.id == exchange.id, 
-  //       'A [WebSocketExchange] must be initialized with a new or existing exchange request.',
-  //     );
-
-  //     // Create a WebSocketExchange for the subscription's request/response cycle.
-  //     exchange = WebSocketExchange<T>(request);
-
-  //     // Store the exchange (request/response) to be used for future subscriptions or cancellation.
-  //     _webSocketExchangeManager.set(exchange);
-
-  //     // Send the request to the JSON-RPC web socket server (the response will be recevied by 
-  //     // `onSocketData`).
-  //     //_debugWebSocketRequest(exchange.request);
-  //     connection.add(json.encode(exchange.request.toJson()));
-
-  //     // Return the pending subscription that completes when a success response is received from the 
-  //     // web socket server (onSocketData) or the request times out.
-  //     final Duration timeLimit = config?.timeout ?? const Duration(seconds: 60);
-  //     return await exchange.response.timeout(timeLimit, onTimeout: _onWebSocketExchangeTimeout());
-
-  //   } catch (error, stackTrace) {
-  //     _webSocketExchangeManager.remove(exchange?.id);
-  //     exchange?.completeError(error, stackTrace);
-  //     return Future.error(error, stackTrace);
-  //   }
-  // }
 
   /// Re-subscribe to an existing subscription.
   Future<WebSocketSubscription> resubscribe(

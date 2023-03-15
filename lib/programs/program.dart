@@ -21,6 +21,7 @@ abstract class Program {
   /// The public key that identifies this program (i.e. program id).
   final PublicKey publicKey;
 
+  /// {@template solana_web3.Program.findAddress}
   /// Finds a valid program address for the given [seeds].
   ///
   /// `Valid program addresses must fall off the ed25519 curve.` This function iterates a nonce 
@@ -29,12 +30,15 @@ abstract class Program {
   /// Throws an [AssertionError] if [seeds] contains an invalid seed.
   /// 
   /// Throws a [PublicKeyException] if a valid program address could not be found.
+  /// {@endtemplate}
   ProgramAddress findAddress(final List<List<int>> seeds)
     => PublicKey.findProgramAddress(seeds, publicKey);
 
+  /// {@template solana_web3.Program.checkDeployed}
   /// Check that the program has been deployed to the cluster and is an executable program.
   /// 
   /// Throws a [ProgramException] if [publicKey] does not refer to a valid program.
+  /// {@endtemplate}
   Future<void> checkDeployed(final Connection connection) async {
     final AccountInfo? programInfo = await connection.getAccountInfo(publicKey);
     if (programInfo == null) {

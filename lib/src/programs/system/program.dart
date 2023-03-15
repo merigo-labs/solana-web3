@@ -123,7 +123,7 @@ class SystemProgram extends Program {
     
     final List<Iterable<int>> data = [
       borsh.u64.encode(lamports),
-      borsh.string.encode(seed),
+      borsh.rustString().encode(seed),
       borsh.publicKey.encode(programId.toBase58()),
     ];
 
@@ -182,7 +182,7 @@ class SystemProgram extends Program {
     
     final List<Iterable<int>> data = [
       borsh.publicKey.encode(basePublicKey.toBase58()),
-      borsh.string.encode(seed),
+      borsh.rustString().encode(seed),
       borsh.publicKey.encode(programId.toBase58()),
     ];
 
@@ -227,7 +227,7 @@ class SystemProgram extends Program {
     
     final List<Iterable<int>> data = [
       borsh.publicKey.encode(basePublicKey.toBase58()),
-      borsh.string.encode(seed),
+      borsh.rustString().encode(seed),
       borsh.u64.encode(lamports),
       borsh.u64.encode(space),
       borsh.publicKey.encode(programId.toBase58()),
@@ -475,11 +475,12 @@ class SystemProgram extends Program {
       AccountMeta.signer(basePublicKey),
     ];
     
+    final BorshStringSizedCodec publicKey = borsh.publicKey;
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(basePublicKey.toBase58()),
-      borsh.string.encode(seed),
+      publicKey.encode(basePublicKey.toBase58()),
+      borsh.rustString().encode(seed),
       borsh.u64.encode(space),
-      borsh.publicKey.encode(programId.toBase58()),
+      publicKey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(

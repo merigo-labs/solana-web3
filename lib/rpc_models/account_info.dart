@@ -74,8 +74,8 @@ class AccountInfo<T extends Object> extends BorshSerializable with DataSerializa
   static BorshStructCodec get binaryCodec {
     return borsh.struct({
       'lamports': borsh.i64,
-      'owner': borsh.string,
-      'data': borsh.array(borsh.string, 2),
+      'owner': borsh.string(),
+      'data': borsh.array(borsh.string(), 2),
       'executable': borsh.boolean,
       'rentEpoch': borsh.i64,
     });

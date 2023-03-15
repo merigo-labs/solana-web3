@@ -1120,10 +1120,11 @@ class StakePoolProgram extends Program {
       AccountMeta(sysvarRentPublicKey),
     ];
 
+    final BorshStringCodec rustString = borsh.rustString();
     final List<Iterable<int>> data = [
-      borsh.string.encode(name),
-      borsh.string.encode(symbol),
-      borsh.string.encode(uri),
+      rustString.encode(name),
+      rustString.encode(symbol),
+      rustString.encode(uri),
     ];
 
     return _instance.createTransactionIntruction(
@@ -1164,10 +1165,11 @@ class StakePoolProgram extends Program {
       AccountMeta(TokenMetadataProgram.programId),
     ];
 
+    final BorshStringCodec rustString = borsh.rustString();
     final List<Iterable<int>> data = [
-      borsh.string.encode(name),
-      borsh.string.encode(symbol),
-      borsh.string.encode(uri),
+      rustString.encode(name),
+      rustString.encode(symbol),
+      rustString.encode(uri),
     ];
 
     return _instance.createTransactionIntruction(

@@ -1,3 +1,7 @@
+## 0.0.7
+
+* Fix transaction serialization for Rust string types.
+
 ## 0.0.6+2
 
 * Update readme.
