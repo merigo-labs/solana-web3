@@ -14,9 +14,13 @@ class StakeAccountInfo extends BorshSerializable {
   
   /// Stake Account Information.
   const StakeAccountInfo({
+    required this.state,
     required this.meta,
     required this.stake,
   });
+
+  /// Stake account type.
+  final StakeState state;
 
   /// The mint address (base-58) associated with this account.
   final StakeMeta meta;
@@ -29,6 +33,8 @@ class StakeAccountInfo extends BorshSerializable {
 
   /// {@macro solana_common.BorshSerializable.codec}
   static final BorshStructSizedCodec codec = borsh.structSized({
+    'state': borsh.enumeration(StakeState.values),
+    '_state_padding_': borsh.buffer(3), // state is u32, so skip next 3-bytes.
     'meta': StakeMeta.codec,
     'stake': Stake.codec,
   });
@@ -73,6 +79,7 @@ class StakeAccountInfo extends BorshSerializable {
 
   /// {@macro solana_common.Serializable.fromJson}
   factory StakeAccountInfo.fromJson(final Map<String, dynamic> json) => StakeAccountInfo(
+    state: json['state'],
     meta: StakeMeta.fromJson(json['meta']),
     stake: Stake.fromJson(json['stake']),
   );
@@ -83,6 +90,8 @@ class StakeAccountInfo extends BorshSerializable {
 
   @override
   Map<String, dynamic> toJson() => {
+    'state': state,
+    '_state_padding_': const [0,0,0],
     'meta': meta.toJson(),
     'stake': stake.toJson(),
   };

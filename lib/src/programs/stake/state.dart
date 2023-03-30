@@ -7,6 +7,17 @@ import 'package:solana_common/utils/types.dart';
 import '../../../src/public_key.dart';
 
 
+/// Stake State
+/// ------------------------------------------------------------------------------------------------
+
+enum StakeState {
+  uninitialized,
+  initialized,
+  stake,
+  rewardsPool,
+}
+
+
 /// Authorized
 /// ------------------------------------------------------------------------------------------------
 
@@ -382,7 +393,7 @@ class StakeMeta extends BorshSerializable {
 
   /// {@macro solana_common.BorshSerializable.codec}
   static final BorshStructSizedCodec codec = borsh.structSized({
-    'rentExemptReserve': borsh.publicKey,
+    'rentExemptReserve': borsh.u64,
     'authorized': Authorized.codec,
     'lockup': Lockup.codec,
   });
@@ -411,8 +422,8 @@ class StakeMeta extends BorshSerializable {
   );
 
   /// {@macro solana_common.Serializable.tryFromJson}
-  static Delegation? tryFromJson(final Map<String, dynamic>? json) 
-    => json != null ? Delegation.fromJson(json) : null;
+  static StakeMeta? tryFromJson(final Map<String, dynamic>? json) 
+    => json != null ? StakeMeta.fromJson(json) : null;
 
   @override
   Map<String, dynamic> toJson() => {

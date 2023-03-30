@@ -1,13 +1,9 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/extensions/num.dart';
 import 'package:solana_common/utils/types.dart';
+import 'package:solana_web3/solana_web3.dart';
 import '../../../programs/program.dart';
-import '../../../src/sysvar.dart';
-import '../../../src/transaction/transaction.dart';
-import '../../../src/public_key.dart';
 import '../system/program.dart';
 import 'instruction.dart';
 import 'state.dart';
@@ -29,13 +25,19 @@ class StakeProgram extends Program {
   static PublicKey get programId => _instance.publicKey;
 
   /// Configuration account.
-  static PublicKey get configId => PublicKey.fromBase58('StakeConfig11111111111111111111111111111111');
+  static PublicKey get configId => PublicKey.fromBase58(
+    'StakeConfig11111111111111111111111111111111',
+  );
 
   /// The max space of a Stake account.
   ///
   /// This is generated from the solana-stake-program StakeState struct as `StakeState::size_of()`:
   /// https://docs.rs/solana-stake-program/latest/solana_stake_program/stake_state/enum.StakeState.html
   static const int space = 200;
+
+  @override
+  Iterable<int> encodeInstruction<T extends Enum>(final T instruction) 
+    => Buffer.fromUint32(instruction.index);
 
   /// Creates a [SystemProgram] instruction that generates a stake account.
   static TransactionInstruction createAccount({
@@ -118,7 +120,7 @@ class StakeProgram extends Program {
     // Keys
     required final PublicKey stakeAccount,
     required final PublicKey authority,
-    required final PublicKey? custodian,
+    final PublicKey? custodian,
     // Data
     required final PublicKey newAuthority,
     required final StakeAuthorize authorityType,
@@ -137,7 +139,7 @@ class StakeProgram extends Program {
 
     final List<Iterable<u8>> data = [
       borsh.publicKey.encode(newAuthority.toBase58()),
-      borsh.enumeration(StakeAuthorize.values).encode(authorityType),
+      borsh.enumeration(StakeAuthorize.values).encode(authorityType), [0,0,0], // padding
     ];
 
     return _instance.createTransactionIntruction(
@@ -232,7 +234,7 @@ class StakeProgram extends Program {
     required final PublicKey stakeAccount,
     required final PublicKey recipientAccount,
     required final PublicKey withdrawAuthority,
-    required final PublicKey? custodian,
+    final PublicKey? custodian,
     // Data
     required final bu64 lamports,
   }) {
@@ -245,6 +247,8 @@ class StakeProgram extends Program {
     final List<AccountMeta> keys = [ 
       AccountMeta.writable(stakeAccount),
       AccountMeta.writable(recipientAccount),
+      AccountMeta(sysvarClockPublicKey),
+      AccountMeta(sysvarStakeHistoryPublicKey),
       AccountMeta.signer(withdrawAuthority),
       if (custodian != null)
         AccountMeta.signer(custodian),
@@ -396,7 +400,7 @@ class StakeProgram extends Program {
 
     final List<Iterable<u8>> data = [
       borsh.publicKey.encode(newAuthority.toBase58()),
-      borsh.enumeration(StakeAuthorize.values).encode(authorityType),
+      borsh.enumeration(StakeAuthorize.values).encode(authorityType), [0,0,0], // padding
       borsh.rustString().encode(authoritySeed),
       borsh.publicKey.encode(authorityOwner.toBase58()),
     ];
@@ -474,7 +478,7 @@ class StakeProgram extends Program {
     ];
 
     final List<Iterable<u8>> data = [
-      borsh.enumeration(StakeAuthorize.values).encode(authorityType),
+      borsh.enumeration(StakeAuthorize.values).encode(authorityType), [0,0,0], // padding
     ];
 
     return _instance.createTransactionIntruction(
@@ -521,7 +525,7 @@ class StakeProgram extends Program {
     ];
 
     final List<Iterable<u8>> data = [
-      borsh.enumeration(StakeAuthorize.values).encode(authorityType),
+      borsh.enumeration(StakeAuthorize.values).encode(authorityType), [0,0,0], // padding
       borsh.rustString().encode(authoritySeed),
       borsh.publicKey.encode(authorityOwner.toBase58()),
     ];

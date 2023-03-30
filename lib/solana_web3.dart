@@ -86,7 +86,7 @@ BigInt _intToLamports(final int sol) {
 
 /// Converts [sol] to lamports.
 BigInt _numToLamports(final num sol) {
-  const decimalPlaces = 9;
+  const int decimalPlaces = 9;
   final String value = sol.toStringAsFixed(decimalPlaces);
   final int decimalPosition = value.length - decimalPlaces;
   return BigInt.parse(value.substring(0, decimalPosition-1) + value.substring(decimalPosition));

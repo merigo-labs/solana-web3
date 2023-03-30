@@ -1,3 +1,7 @@
+## 0.0.8
+
+* Fix stake program bugs.
+
 ## 0.0.7
 
 * Fix transaction serialization for Rust string types.

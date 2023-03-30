@@ -2,7 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:solana_common/utils/buffer.dart';
-import 'package:solana_web3/exceptions/index.dart';
+import '../exceptions/index.dart';
 import '../rpc_models/account_info.dart';
 import '../src/connection.dart';
 import '../src/models/program_address.dart';

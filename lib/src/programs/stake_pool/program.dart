@@ -2,6 +2,7 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
+import 'package:solana_common/extensions/big_int.dart';
 import 'package:solana_common/utils/types.dart';
 import 'instruction.dart';
 import 'state.dart';
@@ -77,15 +78,18 @@ class StakePoolProgram extends Program {
   /// [stakePoolAddress].
   static ProgramAddress findStakeProgramAddress(
     final PublicKey voteAccountAddress,
-    final PublicKey stakePoolAddress,
-  ) {
-    return (PublicKey.findProgramAddress(
+    final PublicKey stakePoolAddress, [
+    final BigInt? seed,
+  ]) {
+    return PublicKey.findProgramAddress(
       [
         voteAccountAddress.toBytes(), 
         stakePoolAddress.toBytes(),
+        if (seed != null)
+          seed.toUint8List(8),
       ],
       StakePoolProgram.programId,
-    ));
+    );
   }
 
   /// Find the transient stake account address of the given validator [voteAccountAddress], 
@@ -100,25 +104,22 @@ class StakePoolProgram extends Program {
         utf8.encode(transientStakeSeedPrefix),
         voteAccountAddress.toBytes(),
         stakePoolAddress.toBytes(),
-        Buffer.fromUint64(seed).toList(growable: false),
+        seed.toUint8List(8),
       ],
       StakePoolProgram.programId,
     );
   }
 
-  /// Find the ephemeral stake account address of the given validator [voteAccountAddress], 
-  /// [stakePoolAddress] and [seed] (u64).
+  /// Find the ephemeral stake account address of [stakePoolAddress] and [seed] (u64).
   static ProgramAddress findEphemeralStakeProgramAddress(
-    final PublicKey voteAccountAddress,
     final PublicKey stakePoolAddress,
     final bu64 seed,
   ) {
     return PublicKey.findProgramAddress(
       [
         utf8.encode(ephemeralStakeSeedPrefix),
-        voteAccountAddress.toBytes(),
         stakePoolAddress.toBytes(),
-        Buffer.fromUint64(seed).toList(growable: false),
+        seed.toUint8List(8),
       ],
       StakePoolProgram.programId,
     );
@@ -655,18 +656,18 @@ class StakePoolProgram extends Program {
   /// the pool. Inputs are converted to the current ratio.
   ///
   /// Keys:
-  /// `[w]` [stakePoolAddress] - Stake pool.
-  /// `[w]` [validatorList] - Validator stake list storage account.
-  /// `[s]/[]` [depositAuthority] - Stake pool deposit authority.
-  /// `[]` [withdrawAuthority] - Stake pool withdraw authority.
-  /// `[w]` [stakeAccount] - Stake account to join the pool (withdraw authority for the stake account should be 
-  ///   first set to the stake pool deposit authority).
-  /// `[w]` [validatorStakeAccount] - Validator stake account for the stake account to be merged with.
-  /// `[w]` [reserveStake] - Reserve stake account, to withdraw rent exempt reserve.
-  /// `[w]` [userTokenAccount] - User account to receive pool tokens.
-  /// `[w]` [tokenAccount] - Account to receive pool fee tokens.
-  /// `[w]` [referralFeeAccount] - Account to receive a portion of pool fee tokens as referral fees.
-  /// `[w]` [poolMint] - Pool token mint account.
+  /// - `[w]` [stakePoolAddress] - Stake pool.
+  /// - `[w]` [validatorList] - Validator stake list storage account.
+  /// - `[s]/[]` [depositAuthority] - Stake pool deposit authority.
+  /// - `[]` [withdrawAuthority] - Stake pool withdraw authority.
+  /// - `[w]` [stakeAccount] - Stake account to join the pool (withdraw authority for the stake 
+  ///     account should be first set to the stake pool deposit authority).
+  /// - `[w]` [validatorStakeAccount] - Validator stake account for the stake account to be merged with.
+  /// - `[w]` [reserveStake] - Reserve stake account, to withdraw rent exempt reserve.
+  /// - `[w]` [userTokenAccount] - User account to receive pool tokens.
+  /// - `[w]` [tokenAccount] - Account to receive pool fee tokens.
+  /// - `[w]` [referralFeeAccount] - Account to receive a portion of pool fee tokens as referral fees.
+  /// - `[w]` [poolMint] - Pool token mint account.
   static TransactionInstruction depositStake({
     required final PublicKey stakePoolAddress,
     required final PublicKey validatorList,
@@ -703,6 +704,7 @@ class StakePoolProgram extends Program {
       AccountMeta(depositAuthority, isSigner: isDepositAuthoritySigner),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(stakeAccount),
+      AccountMeta.writable(validatorStakeAccount),
       AccountMeta.writable(reserveStake),
       AccountMeta.writable(userTokenAccount),
       AccountMeta.writable(tokenAccount),
