@@ -136,7 +136,7 @@ void main() {
   });
   test('public key is on curve', () {
     final Pubkey pubkey = Keypair.fromSeckeySync(seckey).pubkey;
-    final bool isOnCurve = Pubkey.isOnCurve(pubkey);
+    final bool isOnCurve = Pubkey.isOnCurve(pubkey.toBytes());
     print('PUBKEY ADDRESS              ${pubkey.toBase58()}');
     print('PUBKEY IS ON CURVE          $isOnCurve');
     assert(isOnCurve);

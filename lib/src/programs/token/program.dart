@@ -10,7 +10,6 @@ import '../../crypto/pubkey.dart';
 import '../../transactions/account_meta.dart';
 import '../../transactions/transaction_instruction.dart';
 import '../program.dart';
-import '../stake/state.dart';
 import 'instruction.dart';
 
 

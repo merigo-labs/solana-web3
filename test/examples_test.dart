@@ -95,7 +95,7 @@ void main() {
 
     try {
       // Subscribe to receive notifications when the account data changes.
-      final _subscription = await connection.accountSubscribe(
+      await connection.accountSubscribe(
         address,
         onData: (final AccountInfo accountInfo) {
           print('Account Notification Received ${accountInfo.toJson()}\n');

@@ -30,15 +30,3 @@ Continuous code generation
 ```cmd
 $ flutter pub run build_runner watch --delete-conflicting-outputs
 ```
-
-## GitHub
-
-Add remote origin.
-```cmd
-$ git remote add origin https://<PAT>@github.com/merigo-labs/<REPO>.git
-```
-
-Remove remote origin.
-```cmd
-$ git remote remove origin
-```

@@ -165,16 +165,16 @@ class Pubkey extends Serializable {
     buffer..addAll(programId.toBytes())
           ..addAll(utf8.encode('ProgramDerivedAddress'));
 
-    final Pubkey pubkey = Pubkey.fromUint8List(sha256.convert(buffer).bytes);
+    final digestBytes = Uint8List.fromList(sha256.convert(buffer).bytes);
 
-    if (isOnCurve(pubkey)) {
+    if (isOnCurve(digestBytes)) {
       throw ED25519Exception(
         'Invalid seeds $seeds\n'
         'The public key address must fall off the `ed25519` curve.'
       );
     }
 
-    return pubkey;
+    return Pubkey.fromUint8List(digestBytes);
   }
 
   /// Finds a valid program address for the given [seeds] and [programId].
@@ -219,7 +219,7 @@ class Pubkey extends Serializable {
   }
 
   /// Returns true if [pubkey] falls on the `ed25519` curve.
-  static bool isOnCurve(Pubkey pubkey) {
-    return nacl_low_level.isOnCurve(pubkey.toBytes()) == 1;
+  static bool isOnCurve(final Uint8List pubkey) {
+    return nacl_low_level.isOnCurve(pubkey) == 1;
   }
 }

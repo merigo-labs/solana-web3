@@ -10,7 +10,6 @@ import '../../constants/sysvar.dart';
 import '../../crypto/pubkey.dart';
 import '../../transactions/nonce_account.dart';
 import '../../transactions/account_meta.dart';
-import '../../transactions/transaction.dart';
 import '../../transactions/transaction_instruction.dart';
 import '../program.dart';
 import 'instruction.dart';

@@ -6,7 +6,7 @@ import 'package:solana_borsh/borsh.dart';
 import 'package:solana_borsh/codecs.dart';
 import 'package:solana_borsh/models.dart';
 import 'package:solana_borsh/types.dart';
-import 'package:solana_common/types.dart' show bu64, u64;
+import 'package:solana_common/types.dart' show u64;
 import '../mixins/data_serializable_mixin.dart';
 
 

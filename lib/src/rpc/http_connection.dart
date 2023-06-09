@@ -1,20 +1,15 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'dart:convert' show base64;
-import 'dart:typed_data' show Uint8List;
 import 'package:solana_buffer/buffer.dart';
 import 'package:solana_common/types.dart';
 import 'package:solana_jsonrpc/jsonrpc.dart';
 import 'package:solana_jsonrpc/models.dart';
-import '../crypto/keypair.dart';
 import '../crypto/pubkey.dart';
 import '../encodings/account_encoding.dart';
 import '../encodings/transaction_encoding.dart';
-import '../exceptions/transaction_exception.dart';
 import '../messages/message.dart';
 import '../transactions/nonce_account.dart';
-import '../transactions/nonce_information.dart';
 import '../transactions/transaction.dart';
 import '../types.dart';
 import 'methods/index.dart';
@@ -37,8 +32,8 @@ mixin HttpConnection {
   /// The default commitment level applied to all methods that query bank state.
   Commitment? get commitment;
 
-  /// The latest blockhash.
-  final BlockhashCache _blockhashCache = BlockhashCache();
+  // /// The latest blockhash.
+  // final BlockhashCache _blockhashCache = BlockhashCache();
   
   /// Makes a JSON RPC HTTP [method] call.
   /// 

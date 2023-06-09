@@ -1,3 +1,7 @@
+## 0.1.1
+
+* Fix NaCl for web.
+
 ## 0.1.0
 
 * Restructure package.
