@@ -2,9 +2,12 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/types.dart';
-import '../../../src/public_key.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_borsh/codecs.dart';
+import 'package:solana_borsh/models.dart';
+import 'package:solana_borsh/types.dart';
+import 'package:solana_common/types.dart';
+import '../../crypto/pubkey.dart';
 
 
 /// Stake State
@@ -21,7 +24,7 @@ enum StakeState {
 /// Authorized
 /// ------------------------------------------------------------------------------------------------
 
-class Authorized extends BorshSerializable {
+class Authorized extends BorshObject {
 
   /// Stake account authority info.
   const Authorized({
@@ -35,6 +38,15 @@ class Authorized extends BorshSerializable {
   /// Withdraw authority.
   final String withdrawer;
   
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructSizedCodec get codec => borsh.structSized({
+    'staker': borsh.pubkey,
+    'withdrawer': borsh.pubkey,
+  });
+
+  @override
+  BorshSchema get borshSchema => codec.schema;
+
   /// {@macro solana_common.Serializable.fromJson}
   factory Authorized.fromJson(final Map<String, dynamic> json) => Authorized(
     staker: json['staker'],
@@ -44,18 +56,9 @@ class Authorized extends BorshSerializable {
   /// {@macro solana_common.Serializable.tryFromJson}
   static Authorized? tryFromJson(final Map<String, dynamic>? json) 
     => json != null ? Authorized.fromJson(json) : null;
-
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructSizedCodec codec = borsh.structSized({
-    'staker': borsh.publicKey,
-    'withdrawer': borsh.publicKey,
-  });
-
-  @override
-  BorshSchema get schema => codec.schema;
   
   @override
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>{
     'staker': staker,
     'withdrawer': withdrawer,
   };
@@ -74,7 +77,7 @@ enum StakeAuthorize {
 /// Lockup
 /// ------------------------------------------------------------------------------------------------
 
-class Lockup extends BorshSerializable {
+class Lockup extends BorshObject {
 
   /// Stake account lockup info.
   const Lockup({
@@ -92,6 +95,16 @@ class Lockup extends BorshSerializable {
   /// Lockup custodian authority (base-58).
   final String custodian;
   
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructSizedCodec get codec => borsh.structSized({
+    'unixTimestamp': borsh.i64,
+    'epoch': borsh.i64,
+    'custodian': borsh.pubkey,
+  });
+
+  @override
+  BorshSchema get borshSchema => codec.schema;
+  
   /// {@macro solana_common.Serializable.fromJson}
   factory Lockup.fromJson(final Map<String, dynamic> json) => Lockup(
     unixTimestamp: json['unixTimestamp'],
@@ -107,18 +120,8 @@ class Lockup extends BorshSerializable {
   static Lockup get inactive => Lockup(
     unixTimestamp: 0, 
     epoch: 0, 
-    custodian: PublicKey.zero().toBase58(),
+    custodian: Pubkey.zero().toBase58(),
   );
-  
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructSizedCodec codec = borsh.structSized({
-    'unixTimestamp': borsh.i64,
-    'epoch': borsh.i64,
-    'custodian': borsh.publicKey,
-  });
-
-  @override
-  BorshSchema get schema => codec.schema;
   
   @override
   Map<String, dynamic> toJson() => {
@@ -132,7 +135,7 @@ class Lockup extends BorshSerializable {
 /// Lockup Args
 /// ------------------------------------------------------------------------------------------------
 
-class LockupArgs extends BorshSerializable {
+class LockupArgs extends BorshObject {
 
   /// Stake account lockup arguments.
   const LockupArgs({
@@ -149,6 +152,16 @@ class LockupArgs extends BorshSerializable {
 
   /// Lockup custodian authority (base-58).
   final String? custodian;
+  
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructCodec get codec => borsh.struct({
+    'unixTimestamp': borsh.i64.option(),
+    'epoch': borsh.i64.option(),
+    'custodian': borsh.pubkey.option(),
+  });
+
+  @override
+  BorshSchema get borshSchema => codec.schema;
 
   /// {@macro solana_common.Serializable.fromJson}
   factory LockupArgs.fromJson(final Map<String, dynamic> json) => LockupArgs(
@@ -160,16 +173,6 @@ class LockupArgs extends BorshSerializable {
   /// {@macro solana_common.Serializable.tryFromJson}
   static LockupArgs? tryFromJson(final Map<String, dynamic>? json) 
     => json != null ? LockupArgs.fromJson(json) : null;
-  
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructCodec codec = borsh.struct({
-    'unixTimestamp': borsh.i64.option(),
-    'epoch': borsh.i64.option(),
-    'custodian': borsh.publicKey.option(),
-  });
-
-  @override
-  BorshSchema get schema => codec.schema;
   
   @override
   Map<String, dynamic> toJson() => {
@@ -183,7 +186,7 @@ class LockupArgs extends BorshSerializable {
 /// Lockup Checked Args
 /// ------------------------------------------------------------------------------------------------
 
-class LockupCheckedArgs extends BorshSerializable {
+class LockupCheckedArgs extends BorshObject {
 
   /// Stake account lockup arguments.
   const LockupCheckedArgs({
@@ -197,6 +200,15 @@ class LockupCheckedArgs extends BorshSerializable {
   /// Epoch of lockup expiration.
   final i64? epoch;
 
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructSizedCodec get codec => borsh.structSized({
+    'unixTimestamp': borsh.i64.option(),
+    'epoch': borsh.i64.option(),
+  });
+
+  @override
+  BorshSchema get borshSchema => codec.schema;
+
   /// {@macro solana_common.Serializable.fromJson}
   factory LockupCheckedArgs.fromJson(final Map<String, dynamic> json) => LockupCheckedArgs(
     unixTimestamp: json['unixTimestamp'],
@@ -206,15 +218,6 @@ class LockupCheckedArgs extends BorshSerializable {
   /// {@macro solana_common.Serializable.tryFromJson}
   static LockupCheckedArgs? tryFromJson(final Map<String, dynamic>? json) 
     => json != null ? LockupCheckedArgs.fromJson(json) : null;
-  
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructSizedCodec codec = borsh.structSized({
-    'unixTimestamp': borsh.i64.option(),
-    'epoch': borsh.i64.option(),
-  });
-
-  @override
-  BorshSchema get schema => codec.schema;
   
   @override
   Map<String, dynamic> toJson() => {
@@ -238,7 +241,7 @@ enum StakeAccountType {
 /// Stake
 /// ------------------------------------------------------------------------------------------------
 
-class Stake extends BorshSerializable {
+class Stake extends BorshObject {
 
   const Stake({
     required this.delegation,
@@ -248,32 +251,32 @@ class Stake extends BorshSerializable {
   final Delegation delegation;
 
   /// Credits observed is credits from vote account state when delegated or redeemed.
-  final bu64 creditsObserved;
+  final u64 creditsObserved;
 
-  @override
-  BorshSchema get schema => codec.schema;
-
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructSizedCodec codec = borsh.structSized({
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructSizedCodec get codec => borsh.structSized({
     'delegation': Delegation.codec,
     'creditsObserved': borsh.u64,
   });
 
-  /// {@macro solana_common.BorshSerializable.deserialize}
-  static Stake deserialize(final Iterable<int> buffer)
+  @override
+  BorshSchema get borshSchema => codec.schema;
+
+  /// {@macro solana_borsh.BorshObject.fromBorsh}
+  static Stake fromBorsh(final Iterable<int> buffer)
     => borsh.deserialize(codec.schema, buffer, Stake.fromJson);
 
-  /// {@macro solana_common.BorshSerializable.tryDeserialize}
-  static Stake? tryDeserialize(final Iterable<int>? buffer)
-    => buffer != null ? Stake.deserialize(buffer) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorsh}
+  static Stake? tryFromBorsh(final Iterable<int>? buffer)
+    => buffer != null ? Stake.fromBorsh(buffer) : null;
 
-  /// {@macro solana_common.BorshSerializable.fromBase64}
-  factory Stake.fromBase64(final String encoded) 
-    => Stake.deserialize(base64.decode(encoded));
+  /// {@macro solana_borsh.BorshObject.fromBorshBase64}
+  factory Stake.fromBorshBase64(final String encoded) 
+    => Stake.fromBorsh(base64.decode(encoded));
 
-  /// {@macro solana_common.BorshSerializable.tryFromBase64}
-  static Stake? tryFromBase64(final String? encoded)
-    => encoded != null ? Stake.fromBase64(encoded) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorshBase64}
+  static Stake? tryFromBorshBase64(final String? encoded)
+    => encoded != null ? Stake.fromBorshBase64(encoded) : null;
 
   /// {@macro solana_common.Serializable.fromJson}
   factory Stake.fromJson(final Map<String, dynamic> json) => Stake(
@@ -296,7 +299,7 @@ class Stake extends BorshSerializable {
 /// Delegation
 /// ------------------------------------------------------------------------------------------------
 
-class Delegation extends BorshSerializable {
+class Delegation extends BorshObject {
 
   const Delegation({
     required this.voterPubkey,
@@ -310,44 +313,44 @@ class Delegation extends BorshSerializable {
   final String voterPubkey;
 
   /// Activated stake amount, set at delegate() time.
-  final bu64 stake;
+  final u64 stake;
   
   /// Epoch at which this stake was activated, std::Epoch::MAX if is a bootstrap stake.
-  final bu64 activationEpoch;
+  final u64 activationEpoch;
   
   /// Epoch the stake was deactivated, std::Epoch::MAX if not deactivated.
-  final bu64 deactivationEpoch;
+  final u64 deactivationEpoch;
   
   /// How much stake we can activate per-epoch as a fraction of currently effective stake.
   final f64 warmupCooldownRate;
 
-  @override
-  BorshSchema get schema => codec.schema;
-
-  /// {@macro solana_common.BorshSerializable.codec}
-  static final BorshStructSizedCodec codec = borsh.structSized({
-    'voterPubkey': borsh.publicKey,
+  /// {@macro solana_borsh.BorshObject.borshCodec}
+  static BorshStructSizedCodec get codec => borsh.structSized({
+    'voterPubkey': borsh.pubkey,
     'stake': borsh.u64,
     'activationEpoch': borsh.u64,
     'deactivationEpoch': borsh.u64,
     'warmupCooldownRate': borsh.f64,
   });
 
-  /// {@macro solana_common.BorshSerializable.deserialize}
-  static Delegation deserialize(final Iterable<int> buffer)
+  @override
+  BorshSchema get borshSchema => codec.schema;
+
+  /// {@macro solana_borsh.BorshObject.fromBorsh}
+  static Delegation fromBorsh(final Iterable<int> buffer)
     => borsh.deserialize(codec.schema, buffer, Delegation.fromJson);
 
-  /// {@macro solana_common.BorshSerializable.tryDeserialize}
-  static Delegation? tryDeserialize(final Iterable<int>? buffer)
-    => buffer != null ? Delegation.deserialize(buffer) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorsh}
+  static Delegation? tryFromBorsh(final Iterable<int>? buffer)
+    => buffer != null ? Delegation.fromBorsh(buffer) : null;
 
-  /// {@macro solana_common.BorshSerializable.fromBase64}
-  factory Delegation.fromBase64(final String encoded) 
-    => Delegation.deserialize(base64.decode(encoded));
+  /// {@macro solana_borsh.BorshObject.fromBorshBase64}
+  factory Delegation.fromBorshBase64(final String encoded) 
+    => Delegation.fromBorsh(base64.decode(encoded));
 
-  /// {@macro solana_common.BorshSerializable.tryFromBase64}
-  static Delegation? tryFromBase64(final String? encoded)
-    => encoded != null ? Delegation.fromBase64(encoded) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorshBase64}
+  static Delegation? tryFromBorshBase64(final String? encoded)
+    => encoded != null ? Delegation.fromBorshBase64(encoded) : null;
 
   /// {@macro solana_common.Serializable.fromJson}
   factory Delegation.fromJson(final Map<String, dynamic> json) => Delegation(
@@ -376,7 +379,7 @@ class Delegation extends BorshSerializable {
 /// Meta
 /// ------------------------------------------------------------------------------------------------
 
-class StakeMeta extends BorshSerializable {
+class StakeMeta extends BorshObject {
 
   const StakeMeta({
     required this.rentExemptReserve,
@@ -384,35 +387,35 @@ class StakeMeta extends BorshSerializable {
     required this.lockup,
   });
 
-  final bu64 rentExemptReserve;
+  final u64 rentExemptReserve;
   final Authorized authorized;
   final Lockup lockup;
 
-  @override
-  BorshSchema get schema => codec.schema;
-
-  /// {@macro solana_common.BorshSerializable.codec}
+  /// {@macro solana_borsh.BorshObject.borshCodec}
   static final BorshStructSizedCodec codec = borsh.structSized({
     'rentExemptReserve': borsh.u64,
     'authorized': Authorized.codec,
     'lockup': Lockup.codec,
   });
 
-  /// {@macro solana_common.BorshSerializable.deserialize}
-  static StakeMeta deserialize(final Iterable<int> buffer)
+  @override
+  BorshSchema get borshSchema => codec.schema;
+
+  /// {@macro solana_borsh.BorshObject.fromBorsh}
+  static StakeMeta fromBorsh(final Iterable<int> buffer)
     => borsh.deserialize(codec.schema, buffer, StakeMeta.fromJson);
 
-  /// {@macro solana_common.BorshSerializable.tryDeserialize}
-  static StakeMeta? tryDeserialize(final Iterable<int>? buffer)
-    => buffer != null ? StakeMeta.deserialize(buffer) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorsh}
+  static StakeMeta? tryFromBorsh(final Iterable<int>? buffer)
+    => buffer != null ? StakeMeta.fromBorsh(buffer) : null;
 
-  /// {@macro solana_common.BorshSerializable.fromBase64}
-  factory StakeMeta.fromBase64(final String encoded) 
-    => StakeMeta.deserialize(base64.decode(encoded));
+  /// {@macro solana_borsh.BorshObject.fromBorshBase64}
+  factory StakeMeta.fromBorshBase64(final String encoded) 
+    => StakeMeta.fromBorsh(base64.decode(encoded));
 
-  /// {@macro solana_common.BorshSerializable.tryFromBase64}
-  static StakeMeta? tryFromBase64(final String? encoded)
-    => encoded != null ? StakeMeta.fromBase64(encoded) : null;
+  /// {@macro solana_borsh.BorshObject.tryFromBorshBase64}
+  static StakeMeta? tryFromBorshBase64(final String? encoded)
+    => encoded != null ? StakeMeta.fromBorshBase64(encoded) : null;
 
   /// {@macro solana_common.Serializable.fromJson}
   factory StakeMeta.fromJson(final Map<String, dynamic> json) => StakeMeta(

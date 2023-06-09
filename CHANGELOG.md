@@ -1,3 +1,10 @@
+## 0.1.0
+
+* Restructure package.
+* Update JSON RPC API.
+* Add Versioned Transactions.
+* Rename PublicKey to Pubkey.
+
 ## 0.0.8
 
 * Fix stake program bugs.

@@ -1,13 +1,17 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/types.dart';
-import 'package:solana_common/utils/utils.dart';
-import '../../public_key.dart';
-import '../../sysvar.dart';
-import '../../transaction/transaction.dart';
-import '../../../programs/index.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_common/types.dart';
+import 'package:solana_common/validators.dart';
+import 'package:solana_web3/src/programs/token/state.dart';
+import '../../constants/sysvar.dart';
+import '../../crypto/pubkey.dart';
+import '../../transactions/account_meta.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../program.dart';
+import '../stake/state.dart';
+import 'instruction.dart';
 
 
 /// Token Program
@@ -16,13 +20,13 @@ import '../../../programs/index.dart';
 class TokenProgram extends Program {
 
   TokenProgram._()
-    : super(PublicKey.fromBase58('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'));
+    : super(Pubkey.fromBase58('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'));
 
   /// Internal singleton instance.
   static final TokenProgram _instance = TokenProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   /// Minimum number of multisignature signers.
   static const minSigners = 1;
@@ -45,23 +49,23 @@ class TokenProgram extends Program {
   /// - [freezeAuthority] - The freeze authority/multisignature of the mint.
   static TransactionInstruction initializeMint({
     // Keys
-    required final PublicKey mint,
+    required final Pubkey mint,
     // Data
     required final u8 decimals,
-    required final PublicKey mintAuthority,
-    final PublicKey? freezeAuthority,
+    required final Pubkey mintAuthority,
+    final Pubkey? freezeAuthority,
   }) {
     // 0. `[w]` The mint to initialize.
     // 1. `[]` Rent sysvar.
     final List<AccountMeta> keys = [
       AccountMeta.writable(mint),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta(sysvarRentPubkey),
     ];
 
     final List<Iterable<int>> data = [
       borsh.u8.encode(decimals),
-      borsh.publicKey.encode(mintAuthority.toBase58()),
-      borsh.publicKey.cOption().encode(freezeAuthority?.toBase58()),
+      borsh.pubkey.encode(mintAuthority.toBase58()),
+      borsh.pubkey.cOption().encode(freezeAuthority?.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -71,7 +75,7 @@ class TokenProgram extends Program {
     );
   }
 
-  /// Initializes a new account to hold tokens.  If this account is associated with the native mint 
+  /// Initializes a new account to hold tokens. If this account is associated with the native mint 
   /// then the token balance of the initialized account will be equal to the amount of SOL in the 
   /// account. If this account is associated with another mint, that mint must be initialized before 
   /// this command can succeed.
@@ -85,9 +89,9 @@ class TokenProgram extends Program {
   /// - `[]` [mint] - The mint this account will be associated with.
   /// - `[]` [owner] - The new account's owner/multisignature.
   static TransactionInstruction initializeAccount({
-    required final PublicKey account,
-    required final PublicKey mint,
-    required final PublicKey owner,
+    required final Pubkey account,
+    required final Pubkey mint,
+    required final Pubkey owner,
   }) {
     // 0. `[writable]`  The account to initialize.
     // 1. `[]` The mint this account will be associated with.
@@ -97,7 +101,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta(mint),
       AccountMeta(owner),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta(sysvarRentPubkey),
     ];
 
     return _instance.createTransactionIntruction(
@@ -124,8 +128,8 @@ class TokenProgram extends Program {
   /// - [numberOfSigners] - The number of signers required to validate this multisignature account.
   static TransactionInstruction initializeMultisig({
     // Keys
-    required final PublicKey account,
-    required final List<PublicKey> signers,
+    required final Pubkey account,
+    required final List<Pubkey> signers,
     // Data
     required final u8 numberOfSigners,
   }) {
@@ -138,8 +142,8 @@ class TokenProgram extends Program {
     // 2. `[]` ..2+N The signer accounts, must equal to N where 1 <= N <= 11.
     final List<AccountMeta> keys = [
       AccountMeta.writable(account),
-      AccountMeta(sysvarRentPublicKey),
-      for (final PublicKey signer in signers)
+      AccountMeta(sysvarRentPubkey),
+      for (final Pubkey signer in signers)
         AccountMeta(signer),
     ];
 
@@ -174,10 +178,10 @@ class TokenProgram extends Program {
   /// - [amount] - The amount of tokens to transfer.
   static TransactionInstruction transfer({
     // Keys
-    required final PublicKey source,
-    required final PublicKey destination,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey source,
+    required final Pubkey destination,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
   }) {
@@ -195,7 +199,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(source),
       AccountMeta.writable(destination),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -229,10 +233,10 @@ class TokenProgram extends Program {
   /// - [amount] - The amount of tokens the delegate is approved for.
   static TransactionInstruction approve({
     // Keys
-    required final PublicKey source,
-    required final PublicKey delegate,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey source,
+    required final Pubkey delegate,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
   }) {
@@ -250,7 +254,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(source),
       AccountMeta(delegate),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -278,9 +282,9 @@ class TokenProgram extends Program {
   /// - `[s]` [signers] - The signer accounts.
   static TransactionInstruction revoke({
     // Keys
-    required final PublicKey source,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey source,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
   }) {
     // * Single owner
     // 0. `[w]` The source account.
@@ -293,7 +297,7 @@ class TokenProgram extends Program {
     final List<AccountMeta> keys = [
       AccountMeta.writable(source),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -320,12 +324,12 @@ class TokenProgram extends Program {
   /// - [newAuthority] - The new authority.
   static TransactionInstruction setAuthority({
     // Keys
-    required final PublicKey account,
-    required final PublicKey authority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey authority,
+    final List<Pubkey> signers = const [],
     // Data 
-    required final StakeAuthorize authorityType,
-    required final PublicKey? newAuthority,
+    required final AuthorityType authorityType,
+    required final Pubkey? newAuthority,
   }) {
     // * Single authority
     // 0. `[w]` The mint or account to change the authority of.
@@ -338,13 +342,13 @@ class TokenProgram extends Program {
     final List<AccountMeta> keys = [
       AccountMeta.writable(account),
       AccountMeta(authority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
     final List<Iterable<u8>> data = [
-      borsh.enumeration(StakeAuthorize.values).encode(authorityType),
-      borsh.publicKey.cOption().encode(newAuthority?.toBase58()),
+      borsh.enumeration(AuthorityType.values).encode(authorityType),
+      borsh.pubkey.option().encode(newAuthority?.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -372,10 +376,10 @@ class TokenProgram extends Program {
   /// - [amount] - The amount of new tokens to mint.
   static TransactionInstruction mintTo({
     // Keys
-    required final PublicKey mint,
-    required final PublicKey account,
-    required final PublicKey mintAuthority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey mint,
+    required final Pubkey account,
+    required final Pubkey mintAuthority,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
   }) {
@@ -393,7 +397,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(mint),
       AccountMeta.writable(account),
       AccountMeta(mintAuthority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -427,10 +431,10 @@ class TokenProgram extends Program {
   /// - [amount] - The amount of tokens to burn.
   static TransactionInstruction burn({
     // Keys
-    required final PublicKey account,
-    required final PublicKey mint,
-    required final PublicKey authority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey mint,
+    required final Pubkey authority,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
   }) {
@@ -448,7 +452,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta.writable(mint),
       AccountMeta(authority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -478,10 +482,10 @@ class TokenProgram extends Program {
   /// - `[]` [owner] - The account's multisignature owner.
   /// - `[s]` [signers] - The signer accounts.
   static TransactionInstruction closeAccount({
-    required final PublicKey account,
-    required final PublicKey destination,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey destination,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
   }) {
     // * Single owner
     // 0. `[writable]` The account to close.
@@ -497,7 +501,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta.writable(destination),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -522,10 +526,10 @@ class TokenProgram extends Program {
   /// - `[]` [authority] - The mint's multisignature freeze authority.
   /// - `[s]` [signers] - The signer accounts.
   static TransactionInstruction freezeAccount({
-    required final PublicKey account,
-    required final PublicKey mint,
-    required final PublicKey authority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey mint,
+    required final Pubkey authority,
+    final List<Pubkey> signers = const [],
   }) {
     // * Single owner
     // 0. `[w]` The account to fress.
@@ -541,7 +545,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta.writable(mint),
       AccountMeta(authority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -565,10 +569,10 @@ class TokenProgram extends Program {
   ///   2. `[]` The mint's multisignature freeze authority.
   ///   3. ..3+M `[signer]` M signer accounts.
   static TransactionInstruction thawAccount({
-    required final PublicKey account,
-    required final PublicKey mint,
-    required final PublicKey authority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey mint,
+    required final Pubkey authority,
+    final List<Pubkey> signers = const [],
   }) {
     // * Single owner
     // 0. `[w]` The account to fress.
@@ -584,7 +588,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta.writable(mint),
       AccountMeta(authority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -621,11 +625,11 @@ class TokenProgram extends Program {
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
   static TransactionInstruction transferChecked({
     // Keys
-    required final PublicKey source,
-    required final PublicKey mint,
-    required final PublicKey destination,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey source,
+    required final Pubkey mint,
+    required final Pubkey destination,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
     required final u8 decimals,
@@ -647,7 +651,7 @@ class TokenProgram extends Program {
       AccountMeta(mint),
       AccountMeta.writable(destination),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -689,11 +693,11 @@ class TokenProgram extends Program {
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
   static TransactionInstruction approveChecked({
     // Keys
-    required final PublicKey source,
-    required final PublicKey mint,
-    required final PublicKey delegate,
-    required final PublicKey owner,
-    final List<PublicKey> signers = const [],
+    required final Pubkey source,
+    required final Pubkey mint,
+    required final Pubkey delegate,
+    required final Pubkey owner,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
     required final u8 decimals,
@@ -715,7 +719,7 @@ class TokenProgram extends Program {
       AccountMeta(mint),
       AccountMeta(delegate),
       AccountMeta(owner, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -753,10 +757,10 @@ class TokenProgram extends Program {
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
   static TransactionInstruction mintToChecked({
     // Keys
-    required final PublicKey mint,
-    required final PublicKey account,
-    required final PublicKey mintAuthority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey mint,
+    required final Pubkey account,
+    required final Pubkey mintAuthority,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
     required final u8 decimals,
@@ -775,7 +779,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(mint),
       AccountMeta.writable(account),
       AccountMeta(mintAuthority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -814,10 +818,10 @@ class TokenProgram extends Program {
   /// - [decimals] - Expected number of base 10 digits to the right of the decimal place.
   static TransactionInstruction burnChecked({
     // Keys
-    required final PublicKey account,
-    required final PublicKey mint,
-    required final PublicKey authority,
-    final List<PublicKey> signers = const [],
+    required final Pubkey account,
+    required final Pubkey mint,
+    required final Pubkey authority,
+    final List<Pubkey> signers = const [],
     // Data
     required final bu64 amount,
     required final u8 decimals,
@@ -836,7 +840,7 @@ class TokenProgram extends Program {
       AccountMeta.writable(account),
       AccountMeta.writable(mint),
       AccountMeta(authority, isSigner: signers.isEmpty),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 
@@ -864,10 +868,10 @@ class TokenProgram extends Program {
   /// - [owner] - The new account's owner/multisignature.
   static TransactionInstruction initializeAccount2({
     // Keys
-    required final PublicKey account,
-    required final PublicKey mint,
+    required final Pubkey account,
+    required final Pubkey mint,
     // Data
-    required final PublicKey owner,
+    required final Pubkey owner,
   }) {
     // 0. `[writable]`  The account to initialize.
     // 1. `[]` The mint this account will be associated with.
@@ -875,11 +879,11 @@ class TokenProgram extends Program {
     final List<AccountMeta> keys = [
       AccountMeta.writable(account),
       AccountMeta(mint),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta(sysvarRentPubkey),
     ];
 
     final List<Iterable<u8>> data = [
-      borsh.publicKey.encode(owner.toBase58()),
+      borsh.pubkey.encode(owner.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -897,7 +901,7 @@ class TokenProgram extends Program {
   /// ### Keys:
   /// - `[w]` [account] - The native token account to sync with its underlying lamports.
   static TransactionInstruction syncNative({
-    required final PublicKey account,
+    required final Pubkey account,
   }) {
     // 0. `[w]` The native token account to sync with its underlying lamports.
     final List<AccountMeta> keys = [
@@ -920,10 +924,10 @@ class TokenProgram extends Program {
   /// - [owner] - The new account's owner/multisignature.
   static TransactionInstruction initializeAccount3({
     // Keys
-    required final PublicKey account,
-    required final PublicKey mint,
+    required final Pubkey account,
+    required final Pubkey mint,
     // Data
-    required final PublicKey owner,
+    required final Pubkey owner,
   }) {
     // 0. `[writable]`  The account to initialize.
     // 1. `[]` The mint this account will be associated with.
@@ -933,7 +937,7 @@ class TokenProgram extends Program {
     ];
 
     final List<Iterable<u8>> data = [
-      borsh.publicKey.encode(owner.toBase58()),
+      borsh.pubkey.encode(owner.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -953,8 +957,8 @@ class TokenProgram extends Program {
   /// - [numberOfSigners] - The number of signers required to validate this multisignature account.
   static TransactionInstruction initializeMultisig2({
     // Keys
-    required final PublicKey account,
-    required final List<PublicKey> signers,
+    required final Pubkey account,
+    required final List<Pubkey> signers,
     // Data
     required final u8 numberOfSigners,
   }) {
@@ -966,7 +970,7 @@ class TokenProgram extends Program {
     // 1. `[]` ..2+N The signer accounts, must equal to N where 1 <= N <= 11.
     final List<AccountMeta> keys = [
       AccountMeta.writable(account),
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta(signer),
     ];
 
@@ -992,11 +996,11 @@ class TokenProgram extends Program {
   /// - [freezeAuthority] - The freeze authority/multisignature of the mint.
   static TransactionInstruction initializeMint2({
     // Keys
-    required final PublicKey mint,
+    required final Pubkey mint,
     // Data
     required final u8 decimals,
-    required final PublicKey mintAuthority,
-    final PublicKey? freezeAuthority,
+    required final Pubkey mintAuthority,
+    final Pubkey? freezeAuthority,
   }) {
     // 0. `[w]` The mint to initialize.
     final List<AccountMeta> keys = [
@@ -1005,8 +1009,8 @@ class TokenProgram extends Program {
 
     final List<Iterable<int>> data = [
       borsh.u8.encode(decimals),
-      borsh.publicKey.encode(mintAuthority.toBase58()),
-      borsh.publicKey.cOption().encode(freezeAuthority?.toBase58()),
+      borsh.pubkey.encode(mintAuthority.toBase58()),
+      borsh.pubkey.cOption().encode(freezeAuthority?.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -1037,7 +1041,7 @@ class TokenProgram extends Program {
   /// ### Keys:
   /// - `[w]` [account] The account to initialize.
   static TransactionInstruction initializeImmutableOwner({
-    required final PublicKey account,
+    required final Pubkey account,
   }) {
     //  0. `[w]` The account to initialize.
     final List<AccountMeta> keys = [

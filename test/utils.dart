@@ -2,8 +2,8 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'package:pinenacl/ed25519.dart';
-import 'package:solana_web3/solana_web3.dart' as web3;
-import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_buffer/buffer.dart';
+import 'package:solana_web3/src/crypto/keypair.dart';
 
 
 /// Test Utilities
@@ -22,7 +22,7 @@ const int maxInt64 = 9223372036854775807;
 final Buffer maxInt64Buffer = Buffer.fromList([255, 255, 255, 255, 255, 255, 255, 127]);
 
 // A test wallet account.
-final web3.Keypair wallet = web3.Keypair.fromSeedSync(
+final Keypair wallet = Keypair.fromSeedSync(
   Uint8List.fromList([
     183, 69, 110, 126, 141, 167, 148, 129, 79, 147, 153, 132, 80, 178, 86, 134, 
     29, 190, 26, 249, 17, 113, 128, 188, 232, 98, 25, 174, 129, 170, 200, 48,

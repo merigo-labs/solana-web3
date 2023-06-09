@@ -2,16 +2,23 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_common/extensions/big_int.dart';
-import 'package:solana_common/utils/types.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_borsh/codecs.dart';
+import 'package:solana_buffer/extensions.dart';
+import 'package:solana_common/types.dart';
+import 'package:solana_web3/programs.dart';
+import '../../encodings/lamports.dart';
+import '../../constants/sysvar.dart';
+import '../../crypto/pubkey.dart';
+import '../../rpc/models/program_address.dart';
+import '../../transactions/account_meta.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../stake/program.dart';
+import '../system/program.dart';
+import '../token/program.dart';
+import '../program.dart';
 import 'instruction.dart';
 import 'state.dart';
-import '../stake/program.dart';
-import '../token/program.dart';
-import '../token_metadata/program.dart';
-import '../../../programs/program.dart';
-import '../../../programs/system.dart';
-import '../../../solana_web3.dart';
 
 
 /// Stake Pool Program
@@ -21,13 +28,13 @@ class StakePoolProgram extends Program {
 
   /// Stake pool program.
   StakePoolProgram._()
-    : super(PublicKey.fromBase58('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy'));
+    : super(Pubkey.fromBase58('SPoo1Ku8WFXoNDMHPsrGSTSG1Y47rzgn41SLUNakuHy'));
 
   /// Internal singleton instance.
   static final StakePoolProgram _instance = StakePoolProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   /// Maximum number of validators to update during UpdateValidatorListBalance.
   static const int maxValidatorsToUpdate = 5;
@@ -50,9 +57,9 @@ class StakePoolProgram extends Program {
 
   /// Find the deposit authority account address of the given [stakePoolAddress].
   static ProgramAddress findDepositAuthorityProgramAddress(
-    final PublicKey stakePoolAddress,
+    final Pubkey stakePoolAddress,
   ) {
-    return PublicKey.findProgramAddress(
+    return Pubkey.findProgramAddress(
       [
         stakePoolAddress.toBytes(), 
         utf8.encode(depositAuthoritySeed),
@@ -63,9 +70,9 @@ class StakePoolProgram extends Program {
 
   /// Find the withdraw authority account address of the given [stakePoolAddress].
   static ProgramAddress findWithdrawAuthorityProgramAddress(
-    final PublicKey stakePoolAddress,
+    final Pubkey stakePoolAddress,
   ) {
-    return PublicKey.findProgramAddress(
+    return Pubkey.findProgramAddress(
       [
         stakePoolAddress.toBytes(), 
         utf8.encode(withdrawAuthoritySeed),
@@ -77,11 +84,11 @@ class StakePoolProgram extends Program {
   /// Find the stake account address of the given validator [voteAccountAddress] and 
   /// [stakePoolAddress].
   static ProgramAddress findStakeProgramAddress(
-    final PublicKey voteAccountAddress,
-    final PublicKey stakePoolAddress, [
-    final BigInt? seed,
+    final Pubkey voteAccountAddress,
+    final Pubkey stakePoolAddress, [
+    final bu64? seed,
   ]) {
-    return PublicKey.findProgramAddress(
+    return Pubkey.findProgramAddress(
       [
         voteAccountAddress.toBytes(), 
         stakePoolAddress.toBytes(),
@@ -95,11 +102,11 @@ class StakePoolProgram extends Program {
   /// Find the transient stake account address of the given validator [voteAccountAddress], 
   /// [stakePoolAddress] and [seed] (u64).
   static ProgramAddress findTransientStakeProgramAddress(
-    final PublicKey voteAccountAddress,
-    final PublicKey stakePoolAddress,
+    final Pubkey voteAccountAddress,
+    final Pubkey stakePoolAddress,
     final bu64 seed,
   ) {
-    return PublicKey.findProgramAddress(
+    return Pubkey.findProgramAddress(
       [
         utf8.encode(transientStakeSeedPrefix),
         voteAccountAddress.toBytes(),
@@ -112,10 +119,10 @@ class StakePoolProgram extends Program {
 
   /// Find the ephemeral stake account address of [stakePoolAddress] and [seed] (u64).
   static ProgramAddress findEphemeralStakeProgramAddress(
-    final PublicKey stakePoolAddress,
+    final Pubkey stakePoolAddress,
     final bu64 seed,
   ) {
-    return PublicKey.findProgramAddress(
+    return Pubkey.findProgramAddress(
       [
         utf8.encode(ephemeralStakeSeedPrefix),
         stakePoolAddress.toBytes(),
@@ -145,19 +152,19 @@ class StakePoolProgram extends Program {
   /// - [fee] - Fee assessed as percentage of perceived rewards.
   /// - [withdrawalFee] - Fee charged per withdrawal as percentage of withdrawal.
   /// - [depositFee] - Fee charged per deposit as percentage of deposit.
-  /// - [referralFee] - Percentage [0-100] of deposit_fee that goes to referrer.
+  /// - [referralFee] - Percentage 0-100 of deposit_fee that goes to referrer.
   /// - [maxValidators] - Maximum expected number of validators.
   static TransactionInstruction initialize({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
-    required final PublicKey staker,
-    final PublicKey? withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey reserveStake,
-    required final PublicKey poolMint,
-    required final PublicKey managerFeeAccount,
-    final PublicKey? depositAuthority,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
+    required final Pubkey staker,
+    final Pubkey? withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey reserveStake,
+    required final Pubkey poolMint,
+    required final Pubkey managerFeeAccount,
+    final Pubkey? depositAuthority,
     // Data
     required final Fee fee,
     required final Fee withdrawalFee,
@@ -182,7 +189,7 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(stakePoolAddress),
       AccountMeta.signer(manager),
       AccountMeta(staker),
-      AccountMeta(withdrawAuthority ?? findWithdrawAuthorityProgramAddress(stakePoolAddress).publicKey),
+      AccountMeta(withdrawAuthority ?? findWithdrawAuthorityProgramAddress(stakePoolAddress).pubkey),
       AccountMeta.writable(validatorList),
       AccountMeta(reserveStake),
       AccountMeta(poolMint),
@@ -228,13 +235,13 @@ class StakePoolProgram extends Program {
   /// - [seed] - Optional non-zero u32 seed used for generating the validator stake address.
   static TransactionInstruction addValidatorToPool({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey reserveStake,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey stakeAccount,
-    required final PublicKey voteAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey reserveStake,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey stakeAccount,
+    required final Pubkey voteAccount,
     // Data
     final u32? seed,
   }) {
@@ -259,9 +266,9 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(validatorList),
       AccountMeta.writable(stakeAccount),
       AccountMeta(voteAccount),
-      AccountMeta(sysvarRentPublicKey),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarRentPubkey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.configId),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),
@@ -293,12 +300,12 @@ class StakePoolProgram extends Program {
   /// - [transientStakeAccount] `[]` Transient stake account, to check that that we're not trying 
   ///   to activate.
   static TransactionInstruction removeValidatorFromPool({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey stakeAccount,
-    required final PublicKey transientStakeAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey stakeAccount,
+    required final Pubkey transientStakeAccount,
   }) {
     // 0. `[w]` Stake pool
     // 1. `[s]` Staker
@@ -315,7 +322,7 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(validatorList),
       AccountMeta.writable(stakeAccount),
       AccountMeta(transientStakeAccount),
-      AccountMeta(sysvarClockPublicKey),
+      AccountMeta(sysvarClockPubkey),
       AccountMeta(StakeProgram.programId),
     ];
 
@@ -352,12 +359,12 @@ class StakePoolProgram extends Program {
   /// - [transientStakeSeed] - Seed used to create transient stake account.
   static TransactionInstruction decreaseValidatorStake({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey stakeAccount,
-    required final PublicKey transientStakeAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey stakeAccount,
+    required final Pubkey transientStakeAccount,
     // Data
     required final bu64 lamports,
     required final bu64 transientStakeSeed,
@@ -379,8 +386,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(validatorList),
       AccountMeta.writable(stakeAccount),
       AccountMeta.writable(transientStakeAccount),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarRentPubkey),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),
     ];
@@ -424,14 +431,14 @@ class StakePoolProgram extends Program {
   /// - [transientStakeSeed] - Seed used to create transient stake account.
   static TransactionInstruction increaseValidatorStake({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey reserveStake,
-    required final PublicKey transientStakeAccount,
-    required final PublicKey validatorStakeAccount,
-    required final PublicKey validatorVoteAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey reserveStake,
+    required final Pubkey transientStakeAccount,
+    required final Pubkey validatorStakeAccount,
+    required final Pubkey validatorVoteAccount,
     // Data
     required final bu64 lamports,
     required final bu64 transientStakeSeed,
@@ -459,9 +466,9 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(transientStakeAccount),
       AccountMeta(validatorStakeAccount),
       AccountMeta(validatorVoteAccount),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarRentPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarRentPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.configId),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),
@@ -498,12 +505,12 @@ class StakePoolProgram extends Program {
   ///   unset with `null`
   static TransactionInstruction setPreferredValidator({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey validatorList,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey validatorList,
     // Data
     required final PreferredValidatorType validatorType,
-    required final PublicKey? validatorVoteAddress,
+    required final Pubkey? validatorVoteAddress,
   }) {
     // 0. `[w]` Stake pool
     // 1. `[s]` Stake pool staker
@@ -516,7 +523,7 @@ class StakePoolProgram extends Program {
 
     final List<Iterable<int>> data = [
       borsh.enumeration(PreferredValidatorType.values).encode(validatorType),
-      borsh.publicKey.option().encode(validatorVoteAddress?.toBase58()),
+      borsh.pubkey.option().encode(validatorVoteAddress?.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -548,11 +555,11 @@ class StakePoolProgram extends Program {
   ///   state, but we still want to update.
   static TransactionInstruction updateValidatorListBalance({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey reserveStake,
-    required final List<PublicKey> validatorAndTransientStakeAccounts,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey reserveStake,
+    required final List<Pubkey> validatorAndTransientStakeAccounts,
     // Data
     required final u32 startIndex,
     required final bool noMerge,
@@ -571,10 +578,10 @@ class StakePoolProgram extends Program {
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(validatorList),
       AccountMeta.writable(reserveStake),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.programId),
-      for (final PublicKey account in validatorAndTransientStakeAccounts)
+      for (final Pubkey account in validatorAndTransientStakeAccounts)
         AccountMeta.writable(account),
     ];
 
@@ -600,12 +607,12 @@ class StakePoolProgram extends Program {
   /// - `[w]` [managerFeeAccount] - Account to receive pool fee tokens.
   /// - `[w]` [poolMint] - Pool mint account.
   static TransactionInstruction updateStakePoolBalance({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey reserveStake,
-    required final PublicKey managerFeeAccount,
-    required final PublicKey poolMint,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey reserveStake,
+    required final Pubkey managerFeeAccount,
+    required final Pubkey poolMint,
   }) {
     // 0. `[w]` Stake pool
     // 1. `[]` Stake pool withdraw authority
@@ -636,8 +643,8 @@ class StakePoolProgram extends Program {
   /// - `[]` [stakePoolAddress] - Stake pool.
   /// - `[w]` [validatorList] - Validator stake list storage account.
   static TransactionInstruction cleanupRemovedValidatorEntries({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey validatorList,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey validatorList,
   }) {
     // 0. `[]` Stake pool
     // 1. `[w]` Validator stake list storage account
@@ -669,18 +676,18 @@ class StakePoolProgram extends Program {
   /// - `[w]` [referralFeeAccount] - Account to receive a portion of pool fee tokens as referral fees.
   /// - `[w]` [poolMint] - Pool token mint account.
   static TransactionInstruction depositStake({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey validatorList,
-    required final PublicKey depositAuthority,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey validatorList,
+    required final Pubkey depositAuthority,
     final bool isDepositAuthoritySigner = false,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey stakeAccount,
-    required final PublicKey validatorStakeAccount,
-    required final PublicKey reserveStake,
-    required final PublicKey userTokenAccount,
-    required final PublicKey tokenAccount,
-    required final PublicKey referralFeeAccount,
-    required final PublicKey poolMint,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey stakeAccount,
+    required final Pubkey validatorStakeAccount,
+    required final Pubkey reserveStake,
+    required final Pubkey userTokenAccount,
+    required final Pubkey tokenAccount,
+    required final Pubkey referralFeeAccount,
+    required final Pubkey poolMint,
   }) {
     // 0. `[w]` Stake pool
     // 1. `[w]` Validator stake list storage account
@@ -710,8 +717,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(tokenAccount),
       AccountMeta.writable(referralFeeAccount),
       AccountMeta.writable(poolMint),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(TokenProgram.programId),
       AccountMeta(StakeProgram.programId),
     ];
@@ -755,16 +762,16 @@ class StakePoolProgram extends Program {
   /// - [lamports] - Amount of pool tokens to withdraw.
   static TransactionInstruction withdrawStake({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey validatorList,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorOrReserveStakeAccount,
-    required final PublicKey unitializedStakeAccount,
-    required final PublicKey userWithdrawAuthority,
-    required final PublicKey userTransferAuthority,
-    required final PublicKey userTokenAccount,
-    required final PublicKey managerFeeAccount,
-    required final PublicKey poolMint,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey validatorList,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorOrReserveStakeAccount,
+    required final Pubkey unitializedStakeAccount,
+    required final Pubkey userWithdrawAuthority,
+    required final Pubkey userTransferAuthority,
+    required final Pubkey userTokenAccount,
+    required final Pubkey managerFeeAccount,
+    required final Pubkey poolMint,
     // Data
     required final bu64 lamports,
   }) {
@@ -792,7 +799,7 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(userTokenAccount),
       AccountMeta.writable(managerFeeAccount),
       AccountMeta.writable(poolMint),
-      AccountMeta(sysvarClockPublicKey),
+      AccountMeta(sysvarClockPubkey),
       AccountMeta(TokenProgram.programId),
       AccountMeta(StakeProgram.programId),
     ];
@@ -816,10 +823,10 @@ class StakePoolProgram extends Program {
   /// - `[s]` [newManager] - New manager.
   /// - `[]` [newManagerFeeAccount] - New manager fee account.
   static TransactionInstruction setManager({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
-    required final PublicKey newManager,
-    required final PublicKey newManagerFeeAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
+    required final Pubkey newManager,
+    required final Pubkey newManagerFeeAccount,
   }) {
     /// 0. `[w]` StakePool
     /// 1. `[s]` Manager
@@ -848,8 +855,8 @@ class StakePoolProgram extends Program {
   /// - [fee] - Type of fee to update and value to update it to.
   static TransactionInstruction setFee({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
     // Data
     required final FeeType fee,
   }) {
@@ -862,7 +869,6 @@ class StakePoolProgram extends Program {
 
     final BorshRustEnumCodec feeTypeCode = borsh.rustEnumeration(
       FeeType.codecs, 
-      FeeType.from,
     );
 
     final List<Iterable<int>> data = [
@@ -883,9 +889,9 @@ class StakePoolProgram extends Program {
   /// - `[s]` [staker] - Manager or current staker.
   /// - '[]` [newStaker] - New staker pubkey.
   static TransactionInstruction setStaker({
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey newStaker,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey newStaker,
   }) {
     /// 0. `[w]` StakePool
     /// 1. `[s]` Manager or current staker
@@ -920,15 +926,15 @@ class StakePoolProgram extends Program {
   /// - [lamports] - Amount of solana to deposit in exchange for pool tokens.
   static TransactionInstruction depositSol({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey reserveStake,
-    required final PublicKey payer,
-    required final PublicKey payerTokenAccount,
-    required final PublicKey feeAccount,
-    required final PublicKey referralFeeAccount,
-    required final PublicKey poolMint,
-    final PublicKey? depositAuthority,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey reserveStake,
+    required final Pubkey payer,
+    required final Pubkey payerTokenAccount,
+    required final Pubkey feeAccount,
+    required final Pubkey referralFeeAccount,
+    required final Pubkey poolMint,
+    final Pubkey? depositAuthority,
     // Data
     required final bu64 lamports,
   }) {
@@ -980,9 +986,9 @@ class StakePoolProgram extends Program {
   /// - [fundingType] - The authority to update.
   static TransactionInstruction setFundingAuthority({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
-    required final PublicKey? newAuthority,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
+    required final Pubkey? newAuthority,
     // Data
     required final FundingType fundingType,
   }) {
@@ -1021,15 +1027,15 @@ class StakePoolProgram extends Program {
   /// - `[s]` [solWithdrawAuthority] - (Optional) Stake pool sol withdraw authority.
   static TransactionInstruction withdrawSol({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey userTransferAuthority,
-    required final PublicKey userTokenAccount,
-    required final PublicKey reserveStake,
-    required final PublicKey receiverAccount,
-    required final PublicKey receiverTokenAccount,
-    required final PublicKey poolMint,
-    final PublicKey? solWithdrawAuthority,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey userTransferAuthority,
+    required final Pubkey userTokenAccount,
+    required final Pubkey reserveStake,
+    required final Pubkey receiverAccount,
+    required final Pubkey receiverTokenAccount,
+    required final Pubkey poolMint,
+    final Pubkey? solWithdrawAuthority,
     // Data
     required final bu64 lamports,
   }) {
@@ -1055,8 +1061,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(receiverAccount),
       AccountMeta.writable(receiverTokenAccount),
       AccountMeta.writable(poolMint),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.programId),
       AccountMeta(TokenProgram.programId),
       if (solWithdrawAuthority != null)
@@ -1090,12 +1096,12 @@ class StakePoolProgram extends Program {
   /// - [uri] - URI of the uploaded metadata of the spl-token.
   static TransactionInstruction createTokenMetadata({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey poolMint,
-    required final PublicKey payer,
-    required final PublicKey tokenMetadataAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey poolMint,
+    required final Pubkey payer,
+    required final Pubkey tokenMetadataAccount,
     // Data
     required final String name,
     required final String symbol,
@@ -1117,9 +1123,9 @@ class StakePoolProgram extends Program {
       AccountMeta(poolMint),
       AccountMeta.signerAndWritable(payer),
       AccountMeta.writable(tokenMetadataAccount),
-      AccountMeta(TokenMetadataProgram.programId),
+      AccountMeta(MetaplexTokenMetadataProgram.programId),
       AccountMeta(SystemProgram.programId),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta(sysvarRentPubkey),
     ];
 
     final BorshStringCodec rustString = borsh.rustString();
@@ -1145,10 +1151,10 @@ class StakePoolProgram extends Program {
   /// 
   static TransactionInstruction updateTokenMetadata({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey manager,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey tokenMetadataAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey manager,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey tokenMetadataAccount,
     // Data
     required final String name,
     required final String symbol,
@@ -1164,7 +1170,7 @@ class StakePoolProgram extends Program {
       AccountMeta.signer(manager),
       AccountMeta(withdrawAuthority),
       AccountMeta.writable(tokenMetadataAccount),
-      AccountMeta(TokenMetadataProgram.programId),
+      AccountMeta(MetaplexTokenMetadataProgram.programId),
     ];
 
     final BorshStringCodec rustString = borsh.rustString();
@@ -1213,15 +1219,15 @@ class StakePoolProgram extends Program {
   ///  userdata: 
   static TransactionInstruction increaseAdditionalValidatorStake({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey reserveStake,
-    required final PublicKey uninitializedStakeAccount,
-    required final PublicKey transientStakeAccount,
-    required final PublicKey validatorStakeAccount,
-    required final PublicKey voteAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey reserveStake,
+    required final Pubkey uninitializedStakeAccount,
+    required final Pubkey transientStakeAccount,
+    required final Pubkey validatorStakeAccount,
+    required final Pubkey voteAccount,
     // Data
     required final bu64 lamports,
     required final bu64 transientStakeSeed,
@@ -1251,8 +1257,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(transientStakeAccount),
       AccountMeta(validatorStakeAccount),
       AccountMeta(voteAccount),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.configId),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),
@@ -1298,13 +1304,13 @@ class StakePoolProgram extends Program {
   /// - [ephemeralStakeSeed] - Seed used to create ephemeral account.
   static TransactionInstruction decreaseAdditionalValidatorStake({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey stakeAccount,
-    required final PublicKey uninitializedStakeAccount,
-    required final PublicKey transientStakeAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey stakeAccount,
+    required final Pubkey uninitializedStakeAccount,
+    required final Pubkey transientStakeAccount,
     // Data
     required final bu64 lamports,
     required final bu64 transientStakeSeed,
@@ -1329,8 +1335,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(stakeAccount),
       AccountMeta.writable(uninitializedStakeAccount),
       AccountMeta.writable(transientStakeAccount),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),
     ];
@@ -1392,16 +1398,16 @@ class StakePoolProgram extends Program {
   ///   anything.
   static TransactionInstruction redelegate({
     // Keys
-    required final PublicKey stakePoolAddress,
-    required final PublicKey staker,
-    required final PublicKey withdrawAuthority,
-    required final PublicKey validatorList,
-    required final PublicKey sourceStakeAccount,
-    required final PublicKey sourceTransientStakeAccount,
-    required final PublicKey uninitializedEphemeralStakeAccount,
-    required final PublicKey destinationTransientStakeAccount,
-    required final PublicKey destinationStakeAccount,
-    required final PublicKey destinationVoteAccount,
+    required final Pubkey stakePoolAddress,
+    required final Pubkey staker,
+    required final Pubkey withdrawAuthority,
+    required final Pubkey validatorList,
+    required final Pubkey sourceStakeAccount,
+    required final Pubkey sourceTransientStakeAccount,
+    required final Pubkey uninitializedEphemeralStakeAccount,
+    required final Pubkey destinationTransientStakeAccount,
+    required final Pubkey destinationStakeAccount,
+    required final Pubkey destinationVoteAccount,
     // Data
     required final bu64 lamports,
     required final bu64 sourceTransientStakeSeed,
@@ -1434,8 +1440,8 @@ class StakePoolProgram extends Program {
       AccountMeta.writable(destinationTransientStakeAccount),
       AccountMeta(destinationStakeAccount),
       AccountMeta(destinationVoteAccount),
-      AccountMeta(sysvarClockPublicKey),
-      AccountMeta(sysvarStakeHistoryPublicKey),
+      AccountMeta(sysvarClockPubkey),
+      AccountMeta(sysvarStakeHistoryPubkey),
       AccountMeta(StakeProgram.configId),
       AccountMeta(SystemProgram.programId),
       AccountMeta(StakeProgram.programId),

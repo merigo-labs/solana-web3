@@ -2,40 +2,28 @@ name: solana_web3
 description: Dart implementation of Solana's JSON RPC API with support for common Programs.
 repository: https://github.com/merigo-labs/solana-web3
 issue_tracker: https://github.com/merigo-labs/solana-web3/issues/new/choose
-version: 0.0.8
+version: 0.1.0
 
 environment:
-  sdk: ">=2.17.3 <3.0.0"
-  flutter: ">=1.17.0"
+  sdk: '>=3.0.3 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-  connectivity_plus: ^3.0.3
-  crypto: ^3.0.2
-  http: ^0.13.5
+  json_annotation: ^4.8.0
   pinenacl: ^0.5.1
-  solana_common: ^0.0.5
+  solana_borsh: ^0.0.1
+    # path: ../solana_borsh
+  solana_buffer: ^0.0.1
+    # path: ../solana_buffer
+  solana_common: ^0.1.0
     # path: ../solana_common
+  solana_jsonrpc: ^0.0.1
+    # path: ../solana_jsonrpc
     
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^1.0.0
-
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter.
-flutter:
-
-  # To add assets to your package, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
-  #
-  # For details regarding assets in packages, see
-  # https://flutter.dev/assets-and-images/#from-packages
-  #
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware.
+  build_runner: ^2.3.3
+  json_serializable: ^6.6.1

@@ -2,11 +2,12 @@
 /// ------------------------------------------------------------------------------------------------
 
 import 'dart:convert';
-import 'package:solana_common/utils/types.dart';
-import 'package:solana_common/utils/utils.dart';
-import '../../../programs/program.dart';
-import '../../../src/public_key.dart';
-import '../../../src/transaction/transaction.dart';
+import 'package:solana_common/types.dart';
+import 'package:solana_common/validators.dart';
+import '../../crypto/pubkey.dart';
+import '../../transactions/account_meta.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../program.dart';
 import 'instruction.dart';
 
 
@@ -16,13 +17,13 @@ import 'instruction.dart';
 class MemoProgram extends Program {
 
   MemoProgram._()
-    : super(PublicKey.fromBase58('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'));
+    : super(Pubkey.fromBase58('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'));
 
   /// Internal singleton instance.
   static final MemoProgram _instance = MemoProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   /// Maximum length.
   static const int maxLength = 566;
@@ -43,10 +44,10 @@ class MemoProgram extends Program {
   ///   succeed. null is allowed if there are no signers for the memo verification.
   static TransactionInstruction create(
     final String memo, {
-    final List<PublicKey> signers = const [],
+    final List<Pubkey> signers = const [],
   }) {
     final List<AccountMeta> keys = [
-      for (final PublicKey signer in signers)
+      for (final Pubkey signer in signers)
         AccountMeta.signer(signer),
     ];
 

@@ -1,15 +1,18 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/extensions/num.dart';
-import 'package:solana_common/utils/buffer.dart';
-import 'package:solana_common/utils/types.dart';
-import '../../../programs/program.dart';
-import '../../nonce_account.dart';
-import '../../sysvar.dart';
-import '../../transaction/transaction.dart';
-import '../../public_key.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_borsh/codecs.dart';
+import 'package:solana_buffer/buffer.dart';
+import 'package:solana_common/extensions.dart';
+import 'package:solana_common/types.dart';
+import '../../constants/sysvar.dart';
+import '../../crypto/pubkey.dart';
+import '../../transactions/nonce_account.dart';
+import '../../transactions/account_meta.dart';
+import '../../transactions/transaction.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../program.dart';
 import 'instruction.dart';
 
 
@@ -20,13 +23,13 @@ class SystemProgram extends Program {
 
   /// System program.
   SystemProgram._()
-    : super(PublicKey.zero());
+    : super(Pubkey.zero());
 
   /// Internal singleton instance.
   static final SystemProgram _instance = SystemProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   @override
   Iterable<int> encodeInstruction<T extends Enum>(final T instruction)
@@ -35,29 +38,29 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that creates a new account.
   /// 
   /// ### Keys:
-  /// - `[w,s]` [fromPublicKey] - The account that will transfer lamports to the created account.
-  /// - `[w,s]` [newAccountPublicKey] - The public key of the created account.
+  /// - `[w,s]` [fromPubkey] - The account that will transfer lamports to the created account.
+  /// - `[w,s]` [newAccountPubkey] - The public key of the created account.
   /// 
   /// ### Data:
   /// - [lamports] - The amount of lamports to transfer to the created account.
   /// - [space] - The amount of space in bytes to allocate to the created account.
   /// - [programId] - The public key of the program to assign as the owner of the created account.
   static TransactionInstruction createAccount({
-    required final PublicKey fromPublicKey,
-    required final PublicKey newAccountPublicKey,
+    required final Pubkey fromPubkey,
+    required final Pubkey newAccountPubkey,
     required final bu64 lamports,
     required final bu64 space,
-    required final PublicKey programId,
+    required final Pubkey programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.signerAndWritable(fromPublicKey),
-      AccountMeta.signerAndWritable(newAccountPublicKey),
+      AccountMeta.signerAndWritable(fromPubkey),
+      AccountMeta.signerAndWritable(newAccountPubkey),
     ];
     
     final List<Iterable<int>> data = [
       borsh.u64.encode(lamports),
       borsh.u64.encode(space),
-      borsh.publicKey.encode(programId.toBase58()),
+      borsh.pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -70,19 +73,19 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that transfers lamports from one account to another.
   /// 
   /// ### Keys:
-  /// - [fromPublicKey] The account that will transfer lamports.
-  /// - [toPublicKey] The account that will receive transferred lamports.
+  /// - [fromPubkey] The account that will transfer lamports.
+  /// - [toPubkey] The account that will receive transferred lamports.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer.
   static TransactionInstruction transfer({
-    required final PublicKey fromPublicKey,
-    required final PublicKey toPublicKey,
+    required final Pubkey fromPubkey,
+    required final Pubkey toPubkey,
     required final BigInt lamports,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.signerAndWritable(fromPublicKey),
-      AccountMeta.writable(toPublicKey),
+      AccountMeta.signerAndWritable(fromPubkey),
+      AccountMeta.writable(toPubkey),
     ];   
     
     final List<Iterable<int>> data = [
@@ -99,32 +102,32 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that transfers lamports from one account to another.
   /// 
   /// ### Keys:
-  /// - [fromPublicKey] The account that will transfer lamports.
-  /// - [basePublicKey] The base public key used to derive the funding account address.
-  /// - [toPublicKey] The account that will receive the transferred lamports.
+  /// - [fromPubkey] The account that will transfer lamports.
+  /// - [basePubkey] The base public key used to derive the funding account address.
+  /// - [toPubkey] The account that will receive the transferred lamports.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer.
   /// - [seed] The seed used to derive the funding account address.
   /// - [programId] The program id used to derive the funding account address.
   static TransactionInstruction transferWithSeed({
-    required final PublicKey fromPublicKey,
-    required final PublicKey basePublicKey,
-    required final PublicKey toPublicKey,
+    required final Pubkey fromPubkey,
+    required final Pubkey basePubkey,
+    required final Pubkey toPubkey,
     required final BigInt lamports,
     required final String seed,
-    required final PublicKey programId,
+    required final Pubkey programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(fromPublicKey),
-      AccountMeta.signer(basePublicKey),
-      AccountMeta.writable(toPublicKey),
+      AccountMeta.writable(fromPubkey),
+      AccountMeta.signer(basePubkey),
+      AccountMeta.writable(toPubkey),
     ];
     
     final List<Iterable<int>> data = [
       borsh.u64.encode(lamports),
       borsh.rustString().encode(seed),
-      borsh.publicKey.encode(programId.toBase58()),
+      borsh.pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -137,20 +140,20 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that assigns an account to a program.
   /// 
   /// ### Keys:
-  /// - [accountPublicKey] The public key of the account which will be assigned a new owner.
+  /// - [accountPubkey] The public key of the account which will be assigned a new owner.
   /// 
   /// ### Data:
   /// - [programId] The public key of the program to assign as the owner.
   static TransactionInstruction assign({
-    required final PublicKey accountPublicKey,
-    required final PublicKey programId,
+    required final Pubkey accountPubkey,
+    required final Pubkey programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.signerAndWritable(accountPublicKey),
+      AccountMeta.signerAndWritable(accountPubkey),
     ];
     
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(programId.toBase58()),
+      borsh.pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -163,27 +166,27 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that assigns an account to a program.
   /// 
   /// ### Keys:
-  /// - [accountPublicKey] The public key of the account which will be assigned a new owner.
+  /// - [accountPubkey] The public key of the account which will be assigned a new owner.
   /// 
   /// ### Data:
-  /// - [basePublicKey] The base public key used to derive the address of the assigned account.
+  /// - [basePubkey] The base public key used to derive the address of the assigned account.
   /// - [seed] The seed used to derive the address of the assigned account.
   /// - [programId] The public key of the program to assign as the owner.
   static TransactionInstruction assignWithSeed({
-    required final PublicKey accountPublicKey,
-    required final PublicKey basePublicKey,
+    required final Pubkey accountPubkey,
+    required final Pubkey basePubkey,
     required final String seed,
-    required final PublicKey programId,
+    required final Pubkey programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(accountPublicKey),
-      AccountMeta.signer(basePublicKey),
+      AccountMeta.writable(accountPubkey),
+      AccountMeta.signer(basePubkey),
     ];
     
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(basePublicKey.toBase58()),
+      borsh.pubkey.encode(basePubkey.toBase58()),
       borsh.rustString().encode(seed),
-      borsh.publicKey.encode(programId.toBase58()),
+      borsh.pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -194,43 +197,43 @@ class SystemProgram extends Program {
   }
 
   /// Creates a transaction instruction that creates a new account at an address generated with 
-  /// `fromPublicKey`, a `seed`, and `programId`.
+  /// `fromPubkey`, a `seed`, and `programId`.
   /// 
   /// ### Keys:
-  /// - [fromPublicKey] The account that will transfer lamports to the created account.
-  /// - [newAccountPublicKey] The public key of the created account. Must be pre-calculated with 
-  ///   PublicKey.createWithSeed().
+  /// - [fromPubkey] The account that will transfer lamports to the created account.
+  /// - [newAccountPubkey] The public key of the created account. Must be pre-calculated with 
+  ///   Pubkey.createWithSeed().
   /// 
   /// ### Data:
-  /// - [basePublicKey] The base public key used to derive the address of the created account. Must be 
-  ///   the same as the base key used to create `newAccountPublicKey`.
+  /// - [basePubkey] The base public key used to derive the address of the created account. Must be 
+  ///   the same as the base key used to create `newAccountPubkey`.
   /// - [seed] The seed used to derive the address of the created account. Must be the same as the 
-  ///   seed used to create `newAccountPublicKey`.
+  ///   seed used to create `newAccountPubkey`.
   /// - [lamports] The amount of lamports to transfer to the created account.
   /// - [space] The amount of space in bytes to allocate to the created account.
   /// - [programId] The public key of the program to assign as the owner of the created account.
   static TransactionInstruction createAccountWithSeed({
-    required final PublicKey fromPublicKey,
-    required final PublicKey newAccountPublicKey,
-    required final PublicKey basePublicKey,
+    required final Pubkey fromPubkey,
+    required final Pubkey newAccountPubkey,
+    required final Pubkey basePubkey,
     required final String seed,
     required final bu64 lamports,
     required final bu64 space,
-    required final PublicKey programId,
+    required final Pubkey programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.signerAndWritable(fromPublicKey),
-      AccountMeta.writable(newAccountPublicKey),
-      if (fromPublicKey != basePublicKey)
-        AccountMeta.signer(basePublicKey),
+      AccountMeta.signerAndWritable(fromPubkey),
+      AccountMeta.writable(newAccountPubkey),
+      if (fromPubkey != basePubkey)
+        AccountMeta.signer(basePubkey),
     ];
     
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(basePublicKey.toBase58()),
+      borsh.pubkey.encode(basePubkey.toBase58()),
       borsh.rustString().encode(seed),
       borsh.u64.encode(lamports),
       borsh.u64.encode(space),
-      borsh.publicKey.encode(programId.toBase58()),
+      borsh.pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -243,94 +246,84 @@ class SystemProgram extends Program {
   /// Generates a transaction that creates a new Nonce account.
   /// 
   /// ### Keys:
-  /// - `[s, w]` [fromPublicKey] The account that will transfer lamports to the created nonce account.
-  /// - `[s, w]` [noncePublicKey] The public key of the created nonce account.
-  /// - `[]` [authorizedPublicKey] The public key to set as the authority of the created nonce account.
+  /// - `[s, w]` [fromPubkey] The account that will transfer lamports to the created nonce account.
+  /// - `[s, w]` [noncePubkey] The public key of the created nonce account.
+  /// - `[]` [authorizedPubkey] The public key to set as the authority of the created nonce account.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer to the created nonce account.
-  static Transaction createNonceAccount({
-    required final PublicKey fromPublicKey,
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
+  static List<TransactionInstruction> createNonceAccount({
+    required final Pubkey fromPubkey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
     required final bu64 lamports,
-  }) {
-    return Transaction()
-      ..add(
-        SystemProgram.createAccount(
-          fromPublicKey: fromPublicKey,
-          newAccountPublicKey: noncePublicKey,
-          lamports: lamports,
-          space: NonceAccount.length.toBigInt(),
-          programId: SystemProgram.programId,
-        ),
-      )
-      ..add(
-        nonceInitialize(
-          noncePublicKey: noncePublicKey,
-          authorizedPublicKey: authorizedPublicKey,
-        ),
-      );
-  }
+  }) => [
+    SystemProgram.createAccount(
+      fromPubkey: fromPubkey,
+      newAccountPubkey: noncePubkey,
+      lamports: lamports,
+      space: NonceAccount.length.toBigInt(),
+      programId: SystemProgram.programId,
+    ),
+    nonceInitialize(
+      noncePubkey: noncePubkey,
+      authorizedPubkey: authorizedPubkey,
+    ),
+  ];
 
   /// Generates a transaction that creates a new Nonce account.
   /// 
   /// ### Keys: 
-  /// - `[s, w]` [fromPublicKey] The account that will transfer lamports to the created nonce account.
-  /// - `[s, w]` [noncePublicKey] The public key of the created nonce account.
-  /// - `[]` [authorizedPublicKey] The public key to set as the authority of the created nonce account.
+  /// - `[s, w]` [fromPubkey] The account that will transfer lamports to the created nonce account.
+  /// - `[s, w]` [noncePubkey] The public key of the created nonce account.
+  /// - `[]` [authorizedPubkey] The public key to set as the authority of the created nonce account.
   /// 
   /// ### Data:
   /// - [lamports] The amount of lamports to transfer to the created nonce account.
-  /// - [basePublicKey] The base public key used to derive the address of the nonce account.
+  /// - [basePubkey] The base public key used to derive the address of the nonce account.
   /// - [seed] The seed used to derive the address of the nonce account.
-  static Transaction createNonceAccountWithSeed({
-    required final PublicKey fromPublicKey,
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
+  static List<TransactionInstruction> createNonceAccountWithSeed({
+    required final Pubkey fromPubkey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
     required final bu64 lamports,
-    required final PublicKey basePublicKey,
+    required final Pubkey basePubkey,
     required final String seed,
-  }) {
-    return Transaction()
-      ..add(
-        SystemProgram.createAccountWithSeed(
-          fromPublicKey: fromPublicKey,
-          newAccountPublicKey: noncePublicKey,
-          basePublicKey: basePublicKey,
-          seed: seed,
-          lamports: lamports,
-          space: NonceAccount.length.toBigInt(),
-          programId: SystemProgram.programId,
-        ),
-      )
-      ..add(
-        nonceInitialize(
-          noncePublicKey: noncePublicKey,
-          authorizedPublicKey: authorizedPublicKey,
-        ),
-      );
-  }
+  }) => [
+    SystemProgram.createAccountWithSeed(
+      fromPubkey: fromPubkey,
+      newAccountPubkey: noncePubkey,
+      basePubkey: basePubkey,
+      seed: seed,
+      lamports: lamports,
+      space: NonceAccount.length.toBigInt(),
+      programId: SystemProgram.programId,
+    ),
+    nonceInitialize(
+      noncePubkey: noncePubkey,
+      authorizedPubkey: authorizedPubkey,
+    )
+  ];
 
   /// Generates an instruction to initialize a Nonce account.
   /// 
   /// ### Keys:
-  /// - `[w]` [noncePublicKey] The nonce account.
+  /// - `[w]` [noncePubkey] The nonce account.
   /// 
   /// ### Data:
-  /// - [authorizedPublicKey] The public key of the nonce authority.
+  /// - [authorizedPubkey] The public key of the nonce authority.
   static TransactionInstruction nonceInitialize({
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(noncePublicKey),
-      AccountMeta(sysvarRecentBlockhashesPublicKey),
-      AccountMeta(sysvarRentPublicKey),
+      AccountMeta.writable(noncePubkey),
+      AccountMeta(sysvarRecentBlockhashesPubkey),
+      AccountMeta(sysvarRentPubkey),
     ];
     
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(authorizedPublicKey.toBase58()),
+      borsh.pubkey.encode(authorizedPubkey.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -343,16 +336,16 @@ class SystemProgram extends Program {
   /// Generates an instruction to advance the nonce in a Nonce account.
   /// 
   /// ### Keys:
-  /// - `[w]` [noncePublicKey] The nonce account.
-  /// - `[s]` [authorizedPublicKey] The public key of the nonce authority.
+  /// - `[w]` [noncePubkey] The nonce account.
+  /// - `[s]` [authorizedPubkey] The public key of the nonce authority.
   static TransactionInstruction nonceAdvance({
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(noncePublicKey),
-      AccountMeta(sysvarRecentBlockhashesPublicKey),
-      AccountMeta.signer(authorizedPublicKey),
+      AccountMeta.writable(noncePubkey),
+      AccountMeta(sysvarRecentBlockhashesPubkey),
+      AccountMeta.signer(authorizedPubkey),
     ];
 
     return _instance.createTransactionIntruction(
@@ -364,25 +357,25 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that withdraws lamports from a Nonce account.
   /// 
   /// ### Keys:
-  /// - `[w]` [noncePublicKey] The nonce account.
-  /// - `[s]` [authorizedPublicKey] The public key of the nonce authority.
-  /// - `[w]` [toPublicKey] The public key of the account which will receive the withdrawn nonce 
+  /// - `[w]` [noncePubkey] The nonce account.
+  /// - `[s]` [authorizedPubkey] The public key of the nonce authority.
+  /// - `[w]` [toPubkey] The public key of the account which will receive the withdrawn nonce 
   ///   account balance.
   /// 
   /// ### Data:
   /// - [lamports] The mount of lamports to withdraw from the nonce account.
   static TransactionInstruction nonceWithdraw({
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
-    required final PublicKey toPublicKey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
+    required final Pubkey toPubkey,
     required final bu64 lamports,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(noncePublicKey),
-      AccountMeta.writable(toPublicKey),
-      AccountMeta(sysvarRecentBlockhashesPublicKey),
-      AccountMeta(sysvarRentPublicKey),
-      AccountMeta.signer(authorizedPublicKey),
+      AccountMeta.writable(noncePubkey),
+      AccountMeta.writable(toPubkey),
+      AccountMeta(sysvarRecentBlockhashesPubkey),
+      AccountMeta(sysvarRentPubkey),
+      AccountMeta.signer(authorizedPubkey),
     ];
     
     final List<Iterable<int>> data = [
@@ -396,27 +389,27 @@ class SystemProgram extends Program {
     );
   }
 
-  /// Generates a transaction instruction that authorises a new PublicKey as the authority on a 
+  /// Generates a transaction instruction that authorises a new Pubkey as the authority on a 
   /// Nonce account.
   /// 
   /// ### Keys:
-  /// - `[w]` [noncePublicKey] The nonce account.
-  /// - `[s]` [authorizedPublicKey] The public key of the current nonce authority.
+  /// - `[w]` [noncePubkey] The nonce account.
+  /// - `[s]` [authorizedPubkey] The public key of the current nonce authority.
   /// 
   /// ### Data:
-  /// - [newAuthorizedPublicKey] The public key to set as the new nonce authority.
+  /// - [newAuthorizedPubkey] The public key to set as the new nonce authority.
   static TransactionInstruction nonceAuthorize({
-    required final PublicKey noncePublicKey,
-    required final PublicKey authorizedPublicKey,
-    required final PublicKey newAuthorizedPublicKey,
+    required final Pubkey noncePubkey,
+    required final Pubkey authorizedPubkey,
+    required final Pubkey newAuthorizedPubkey,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(noncePublicKey),
-      AccountMeta.signer(authorizedPublicKey),
+      AccountMeta.writable(noncePubkey),
+      AccountMeta.signer(authorizedPubkey),
     ];
     
     final List<Iterable<int>> data = [
-      borsh.publicKey.encode(newAuthorizedPublicKey.toBase58()),
+      borsh.pubkey.encode(newAuthorizedPubkey.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(
@@ -429,16 +422,16 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that allocates space in an account without funding.
   /// 
   /// ### Keys:
-  /// - `[s, w]` [accountPublicKey] The public key of the account which will be assigned a new owner.
+  /// - `[s, w]` [accountPubkey] The public key of the account which will be assigned a new owner.
   /// 
   /// ### Data:
   /// - [space] The amount of space in bytes to allocate.
   static TransactionInstruction allocate({
-    required final PublicKey accountPublicKey,
+    required final Pubkey accountPubkey,
     required final bu64 space,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.signerAndWritable(accountPublicKey),
+      AccountMeta.signerAndWritable(accountPubkey),
     ];
     
     final List<Iterable<int>> data = [
@@ -455,32 +448,32 @@ class SystemProgram extends Program {
   /// Generates a transaction instruction that allocates space in an account without funding.
   /// 
   /// ### Keys:
-  /// - `[w]` [accountPublicKey] The public key of the account which will be assigned a new owner.
-  /// - `[s]` [basePublicKey] The base public key used to derive the address of the assigned account.
+  /// - `[w]` [accountPubkey] The public key of the account which will be assigned a new owner.
+  /// - `[s]` [basePubkey] The base public key used to derive the address of the assigned account.
   ///  
   /// ### Data:
-  /// - [basePublicKey] The base public key used to derive the address of the assigned account.
+  /// - [basePubkey] The base public key used to derive the address of the assigned account.
   /// - [seed] The seed used to derive the address of the assigned account.
   /// - [space] The amount of space in bytes to allocate.
   /// - [programId] The public key of the program to assign as the owner.
   static TransactionInstruction allocateWithSeed({
-    required final PublicKey accountPublicKey,
-    required final PublicKey basePublicKey,
+    required final Pubkey accountPubkey,
+    required final Pubkey basePubkey,
     required final String seed,
     required final bu64 space,
-    required final PublicKey  programId,
+    required final Pubkey  programId,
   }) {
     final List<AccountMeta> keys = [
-      AccountMeta.writable(accountPublicKey),
-      AccountMeta.signer(basePublicKey),
+      AccountMeta.writable(accountPubkey),
+      AccountMeta.signer(basePubkey),
     ];
     
-    final BorshStringSizedCodec publicKey = borsh.publicKey;
+    final BorshStringSizedCodec pubkey = borsh.pubkey;
     final List<Iterable<int>> data = [
-      publicKey.encode(basePublicKey.toBase58()),
+      pubkey.encode(basePubkey.toBase58()),
       borsh.rustString().encode(seed),
       borsh.u64.encode(space),
-      publicKey.encode(programId.toBase58()),
+      pubkey.encode(programId.toBase58()),
     ];
 
     return _instance.createTransactionIntruction(

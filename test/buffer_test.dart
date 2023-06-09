@@ -3,7 +3,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:solana_common/utils/buffer.dart';
+import 'package:solana_buffer/buffer.dart';
 import './utils.dart';
 
 
@@ -42,15 +42,6 @@ void main() {
     final Buffer buffer = Buffer.fromString(encoded, encoding);
     assert(listEquals(buffer.toList(), expected.toList()));
   });
-  test('create a buffer from a hexadecimal encoded string', () {
-    const String encoded = '68657861646563696d616c20656e636f64696e67'; // 'hexadecimal encoding'
-    const BufferEncoding encoding = BufferEncoding.hex;
-    final Buffer expected = Buffer.fromList(
-      [104, 101, 120, 97, 100, 101, 99, 105, 109, 97, 108, 32, 101, 110, 99, 111, 100, 105, 110, 103],
-    );
-    final Buffer buffer = Buffer.fromString(encoded, encoding);
-    assert(listEquals(buffer.toList(), expected.toList()));
-  });
   test('create a buffer from a utf-8 encoded string', () {
     const String encoded = '\x75\x74\x66\x2d\x38\x20\x65\x6e\x63\x6f\x64\x69\x6e\x67'; // 'utf-8 encoding'
     const BufferEncoding encoding = BufferEncoding.utf8;
@@ -83,18 +74,18 @@ void main() {
   final Buffer stringBuffer = Buffer.fromList([72, 105, 32, 75, 97, 116, 101]);
   test('get string', () {
     final Buffer buffer = stringBuffer.slice();
-    final String hex = buffer.getString(BufferEncoding.hex);
+    final String hex = buffer.getString(BufferEncoding.utf8);
     assert(hex == stringValue);
   });
   test('set string', () {
     const int offset = 0;
     const int length = 2;
     final Buffer buffer = Buffer(stringBuffer.length);
-    buffer.setString(stringValue, BufferEncoding.hex, offset, length);
+    buffer.setString(stringValue, BufferEncoding.utf8, offset, length);
     final Buffer testBuffer = Buffer(stringBuffer.length);
     stringBuffer.copy(testBuffer, 0, offset, length);
     assert(listEquals(buffer.toList(), testBuffer.toList()));
-    buffer.setString(stringValue, BufferEncoding.hex, offset);
+    buffer.setString(stringValue, BufferEncoding.utf8, offset);
     assert(listEquals(buffer.toList(), stringBuffer.toList()));
   });
 

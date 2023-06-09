@@ -1,29 +1,32 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../../../programs/program.dart';
-import '../../../src/public_key.dart';
-import '../../../src/transaction/transaction.dart';
-import '../../../programs/system.dart';
+import '../../crypto/pubkey.dart';
+import '../../transactions/account_meta.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../program.dart';
 import '../token/program.dart';
+import '../system/program.dart';
 import 'instruction.dart';
 
 
 /// Associated Token Program
 /// ------------------------------------------------------------------------------------------------
 
+/// Associated Token Program
 class AssociatedTokenProgram extends Program {
 
+  /// Associated Token Program
   AssociatedTokenProgram._()
-    : super(PublicKey.fromBase58('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'));
+    : super(Pubkey.fromBase58('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'));
 
   /// Internal singleton instance.
   static final AssociatedTokenProgram _instance = AssociatedTokenProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
-  /// Build `create` associated token instruction.
+  /// Builds a `create` associated token [instruction].
   ///
   /// ### Keys:
   /// - `[w,s]` [fundingAccount] - Funding account (must be a system account).
@@ -32,10 +35,10 @@ class AssociatedTokenProgram extends Program {
   /// - `[]` [tokenMint] - The token mint for the new associated token account.
   static TransactionInstruction _createInstruction(
     final AssociatedTokenInstruction instruction, {
-    required final PublicKey fundingAccount,
-    required final PublicKey associatedTokenAccount,
-    required final PublicKey associatedTokenAccountOwner,
-    required final PublicKey tokenMint,
+    required final Pubkey fundingAccount,
+    required final Pubkey associatedTokenAccount,
+    required final Pubkey associatedTokenAccountOwner,
+    required final Pubkey tokenMint,
   }) {
     // 0. `[writeable,signer]` Funding account (must be a system account)
     // 1. `[writeable]` Associated token account address to be created
@@ -68,10 +71,10 @@ class AssociatedTokenProgram extends Program {
   /// - `[]` [associatedTokenAccountOwner] - Wallet address for the new associated token account.
   /// - `[]` [tokenMint] - The token mint for the new associated token account.
   static TransactionInstruction create({
-    required final PublicKey fundingAccount,
-    required final PublicKey associatedTokenAccount,
-    required final PublicKey associatedTokenAccountOwner,
-    required final PublicKey tokenMint,
+    required final Pubkey fundingAccount,
+    required final Pubkey associatedTokenAccount,
+    required final Pubkey associatedTokenAccountOwner,
+    required final Pubkey tokenMint,
   }) {
     return _createInstruction(
       AssociatedTokenInstruction.create, 
@@ -92,10 +95,10 @@ class AssociatedTokenProgram extends Program {
   ///   4. `[]` System program
   ///   5. `[]` SPL Token program
   static TransactionInstruction createIdempotent({
-    required final PublicKey fundingAccount,
-    required final PublicKey associatedTokenAccount,
-    required final PublicKey associatedTokenAccountOwner,
-    required final PublicKey tokenMint,
+    required final Pubkey fundingAccount,
+    required final Pubkey associatedTokenAccount,
+    required final Pubkey associatedTokenAccountOwner,
+    required final Pubkey tokenMint,
   }) {
     return _createInstruction(
       AssociatedTokenInstruction.createIdempotent, 
@@ -125,12 +128,12 @@ class AssociatedTokenProgram extends Program {
   /// - `[]` [associatedTokenMint] - Token mint for the owner associated token account.
   /// - `[w,s]` [associatedTokenAccountOwner] - Wallet address for the owner associated token account.
   static TransactionInstruction recoverNested({
-    required final PublicKey nestedAssociatedTokenAccount,
-    required final PublicKey nestedAssociatedTokenMint,
-    required final PublicKey nestedAssociatedTokenAccountOwner,
-    required final PublicKey associatedTokenAccount,
-    required final PublicKey associatedTokenMint,
-    required final PublicKey associatedTokenAccountOwner,
+    required final Pubkey nestedAssociatedTokenAccount,
+    required final Pubkey nestedAssociatedTokenMint,
+    required final Pubkey nestedAssociatedTokenAccountOwner,
+    required final Pubkey associatedTokenAccount,
+    required final Pubkey associatedTokenMint,
+    required final Pubkey associatedTokenAccountOwner,
   }) {
     // 0. `[w]` Nested associated token account, must be owned by `3`
     // 1. `[]` Token mint for the nested associated token account

@@ -29,3 +29,6 @@
 .flutter-plugins-dependencies
 .packages
 build/
+
+# Solana
+/test-ledger

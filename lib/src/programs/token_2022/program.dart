@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import '../../../programs/program.dart';
-import '../../../src/public_key.dart';
+import '../../crypto/pubkey.dart';
+import '../program.dart';
 
 
 /// Token Program 2022
@@ -11,13 +11,13 @@ import '../../../src/public_key.dart';
 class TokenProgram2022 extends Program {
 
   TokenProgram2022._()
-    : super(PublicKey.fromBase58('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'));
+    : super(Pubkey.fromBase58('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'));
 
   /// Internal singleton instance.
   static final TokenProgram2022 _instance = TokenProgram2022._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   // /// Initializes a new mint and optionally deposits all the newly minted
   // /// tokens in an account.

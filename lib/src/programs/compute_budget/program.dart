@@ -1,11 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/types.dart';
-import '../../../programs/program.dart';
-import '../../../src/public_key.dart';
-import '../../../src/transaction/transaction.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_common/types.dart';
+import '../../crypto/pubkey.dart';
+import '../../transactions/transaction_instruction.dart';
+import '../program.dart';
 import 'instruction.dart';
 
 
@@ -15,13 +15,13 @@ import 'instruction.dart';
 class ComputeBudgetProgram extends Program {
 
   ComputeBudgetProgram._()
-    : super(PublicKey.fromBase58('ComputeBudget111111111111111111111111111111'));
+    : super(Pubkey.fromBase58('ComputeBudget111111111111111111111111111111'));
 
   /// Internal singleton instance.
   static final ComputeBudgetProgram _instance = ComputeBudgetProgram._();
 
   /// The program id.
-  static PublicKey get programId => _instance.publicKey;
+  static Pubkey get programId => _instance.pubkey;
 
   /// Request units.
   /// 

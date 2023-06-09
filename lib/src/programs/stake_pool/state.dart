@@ -3,12 +3,15 @@
 
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:solana_common/borsh/borsh.dart';
-import 'package:solana_common/utils/convert.dart' show list;
-import 'package:solana_common/utils/rust_enum.dart';
-import 'package:solana_common/utils/types.dart';
-import '../../../programs/stake.dart';
-import '../../../rpc_models/account_info.dart';
+import 'package:solana_borsh/borsh.dart';
+import 'package:solana_borsh/codecs.dart';
+import 'package:solana_borsh/models.dart';
+import 'package:solana_borsh/types.dart';
+import 'package:solana_common/extensions.dart';
+import 'package:solana_common/models.dart';
+import 'package:solana_common/types.dart';
+import '../../rpc/models/account_info.dart';
+import '../stake/state.dart';
 
 
 /// Account Type
@@ -32,7 +35,7 @@ enum AccountType {
 
 /// Fee rate as a ratio, minted on `UpdateStakePoolBalance` as a proportion of the rewards.
 /// If either the numerator or the denominator is 0, the fee is considered to be 0.
-class Fee extends BorshSerializable {
+class Fee extends BorshObject {
 
   const Fee({
     required this.denominator,
@@ -40,12 +43,12 @@ class Fee extends BorshSerializable {
   });
   
   /// Denominator of the fee ratio.
-  final bu64 denominator;
+  final u64 denominator;
 
   /// Numerator of the fee ratio.
-  final bu64 numerator;
+  final u64 numerator;
 
-  double get ratio => denominator == BigInt.zero ? 0.0 : numerator / denominator;
+  double get ratio => denominator == 0.0 ? 0.0 : numerator / denominator;
 
   factory Fee.fromJson(final Map<String, dynamic> json) => Fee(
     denominator: json['denominator'],
@@ -55,13 +58,13 @@ class Fee extends BorshSerializable {
   static Fee? tryFromJson(final Map<String, dynamic>? json) 
     => json != null ? Fee.fromJson(json) : null;
 
-  static final BorshStructSizedCodec codec = borsh.structSized({
+  static BorshStructSizedCodec get codec => borsh.structSized({
     'denominator': borsh.u64,
     'numerator': borsh.u64,
   });
   
   @override
-  BorshSchema get schema => codec.schema;
+  BorshSchema get borshSchema => codec.schema;
   
   @override
   Map<String, dynamic> toJson() => {
@@ -74,7 +77,7 @@ class Fee extends BorshSerializable {
 /// Stake Pool
 /// ------------------------------------------------------------------------------------------------
 
-class StakePool extends BorshSerializable {
+class StakePool extends BorshObject {
 
   const StakePool({
     required this.accountType,
@@ -157,13 +160,13 @@ class StakePool extends BorshSerializable {
   /// Total stake under management.
   /// Note that if `lastUpdateEpoch` does not match the current epoch then
   /// this field may not be accurate
-  final bu64 totalLamports; // u64;
+  final u64 totalLamports; // u64;
 
   /// Total supply of pool tokens (should always match the supply in the Pool Mint)
-  final bu64 poolTokenSupply; // u64
+  final u64 poolTokenSupply; // u64
 
   /// Last epoch the `totalLamports` field was updated
-  final bu64 lastUpdateEpoch; // u64
+  final u64 lastUpdateEpoch; // u64
 
   /// Lockup that all stakes in the pool must have
   final Lockup lockup;
@@ -219,10 +222,10 @@ class StakePool extends BorshSerializable {
   final Fee? nextSolWithdrawalFee;
 
   /// Last epoch's total pool tokens, used only for APR estimation
-  final bu64 lastEpochPoolTokenSupply; // u64
+  final u64 lastEpochPoolTokenSupply; // u64
 
   /// Last epoch's total lamports, used only for APR estimation
-  final bu64 lastEpochTotalLamports; // u64
+  final u64 lastEpochTotalLamports; // u64
 
   factory StakePool.fromAccountInfo(final AccountInfo info) {
     final Uint8List buffer = base64.decode((info.data as List)[0]);
@@ -262,33 +265,33 @@ class StakePool extends BorshSerializable {
     lastEpochTotalLamports: json['lastEpochTotalLamports'],
   );
 
-  static final BorshStructCodec codec = borsh.struct({
+  static BorshStructCodec get codec => borsh.struct({
     'accountType': borsh.enumeration(AccountType.values),
-    'manager': borsh.publicKey,
-    'staker': borsh.publicKey,
-    'stakeDepositAuthority': borsh.publicKey,
+    'manager': borsh.pubkey,
+    'staker': borsh.pubkey,
+    'stakeDepositAuthority': borsh.pubkey,
     'stakeWithdrawBumpSeed': borsh.u8,
-    'validatorList': borsh.publicKey,
-    'reserveStake': borsh.publicKey,
-    'poolMint': borsh.publicKey,
-    'managerFeeAccount': borsh.publicKey,
-    'tokenProgramId': borsh.publicKey,
+    'validatorList': borsh.pubkey,
+    'reserveStake': borsh.pubkey,
+    'poolMint': borsh.pubkey,
+    'managerFeeAccount': borsh.pubkey,
+    'tokenProgramId': borsh.pubkey,
     'totalLamports': borsh.u64,
     'poolTokenSupply': borsh.u64,
     'lastUpdateEpoch': borsh.u64,
     'lockup': Lockup.codec,
     'epochFee': Fee.codec,
     'nextEpochFee': Fee.codec.option(),
-    'preferredDepositValidatorVoteAddress': borsh.publicKey.option(),
-    'preferredWithdrawValidatorVoteAddress': borsh.publicKey.option(),
+    'preferredDepositValidatorVoteAddress': borsh.pubkey.option(),
+    'preferredWithdrawValidatorVoteAddress': borsh.pubkey.option(),
     'stakeDepositFee': Fee.codec,
     'stakeWithdrawalFee': Fee.codec,
     'nextStakeWithdrawalFee': Fee.codec.option(),
     'stakeReferralFee': borsh.u8,
-    'solDepositAuthority': borsh.publicKey.option(),
+    'solDepositAuthority': borsh.pubkey.option(),
     'solDepositFee': Fee.codec,
     'solReferralFee': borsh.u8,
-    'solWithdrawAuthority': borsh.publicKey.option(),
+    'solWithdrawAuthority': borsh.pubkey.option(),
     'solWithdrawalFee': Fee.codec,
     'nextSolWithdrawalFee': Fee.codec.option(),
     'lastEpochPoolTokenSupply': borsh.u64,
@@ -296,7 +299,7 @@ class StakePool extends BorshSerializable {
   });
 
   @override
-  BorshSchema get schema => codec.schema;
+  BorshSchema get borshSchema => codec.schema;
 
   @override
   Map<String, dynamic> toJson() => {
@@ -337,7 +340,7 @@ class StakePool extends BorshSerializable {
 /// Validator List
 /// ------------------------------------------------------------------------------------------------
 
-class ValidatorList extends BorshSerializable {
+class ValidatorList extends BorshObject {
 
   /// Storage list for all validator stake accounts in the pool.
   const ValidatorList({
@@ -359,22 +362,22 @@ class ValidatorList extends BorshSerializable {
   factory ValidatorList.fromJson(final Map<String, dynamic> json) {
     return ValidatorList(
       header: ValidatorListHeader.fromJson(json['header']),
-      validators: list.decode(json['validators'], ValidatorStakeInfo.fromJson),
+      validators: IterableSerializable.fromJson(json['validators'], ValidatorStakeInfo.fromJson),
     );
   }
 
-  static final BorshStructCodec codec = borsh.struct({
+  static BorshStructCodec get codec => borsh.struct({
     'header': ValidatorListHeader.codec,
     'validators': borsh.vec(ValidatorStakeInfo.codec),
   });
 
   @override
-  BorshSchema get schema => throw UnimplementedError();
+  BorshSchema get borshSchema => codec.schema;
     
   @override
   Map<String, dynamic> toJson() => {
     'header': header.toJson(),
-    'validators': list.encode(validators),
+    'validators': validators.toJson(),
   };
 }
 
@@ -382,7 +385,7 @@ class ValidatorList extends BorshSerializable {
 /// Validator List Header
 /// ------------------------------------------------------------------------------------------------
 
-class ValidatorListHeader extends BorshSerializable {
+class ValidatorListHeader extends BorshObject {
 
   /// Helper type to deserialize just the start of a ValidatorList.
   const ValidatorListHeader({
@@ -406,13 +409,13 @@ class ValidatorListHeader extends BorshSerializable {
     maxValidators: json['maxValidators'],
   );
 
-  static final BorshStructSizedCodec codec = borsh.structSized({
+  static BorshStructSizedCodec get codec => borsh.structSized({
     'accountType': borsh.enumeration(AccountType.values),
     'maxValidators': borsh.u32,
   });
 
   @override
-  BorshSchema get schema => codec.schema;
+  BorshSchema get borshSchema => codec.schema;
 
   @override
   Map<String, dynamic> toJson() => {
@@ -428,24 +431,24 @@ class ValidatorListHeader extends BorshSerializable {
 /// Status of the stake account in the validator list, for accounting.
 enum StakeStatus {
 
-    /// Stake account is active, there may be a transient stake as well
-    active,
-    
-    /// Only transient stake account exists, when a transient stake is
-    /// deactivating during validator removal
-    deactivatingTransient,
-    
-    /// No more validator stake accounts exist, entry ready for removal during
-    /// `UpdateStakePoolBalance`
-    readyForRemoval,
-    
-    /// Only the validator stake account is deactivating, no transient stake
-    /// account exists
-    deactivatingValidator,
-    
-    /// Both the transient and validator stake account are deactivating, when
-    /// a validator is removed with a transient stake active
-    deactivatingAll,
+  /// Stake account is active, there may be a transient stake as well
+  active,
+  
+  /// Only transient stake account exists, when a transient stake is
+  /// deactivating during validator removal
+  deactivatingTransient,
+  
+  /// No more validator stake accounts exist, entry ready for removal during
+  /// `UpdateStakePoolBalance`
+  readyForRemoval,
+  
+  /// Only the validator stake account is deactivating, no transient stake
+  /// account exists
+  deactivatingValidator,
+  
+  /// Both the transient and validator stake account are deactivating, when
+  /// a validator is removed with a transient stake active
+  deactivatingAll,
 }
 
 
@@ -469,7 +472,7 @@ enum StakeWithdrawSource {
 /// Validator Stake Info
 /// ------------------------------------------------------------------------------------------------
 
-class ValidatorStakeInfo extends BorshSerializable {
+class ValidatorStakeInfo extends Serializable with BorshObjectMixin {
 
   /// Information about a validator in the pool
   ///
@@ -494,19 +497,19 @@ class ValidatorStakeInfo extends BorshSerializable {
   ///
   /// Note that if `lastUpdateEpoch` does not match the current epoch then
   /// this field may not be accurate
-  final bu64 activeStakeLamports; // u64
+  final u64 activeStakeLamports; // u64
 
   /// Amount of transient stake delegated to this validator
   ///
   /// Note that if `lastUpdateEpoch` does not match the current epoch then
   /// this field may not be accurate
-  final bu64 transientStakeLamports; // u64
+  final u64 transientStakeLamports; // u64
 
   /// Last epoch the active and transient stake lamports fields were updated
-  final bu64 lastUpdateEpoch; // u64
+  final u64 lastUpdateEpoch; // u64
 
   /// Transient account seed suffix, used to derive the transient stake account address
-  final bu64 transientSeedSuffix; // u64
+  final u64 transientSeedSuffix; // u64
 
   /// Unused space, initially meant to specify the end of seed suffixes
   final u32 unused; // u32
@@ -536,7 +539,7 @@ class ValidatorStakeInfo extends BorshSerializable {
     voteAccountAddress: json['voteAccountAddress'],
   );
 
-  static final BorshStructSizedCodec codec = borsh.structSized({
+  static BorshStructSizedCodec get codec => borsh.structSized({
     'activeStakeLamports': borsh.u64,
     'transientStakeLamports': borsh.u64,
     'lastUpdateEpoch': borsh.u64,
@@ -544,11 +547,11 @@ class ValidatorStakeInfo extends BorshSerializable {
     'unused': borsh.u32,
     'validatorSeedSuffix': borsh.u32,
     'status': borsh.enumeration(StakeStatus.values),
-    'voteAccountAddress': borsh.publicKey,
+    'voteAccountAddress': borsh.pubkey,
   });
 
   @override
-  BorshSchema get schema => codec.schema;
+  BorshSchema get borshSchema => codec.schema;
   
   @override
   Map<String, dynamic> toJson() => {

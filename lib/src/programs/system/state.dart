@@ -1,8 +1,8 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'package:solana_common/utils/types.dart';
-import '../../public_key.dart';
+import 'package:solana_common/types.dart';
+import '../../crypto/pubkey.dart';
 
 
 /// Create Account Params
@@ -12,27 +12,27 @@ class CreateAccountParams {
 
   /// Creates account system transaction params.
   const CreateAccountParams({
-    required this.fromPublicKey,
-    required this.newAccountPublicKey,
+    required this.fromPubkey,
+    required this.newAccountPubkey,
     required this.lamports,
     required this.space,
     required this.programId,
   });
 
   /// The account that will transfer lamports to the created account.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
 
   /// The public key of the created account.
-  final PublicKey newAccountPublicKey;
+  final Pubkey newAccountPubkey;
 
   /// The amount of lamports to transfer to the created account.
-  final bu64 lamports;
+  final u64 lamports;
   
   /// The amount of space in bytes to allocate to the created account.
-  final bu64 space;
+  final u64 space;
 
   /// The public key of the program to assign as the owner of the created account.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -43,19 +43,19 @@ class TransferParams {
 
   /// Transfer system transaction params.
   const TransferParams({
-    required this.fromPublicKey,
-    required this.toPublicKey,
+    required this.fromPubkey,
+    required this.toPubkey,
     required this.lamports,
   });
 
   /// The account that will transfer lamports.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
 
   /// The account that will receive transferred lamports.
-  final PublicKey toPublicKey;
+  final Pubkey toPubkey;
 
   /// The amount of lamports to transfer.
-  final bu64 lamports;
+  final u64 lamports;
 }
 
 
@@ -66,15 +66,15 @@ class AssignParams {
 
   /// Assign system transaction params.
   const AssignParams({
-    required this.accountPublicKey,
+    required this.accountPubkey,
     required this.programId,
   });
 
   /// The public key of the account which will be assigned a new owner.
-  final PublicKey accountPublicKey;
+  final Pubkey accountPubkey;
 
   /// The public key of the program to assign as the owner.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -85,9 +85,9 @@ class CreateAccountWithSeedParams {
 
   /// Create account with [seed] system transaction params.
   const CreateAccountWithSeedParams({
-    required this.fromPublicKey, 
-    required this.newAccountPublicKey, 
-    required this.basePublicKey, 
+    required this.fromPubkey, 
+    required this.newAccountPubkey, 
+    required this.basePubkey, 
     required this.seed, 
     required this.lamports, 
     required this.space, 
@@ -95,27 +95,27 @@ class CreateAccountWithSeedParams {
   });
 
   /// The account that will transfer lamports to the created account.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
   
-  /// The public key of the created account. Must be pre-calculated with PublicKey.createWithSeed().
-  final PublicKey newAccountPublicKey;
+  /// The public key of the created account. Must be pre-calculated with Pubkey.createWithSeed().
+  final Pubkey newAccountPubkey;
 
   /// The base public key used to derive the address of the created account. Must be the same as the 
-  /// base key used to create `newAccountPublicKey`.
-  final PublicKey basePublicKey;
+  /// base key used to create `newAccountPubkey`.
+  final Pubkey basePubkey;
 
   /// The seed used to derive the address of the created account. Must be the same as the seed used 
-  /// to create `newAccountPublicKey`.
+  /// to create `newAccountPubkey`.
   final String seed;
   
   /// The amount of lamports to transfer to the created account.
-  final bu64 lamports;
+  final u64 lamports;
   
   /// The amount of space in bytes to allocate to the created account.
-  final bu64 space;
+  final u64 space;
 
   /// The public key of the program to assign as the owner of the created account.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -126,23 +126,23 @@ class CreateNonceAccountParams {
 
   /// Create nonce account system transaction params.
   const CreateNonceAccountParams({
-    required this.fromPublicKey,
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
+    required this.fromPubkey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
     required this.lamports,
   });
   
   /// The account that will transfer lamports to the created nonce account.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
 
   /// The public key of the created nonce account.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
   
   /// Thje public key to set as authority of the created nonce account.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
 
   /// The amount of lamports to transfer to the created nonce account.
-  final bu64 lamports;
+  final u64 lamports;
 }
 
 
@@ -153,28 +153,28 @@ class CreateNonceAccountWithSeedParams {
 
   /// Create nonce account with seed system transaction params.
   const CreateNonceAccountWithSeedParams({
-    required this.fromPublicKey,
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
+    required this.fromPubkey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
     required this.lamports,
-    required this.basePublicKey,
+    required this.basePubkey,
     required this.seed,
   });
 
   /// The account that will transfer lamports to the created nonce account.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
   
   /// The public key of the created nonce account.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
   
   /// The public key to set as the authority of the created nonce account.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
   
   /// The amount of lamports to transfer to the created nonce account.
-  final bu64 lamports;
+  final u64 lamports;
 
   /// The base public key used to derive the address of the nonce account.
-  final PublicKey basePublicKey;
+  final Pubkey basePubkey;
 
   /// The seed used to derive the address of the nonce account.
   final String seed;
@@ -188,15 +188,15 @@ class InitializeNonceParams {
 
   /// Initialize nonce account system instruction params.
   const InitializeNonceParams({
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
   });
 
   /// The nonce account to be initialized.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
 
   /// The public key to set as the authority of the initialized nonce account.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
 }
 
 
@@ -207,15 +207,15 @@ class AdvanceNonceParams {
 
   /// Advance nonce account system instruction params.
   const AdvanceNonceParams({
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
   });
   
   /// The nonce account.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
 
   /// The public key of the nonce authority.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
 }
 
 
@@ -226,23 +226,23 @@ class WithdrawNonceParams {
 
   /// Withdraw nonce account system transaction params.
   const WithdrawNonceParams({
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
-    required this.toPublicKey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
+    required this.toPubkey,
     required this.lamports,
   });
 
   /// The nonce account.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
 
   /// The public key of the nonce authority.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
 
   /// The public key of the account which will receive the withdrawn nonce account balance.
-  final PublicKey toPublicKey;
+  final Pubkey toPubkey;
 
   /// The mount of lamports to withdraw from the nonce account.
-  final bu64 lamports;
+  final u64 lamports;
 }
 
 
@@ -253,19 +253,19 @@ class AuthorizeNonceParams {
 
   /// Authorise nonce account system transaction params.
   const AuthorizeNonceParams({
-    required this.noncePublicKey,
-    required this.authorizedPublicKey,
-    required this.newAuthorizedPublicKey,
+    required this.noncePubkey,
+    required this.authorizedPubkey,
+    required this.newAuthorizedPubkey,
   });
 
   /// The nonce account.
-  final PublicKey noncePublicKey;
+  final Pubkey noncePubkey;
 
   /// The public key of the current nonce authority.
-  final PublicKey authorizedPublicKey;
+  final Pubkey authorizedPubkey;
 
   /// The public key to set as the new nonce authority.
-  final PublicKey newAuthorizedPublicKey;
+  final Pubkey newAuthorizedPubkey;
 }
 
 
@@ -276,15 +276,15 @@ class AllocateParams {
 
   /// Allocate account system transaction params.
   const AllocateParams({
-    required this.accountPublicKey,
+    required this.accountPubkey,
     required this.space,
   });
 
   /// The account to allocate.
-  final PublicKey accountPublicKey;
+  final Pubkey accountPubkey;
 
   /// The amount of space in bytes to allocate.
-  final bu64 space;
+  final u64 space;
 }
 
 
@@ -295,27 +295,27 @@ class AllocateWithSeedParams {
 
   /// Allocate account with seed system transaction params.
   const AllocateWithSeedParams({
-    required this.accountPublicKey,
-    required this.basePublicKey,
+    required this.accountPubkey,
+    required this.basePubkey,
     required this.seed,
     required this.space,
     required this.programId,
   });
 
   /// The account to allocate.
-  final PublicKey accountPublicKey;
+  final Pubkey accountPubkey;
   
   /// The base public key used to derive the address of the allocated account.
-  final PublicKey basePublicKey;
+  final Pubkey basePubkey;
   
   /// The seed used to derive the address of the allocated account.
   final String seed;
 
   /// The amount of space in bytes to allocate.
-  final bu64 space;
+  final u64 space;
 
   /// The public key of the program to assign as the owner of the allocated account.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -326,23 +326,23 @@ class AssignWithSeedParams {
 
   /// Assign account with seed system transaction params.
   const AssignWithSeedParams({
-    required this.accountPublicKey,
-    required this.basePublicKey,
+    required this.accountPubkey,
+    required this.basePubkey,
     required this.seed,
     required this.programId,
   });
 
   /// The public key of the account which will be assigned a new owner.
-  final PublicKey accountPublicKey;
+  final Pubkey accountPubkey;
 
   /// The base public key used to derive the address of the assigned account.
-  final PublicKey basePublicKey;
+  final Pubkey basePubkey;
 
   /// The seed used to derive the address of the assigned account.
   final String seed;
 
   /// The public key of the program to assign as the owner.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -353,31 +353,31 @@ class TransferWithSeedParams {
 
   /// Transfer with seed system transaction params.
   const TransferWithSeedParams({
-    required this.fromPublicKey,
-    required this.basePublicKey,
-    required this.toPublicKey,
+    required this.fromPubkey,
+    required this.basePubkey,
+    required this.toPubkey,
     required this.lamports,
     required this.seed,
     required this.programId,
   });
 
   /// The account that will transfer lamports.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
 
   /// The base public key used to derive the funding account address.
-  final PublicKey basePublicKey;
+  final Pubkey basePubkey;
 
   /// The account that will receive the transferred lamports.
-  final PublicKey toPublicKey;
+  final Pubkey toPubkey;
   
   /// The amount of lamports to transfer.
-  final bu64 lamports;
+  final u64 lamports;
   
   /// The seed used to derive the funding account address.
   final String seed;
 
   /// The program id used to derive the funding account address.
-  final PublicKey programId;
+  final Pubkey programId;
 }
 
 
@@ -388,19 +388,19 @@ class DecodedTransferInstruction {
 
   /// Decoded transfer system transaction instruction.
   const DecodedTransferInstruction({
-    required this.fromPublicKey,
-    required this.toPublicKey,
+    required this.fromPubkey,
+    required this.toPubkey,
     required this.lamports,
   });
 
   /// The account that will transfer lamports.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
 
   /// The account that will receive the transferred lamports.
-  final PublicKey toPublicKey;
+  final Pubkey toPubkey;
 
   /// The amount of lamports to transfer.
-  final bu64 lamports;
+  final u64 lamports;
 }
 
 
@@ -411,29 +411,29 @@ class DecodedTransferWithSeedInstruction {
 
   /// Decoded transferWithSeed system transaction instruction.
   const DecodedTransferWithSeedInstruction({
-    required this.fromPublicKey,
-    required this.basePublicKey,
-    required this.toPublicKey,
+    required this.fromPubkey,
+    required this.basePubkey,
+    required this.toPubkey,
     required this.lamports,
     required this.seed,
     required this.programId,
   });
 
   /// The account that will transfer lamports.
-  final PublicKey fromPublicKey;
+  final Pubkey fromPubkey;
   
   /// The base public key used to derive the funding account address.
-  final PublicKey basePublicKey;
+  final Pubkey basePubkey;
   
   /// The account that will receive transferred lamports.
-  final PublicKey toPublicKey;
+  final Pubkey toPubkey;
   
   /// The amount of lamports to transfer.
-  final bu64 lamports;
+  final u64 lamports;
 
   /// The seed used to derive the funding account address.
   final String seed;
 
   /// The program id used to derive the funding account address.
-  final PublicKey programId;
+  final Pubkey programId;
 }
