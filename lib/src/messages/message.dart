@@ -399,6 +399,10 @@ class Message extends Serializable {
   factory Message.fromList(final List<int> byteArray) 
     => Message.fromBuffer(Buffer.fromList(byteArray));
 
+  /// Decodes a `base-58` encoded string into a [Message] instance.
+  factory Message.fromBase58(final String encoded) 
+    => Message.fromBuffer(Buffer.fromString(encoded, BufferEncoding.base58));
+
   /// Decodes a `base-64` encoded string into a [Message] instance.
   factory Message.fromBase64(final String encoded) 
     => Message.fromBuffer(Buffer.fromString(encoded, BufferEncoding.base64));
@@ -410,10 +414,11 @@ class Message extends Serializable {
   /// Decodes a buffer reader into a [Message] instance.
   factory Message.fromBufferReader(final BufferReader reader) {
 
-    /// Reader version.
-    final int prefix = reader[0];
+    /// Read version.
+    final int prefix = reader.getUint8();
     final int maskedPrefix = prefix & versionPrefixMask;
-    final int? version = maskedPrefix != prefix ? (reader.getUint8() & versionPrefixMask) : null;
+    final int? version = prefix != maskedPrefix ? maskedPrefix : null;
+    if (version == null) reader.advance(-1); // unread the first byte.
     
     /// Read the message header.
     final int numRequiredSignatures = reader.getUint8();

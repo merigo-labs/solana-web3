@@ -1,10 +1,11 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
-import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:convert' show base64;
+import 'dart:typed_data' show Uint8List;
 import 'package:json_annotation/json_annotation.dart' show JsonSerializable;
 import 'package:solana_buffer/buffer.dart';
+import 'package:solana_common/convert.dart' show base58;
 import 'package:solana_common/models.dart';
 import 'package:solana_common/validators.dart';
 import '../crypto/keypair.dart';
@@ -125,6 +126,10 @@ class Transaction extends Serializable with TransactionSerializableMixin {
 
   @override
   Buffer serializeMessage() => message.serialize();
+
+  /// Decodes a `base-58` [encoded] transaction into a [Transaction] object.
+  factory Transaction.fromBase58(final String encoded)
+    => Transaction.deserialize(base58.decode(encoded));
 
   /// Decodes a `base-64` [encoded] transaction into a [Transaction] object.
   factory Transaction.fromBase64(final String encoded)

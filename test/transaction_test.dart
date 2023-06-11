@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:solana_common/extensions.dart';
 import 'package:solana_jsonrpc/jsonrpc.dart';
+import 'package:solana_web3/solana_web3.dart';
 import 'package:solana_web3/src/crypto/keypair.dart';
 import 'package:solana_web3/src/crypto/pubkey.dart';
 import 'package:solana_web3/src/encodings/lamports.dart';
@@ -153,5 +154,12 @@ void main() {
     } catch (error) {
       print('TX ERROR $error');
     }
+  });
+
+  test('deserialize', () async {
+    const encoded = '6GhS2ZJhrEfHXU1X5xsiY2jkTMVjEMw1NwZmrgvySH7QhRKGseCSuNJd8sPfrQxbUV4JEMUU2c9nEV'
+      'hVK45kTYmA4HXLt8qk4qGQwv7aocVepYR8ewj1Wj1k4NpZrGZTdRRXARxf1Cp6BgtjZvSymnfij1h91kgRfKEwutHGzn'
+      'z7F7DTQKGRGtT3oFfqawecVKJesy2x98ZPu1ts';
+    Message.fromBase58(encoded);
   });
 }

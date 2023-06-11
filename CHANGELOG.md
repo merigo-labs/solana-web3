@@ -1,3 +1,7 @@
+## 0.1.2
+
+* Fix Versioned Message deserialization.
+
 ## 0.1.1
 
 * Fix NaCl for web.
