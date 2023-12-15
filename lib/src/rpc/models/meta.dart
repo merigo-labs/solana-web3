@@ -29,7 +29,7 @@ class Meta extends Serializable {
   });
 
   /// The error if the transaction failed or `null` if it succeeded.
-  final TransactionError? err;
+  final Map<String, dynamic>? err;
 
   /// The fee this transaction was charged, as a u64 integer.
   final u64 fee;
@@ -61,7 +61,7 @@ class Meta extends Serializable {
 
   /// {@macro solana_common.Serializable.fromJson}
   factory Meta.fromJson(final Map<String, dynamic> json) => Meta(
-    err: TransactionError.tryFromJson(json['err']),
+    err: json['err'],
     fee: json['fee'],
     preBalances: json['preBalances'].cast<u64>(),
     postBalances: json['postBalances'].cast<u64>(),
@@ -85,7 +85,7 @@ class Meta extends Serializable {
   
   @override
   Map<String, dynamic> toJson() => {
-    'err': err?.name,
+    'err': err,
     'fee': fee,
     'preBalances': preBalances,
     'postBalances': postBalances,

@@ -1,6 +1,7 @@
 /// Imports
 /// ------------------------------------------------------------------------------------------------
 
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -961,4 +962,34 @@ void main() {
       connection.simulateTransaction(transaction),
     );
   });
+
+  test('test', () async {
+      final client = Connection(Cluster.mainnet);
+
+      final minSlot = await client.minimumLedgerSlot();
+      final maxSlot = (await client.getHighestSnapshotSlot()).full;
+
+      final slots = await client.getBlocks(
+        maxSlot - 5,
+        endSlot: maxSlot,
+        config: GetBlocksConfig(),
+      );
+
+      print('GOT ${slots.length} slots');
+
+      for (final slot in slots) {
+        // Exception here
+        final block = await client.getBlock(
+          slot,
+          config: GetBlockConfig(maxSupportedTransactionVersion: 10),
+        );
+        if (block == null) {
+          print('BLOCK IS NULL');
+          continue;
+        }
+        final json = jsonEncode(block.toJson());
+        print('GOT JSON');
+        break;
+      }
+    });
 }

@@ -1,3 +1,7 @@
+## 0.1.3
+
+* Fix Transaction error data type.
+
 ## 0.1.2
 
 * Fix Versioned Message deserialization.
