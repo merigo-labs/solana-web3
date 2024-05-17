@@ -15,8 +15,8 @@ Message _$MessageFromJson(Map<String, dynamic> json) => Message(
       recentBlockhash: json['recentBlockhash'] as String,
       instructions: (json['instructions'] as List<dynamic>)
           .map((e) => MessageInstruction.fromJson(e as Map<String, dynamic>)),
-      addressTableLookups: (json['addressTableLookups'] as List<dynamic>?)
-          ?.map((e) =>
+      addressTableLookups: (json['addressTableLookups'] as List<dynamic>)
+          .map((e) =>
               MessageAddressTableLookup.fromJson(e as Map<String, dynamic>))
           .toList(),
     );

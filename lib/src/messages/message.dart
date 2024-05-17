@@ -37,8 +37,8 @@ class Message extends Serializable {
     required this.accountKeys,
     required this.recentBlockhash,
     required this.instructions,
-    required final List<MessageAddressTableLookup>? addressTableLookups,
-  }): addressTableLookups = const [];
+    required this.addressTableLookups,
+  });
 
   /// The transaction/message version (`null` == legacy).
   final int? version;
@@ -456,7 +456,7 @@ class Message extends Serializable {
     }
 
     /// Read the address table lookups.
-    List<MessageAddressTableLookup>? addressTableLookups;
+    List<MessageAddressTableLookup> addressTableLookups = [];
     if (version != null) {
       addressTableLookups = [];
       final int addressTableLookupsCount = shortvec.decodeLength(reader);

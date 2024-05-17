@@ -6,7 +6,6 @@ import 'package:solana_common/types.dart';
 import 'package:solana_jsonrpc/jsonrpc.dart';
 import 'package:solana_jsonrpc/models.dart';
 import '../crypto/pubkey.dart';
-import '../encodings/account_encoding.dart';
 import '../encodings/transaction_encoding.dart';
 import '../messages/message.dart';
 import '../transactions/nonce_account.dart';

@@ -152,6 +152,8 @@ class Transaction extends Serializable with TransactionSerializableMixin {
     // Read the [message].
     final Message message = Message.fromBufferReader(reader);
 
+    
+
     // Create the [Transaction].
     return Transaction(signatures: signatures, message: message);
   }

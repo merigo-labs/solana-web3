@@ -4,7 +4,6 @@
 import 'package:solana_common/extensions.dart';
 import 'package:solana_common/models.dart';
 import 'package:solana_common/types.dart';
-import '../../exceptions/transaction_error.dart';
 import '../models/inner_instruction.dart';
 import '../models/loaded_address.dart';
 import '../models/token_balance.dart';
