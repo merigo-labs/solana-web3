@@ -9,7 +9,7 @@ part of 'accounts.dart';
 MasterEditionAccount _$MasterEditionAccountFromJson(
         Map<String, dynamic> json) =>
     MasterEditionAccount(
-      key: json['key'] as int,
+      key: (json['key'] as num).toInt(),
       supply: BigInt.parse(json['supply'] as String),
       maxSupply: json['maxSupply'] == null
           ? null
@@ -26,19 +26,19 @@ Map<String, dynamic> _$MasterEditionAccountToJson(
 
 MetadataAccount _$MetadataAccountFromJson(Map<String, dynamic> json) =>
     MetadataAccount(
-      key: json['key'] as int,
+      key: (json['key'] as num).toInt(),
       updateAuthority: json['updateAuthority'] as String,
       mint: json['mint'] as String,
       name: json['name'] as String,
       symbol: json['symbol'] as String,
       uri: json['uri'] as String,
-      sellerFeeBasisPoints: json['sellerFeeBasisPoints'] as int,
+      sellerFeeBasisPoints: (json['sellerFeeBasisPoints'] as num).toInt(),
       creators: (json['creators'] as List<dynamic>?)
           ?.map((e) => MetadataCreator.fromJson(e as Map<String, dynamic>))
           .toList(),
       primarySaleHappened: json['primarySaleHappened'] as bool,
       isMutable: json['isMutable'] as bool,
-      editionNonce: json['editionNonce'] as int?,
+      editionNonce: (json['editionNonce'] as num?)?.toInt(),
       tokenStandard:
           $enumDecodeNullable(_$TokenStandardEnumMap, json['tokenStandard']),
       collection: json['collection'] == null

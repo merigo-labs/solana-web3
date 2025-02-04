@@ -10,5 +10,5 @@ TransactionNonceInvalidException _$TransactionNonceInvalidExceptionFromJson(
         Map<String, dynamic> json) =>
     TransactionNonceInvalidException(
       json['message'] as String,
-      slot: json['slot'] as int?,
+      slot: (json['slot'] as num?)?.toInt(),
     );

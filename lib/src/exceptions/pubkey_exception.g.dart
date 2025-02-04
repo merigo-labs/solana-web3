@@ -9,5 +9,5 @@ part of 'pubkey_exception.dart';
 PubkeyException _$PubkeyExceptionFromJson(Map<String, dynamic> json) =>
     PubkeyException(
       json['message'] as String,
-      code: json['code'] as int?,
+      code: (json['code'] as num?)?.toInt(),
     );

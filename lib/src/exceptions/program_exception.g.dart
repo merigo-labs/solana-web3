@@ -9,5 +9,5 @@ part of 'program_exception.dart';
 ProgramException _$ProgramExceptionFromJson(Map<String, dynamic> json) =>
     ProgramException(
       json['message'] as String,
-      code: json['code'] as int?,
+      code: (json['code'] as num?)?.toInt(),
     );

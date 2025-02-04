@@ -7,8 +7,8 @@ part of 'nonce_account.dart';
 // **************************************************************************
 
 NonceAccount _$NonceAccountFromJson(Map<String, dynamic> json) => NonceAccount(
-      version: json['version'] as int,
-      state: json['state'] as int,
+      version: (json['version'] as num).toInt(),
+      state: (json['state'] as num).toInt(),
       authorizedPubkey: Pubkey.fromJson(json['authorizedPubkey'] as String),
       nonce: json['nonce'] as String,
       feeCalculator:

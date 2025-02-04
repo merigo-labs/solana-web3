@@ -7,11 +7,11 @@ part of 'message.dart';
 // **************************************************************************
 
 Message _$MessageFromJson(Map<String, dynamic> json) => Message(
-      version: json['version'] as int?,
+      version: (json['version'] as num?)?.toInt(),
+      header: MessageHeader.fromJson(json['header'] as Map<String, dynamic>),
       accountKeys: (json['accountKeys'] as List<dynamic>)
           .map((e) => Pubkey.fromJson(e as String))
           .toList(),
-      header: MessageHeader.fromJson(json['header'] as Map<String, dynamic>),
       recentBlockhash: json['recentBlockhash'] as String,
       instructions: (json['instructions'] as List<dynamic>)
           .map((e) => MessageInstruction.fromJson(e as Map<String, dynamic>)),
@@ -23,8 +23,8 @@ Message _$MessageFromJson(Map<String, dynamic> json) => Message(
 
 Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
       'version': instance.version,
-      'accountKeys': instance.accountKeys.map((e) => e.toJson()).toList(),
       'header': instance.header.toJson(),
+      'accountKeys': instance.accountKeys.map((e) => e.toJson()).toList(),
       'recentBlockhash': instance.recentBlockhash,
       'instructions': instance.instructions.map((e) => e.toJson()).toList(),
       'addressTableLookups':

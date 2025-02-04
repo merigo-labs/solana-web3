@@ -11,10 +11,10 @@ MessageAddressTableLookup _$MessageAddressTableLookupFromJson(
     MessageAddressTableLookup(
       accountKey: Pubkey.fromJson(json['accountKey'] as String),
       writableIndexes: (json['writableIndexes'] as List<dynamic>)
-          .map((e) => e as int)
+          .map((e) => (e as num).toInt())
           .toList(),
       readonlyIndexes: (json['readonlyIndexes'] as List<dynamic>)
-          .map((e) => e as int)
+          .map((e) => (e as num).toInt())
           .toList(),
     );
 

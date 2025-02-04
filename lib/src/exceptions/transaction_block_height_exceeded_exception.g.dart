@@ -11,5 +11,5 @@ TransactionBlockHeightExceededException
             Map<String, dynamic> json) =>
         TransactionBlockHeightExceededException(
           json['message'] as String,
-          code: json['code'] as int?,
+          code: (json['code'] as num?)?.toInt(),
         );

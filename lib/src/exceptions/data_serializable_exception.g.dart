@@ -10,5 +10,5 @@ DataSerializableException _$DataSerializableExceptionFromJson(
         Map<String, dynamic> json) =>
     DataSerializableException(
       json['message'] as String,
-      code: json['code'] as int?,
+      code: (json['code'] as num?)?.toInt(),
     );

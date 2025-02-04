@@ -10,7 +10,7 @@ MetadataCreator _$MetadataCreatorFromJson(Map<String, dynamic> json) =>
     MetadataCreator(
       address: Pubkey.fromJson(json['address'] as String),
       verified: json['verified'] as bool,
-      share: json['share'] as int,
+      share: (json['share'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MetadataCreatorToJson(MetadataCreator instance) =>
@@ -34,8 +34,8 @@ Map<String, dynamic> _$MetadataCollectionToJson(MetadataCollection instance) =>
 
 MetadataUses _$MetadataUsesFromJson(Map<String, dynamic> json) => MetadataUses(
       useMethod: $enumDecode(_$MetadataUseMethodEnumMap, json['useMethod']),
-      remaining: json['remaining'] as int,
-      total: json['total'] as int,
+      remaining: (json['remaining'] as num).toInt(),
+      total: (json['total'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MetadataUsesToJson(MetadataUses instance) =>
@@ -54,7 +54,7 @@ const _$MetadataUseMethodEnumMap = {
 MetadataCollectionDetailsV1 _$MetadataCollectionDetailsV1FromJson(
         Map<String, dynamic> json) =>
     MetadataCollectionDetailsV1(
-      size: json['size'] as int,
+      size: (json['size'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MetadataCollectionDetailsV1ToJson(
